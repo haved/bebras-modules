@@ -39,6 +39,7 @@ var importableModules = function () {
       'blockly_de': {src: modulesPath+"/ext/blockly/de.js", id: "blockly_de"},
       'blockly_es': {src: modulesPath+"/ext/blockly/es.js", id: "blockly_es"},
       'blockly_sl': {src: modulesPath+"/ext/blockly/sl.js", id: "blockly_sl"},
+      'blockly_no': {src: modulesPath+"/ext/blockly/no.js", id: "blockly_no"},
       'blockly_fioi': {src: modulesPath+"/ext/blockly-fioi/fioi-blockly.min.js", id: "blockly_fioi"},
 
       'blocklyRobot_lib': {src: modulesPath+"/pemFioi/blocklyRobot_lib-0.9.1.js", id: "blocklyRobot_lib"},
