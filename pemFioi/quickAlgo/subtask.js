@@ -116,7 +116,7 @@ var initBlocklySubTask = function(subTask, language) {
       // TODO :: find a way to not have to do that?
       setTimeout(function() {
         subTask.blocklyHelper.reload();
-        }, 100);
+       }, 10);
    };
 
    subTask.updateScale = function() {
