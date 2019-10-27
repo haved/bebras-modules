@@ -13,7 +13,8 @@ var getContext = function(display, infos) {
                 getLatitude: 'getLatitude(%1)',
                 getLongitude: 'getLongitude(%1)',
                 getNeighbors: 'getNeighbors(%1)',
-                shortestPath: 'shortestPath(%1, %2)'
+                shortestPath: 'shortestPath(%1, %2)',
+                echo: 'afficher(%1)'
             },
             code: {
                 clearMap: 'clearMap',
@@ -24,6 +25,7 @@ var getContext = function(display, infos) {
                 getLongitude: 'getLongitude',
                 getNeighbors: 'getNeighbors',
                 shortestPath: 'shortestPath',
+                echo: 'afficher'
             },
             description: {
                 clearMap: 'Delete everything from the map (roads and locations)',
@@ -34,6 +36,7 @@ var getContext = function(display, infos) {
                 getLongitude: 'Returns the longitude of the city',
                 getNeighbors: 'Returns the list of neighbors of the city',
                 shortestPath: 'Returns the shortest path between the two cities, using geoDistance',
+                echo: 'Afficher'
             },
             startingBlockName: "Programme",
             constantLabel: {
@@ -50,12 +53,12 @@ var getContext = function(display, infos) {
     var context = quickAlgoContext(display, infos)
     var strings = context.setLocalLanguageStrings(map_strings)
     var map;
-
+    var logger;
 
     var conceptBaseUrl = window.location.protocol + '//'
         + 'static4.castor-informatique.fr/help/index.html';
     context.conceptList = [
-        {id: 'map_introduction', name: 'La proglet gogleMap', url: conceptBaseUrl+'#map_introduction'},
+        {id: 'map_introduction', name: 'La proglet gogleMaps', url: conceptBaseUrl+'#map_introduction'},
         {id: 'map_clearMap', name: 'Effacer la carte', url: conceptBaseUrl+'#map_mapDisplay'},
         {id: 'map_addLocation', name: 'Mettre en évidence un point de la carte', url: conceptBaseUrl+'#map_mapDisplay'},
         {id: 'map_addRoad', name: 'Tracer une ligne droite', url: conceptBaseUrl+'#map_mapDisplay'},
@@ -68,10 +71,13 @@ var getContext = function(display, infos) {
 
 
     context.reset = function(taskInfos) {
-        if(!context.display || map) return
+        if(!context.display) return
         if(!map) {
             var options = $.extend({ parent: $('#grid')[0] }, infos.mapConfig);
             map = new Map(options);
+            logger = new Logger({
+                parent: $('#gridContainer')
+            });
         }
         map.clearMap();
     }
@@ -81,7 +87,6 @@ var getContext = function(display, infos) {
     context.updateScale = function() {}
     context.resetDisplay = function() {}
     context.unload = function() {}
-    context.changeDelay = function(actionDelay) {}
     context.onExecutionEnd = function() {}
 
 
@@ -114,7 +119,7 @@ var getContext = function(display, infos) {
                     params_names: ['cityName']
                 },
                 { name: 'getLongitude',
-                yieldsValue: true,
+                  yieldsValue: true,
                     params: ['String'],
                     params_names: ['cityName']
                 },
@@ -126,13 +131,22 @@ var getContext = function(display, infos) {
                 { name: 'shortestPath',
                     params: ['String', 'String'],
                     params_names: ['cityName1', 'cityName2']
+                },
+                { name: 'echo',
+                    params: ['String'],
+                    params_names: ['longitude', 'latitude', 'label']
                 }
             ]
         }
     }
 
 
-    context.map = {}
+    context.map = {
+        echo: function(msg, callback) {
+            logger.put(msg);
+            callback();
+        }
+    }
 
 
     for (var category in context.customBlocks.map) {
@@ -153,15 +167,13 @@ var getContext = function(display, infos) {
                     }
                     block.blocklyXml += '</block>';
                 }
+                if(context.map[block.name]) {
+                    return;
+                }
                 context.map[block.name] = function() {
                     var callback = arguments[arguments.length - 1];
                     if(map) {
-                        if(block.hasHandler) {
-                            // This function knows how to take care of the callback
-                            map[block.name].apply(map, arguments);
-                        } else {
-                            context.runner.noDelay(callback, map[block.name].apply(map, arguments));
-                        }
+                        context.waitDelay(callback, map[block.name].apply(map, arguments))
                     } else {
                         callback();
                     }
@@ -174,8 +186,8 @@ var getContext = function(display, infos) {
 }
 
 if(window.quickAlgoLibraries) {
-   quickAlgoLibraries.register('map', getContext);
-} else {
-   if(!window.quickAlgoLibrariesList) { window.quickAlgoLibrariesList = []; }
-   window.quickAlgoLibrariesList.push(['map', getContext]);
-}
+    quickAlgoLibraries.register('map', getContext);
+ } else {
+    if(!window.quickAlgoLibrariesList) { window.quickAlgoLibrariesList = []; }
+    window.quickAlgoLibrariesList.push(['map', getContext]);
+ }

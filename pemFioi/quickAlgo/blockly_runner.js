@@ -101,6 +101,14 @@ function initBlocklyRunner(context, messageCallback) {
          target.addEventListener(eventName, listenerFunc);
       };
 
+      runner.waitCallback = function(callback, value) {
+         // Returns a callback to be called once we can continue the execution
+         runner.stackCount = 0;
+         return function() {
+            runner.noDelay(callback, value);
+         }
+      };
+
       runner.noDelay = function(callback, value) {
          var primitive = undefined;
          if (value != undefined) {
@@ -289,7 +297,7 @@ function initBlocklyRunner(context, messageCallback) {
                context.programEnded[iInterpreter] = true;
             }
 
-            var message = e.toString();
+            var message = e.message || e.toString();
 
             // Translate "Unknown identifier" message
             if(message.substring(0, 20) == "Unknown identifier: ") {
