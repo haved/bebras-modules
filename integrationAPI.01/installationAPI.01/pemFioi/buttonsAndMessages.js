@@ -529,8 +529,8 @@ window.displayHelper = {
          scoreWouldStay: "With this answer, your score would stay the same:",
          answerNotSavedContestOver: "The contest being over, your answer was not saved. You may {0}.",
          reloadSubmittedAnswer: "reload the validated answer",
-         difficultyWarning: "<strong>Warning:</strong> solving this version takes time.<br/>You would solve the 2 or 3 star versions of other tasks more quickly.",
-         enemyWarning: "<strong>Warning:</strong> in this challenge, the computer will make sure you don't find the solution by chance."
+         difficultyWarning: "<strong>Advarsel:</strong> Denne versjonen kan være tidkrevende.<br/>Du kan nok løse 2 eller 3-stjerne-versjonene av andre oppgaver raskere.",
+         enemyWarning: "<strong>Advarsel:</strong> in this challenge, the computer will make sure you don't find the solution by chance."
       },
    },
    initLanguage: function() {

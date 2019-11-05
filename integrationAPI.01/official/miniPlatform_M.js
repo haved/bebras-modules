@@ -60,7 +60,18 @@
          'yourScore': 'Su puntuación:',
          'canReadSolution': 'Puede leer la solución al final de esta página.',
          'gradeAnswer': 'Test grader'
-      }
+      },
+       no: {
+           'task': 'Task',
+           'submission': 'Submission',
+           'solution': 'Solution',
+           'editor': 'Edit',
+           'hints': 'Hints',
+           'showSolution': 'Show solution',
+           'yourScore': "Your score:",
+           'canReadSolution': "You can now read the solution at the bottom of this page.",
+           'gradeAnswer': 'Test grader'
+       }
    };
 
    /*

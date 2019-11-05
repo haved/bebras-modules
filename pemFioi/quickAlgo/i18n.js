@@ -482,6 +482,8 @@ var localLanguageStrings = {
       saveProgram: "Lagre",
       limitBlocks: "{remainingBlocks} av totalt {maxBlocks} blokker igjen.",
       limitBlocksOver: "{remainingBlocks} blokker over grensen på {maxBlocks}.",
+         limitElements: "{remainingBlocks} av totalt {maxBlocks} blokker igjen.",
+         limitElementsOver: "{remainingBlocks} blokker over grensen på {maxBlocks}.",
       previousTestcase: "Forrige",
       nextTestcase: "Neste",
       allTests: "Alle tester:",
