@@ -503,7 +503,7 @@ var localLanguageStrings = {
 };
 
 
-window.stringsLanguage = window.stringsLanguage || "fr";
+window.stringsLanguage = window.stringsLanguage || "no";
 window.languageStrings = window.languageStrings || {};
 
 if (typeof window.languageStrings != "object") {
