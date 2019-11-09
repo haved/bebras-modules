@@ -506,7 +506,7 @@ window.displayHelper = {
          illKeepThatInMind: "I'll consider it.",
          harderLevelAvailable: "Note that for this task, you may try to directly work on a harder version than this one.",
          lockedLevel: "This version is locked. Solve the previous version to display it!",
-         gradeThisAnswer: "Grade this answer",
+         gradeThisAnswer: "Valider",
 
          // The following messages are used for tasks with no feedback
          saveAnswer: "Save this answer",

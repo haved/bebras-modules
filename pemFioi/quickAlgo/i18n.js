@@ -497,7 +497,8 @@ var localLanguageStrings = {
       wrongAnswer: 'Feil svar',
       resultsNoSuccess: "Du passerte ikke noen av testene.",
       resultsPartialSuccess: "Du passerte bare {nbSuccess} av {nbTests} tester.",
-      gradingInProgress: "Vurdering underveis"
+      gradingInProgress: "Vurdering underveis",
+      errorEmptyProgram: "Programmet er tomt! Trekk noen kommandoer under \"Program\"-blokken.",
    }
 };
 

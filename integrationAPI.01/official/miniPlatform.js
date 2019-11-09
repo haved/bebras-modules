@@ -45,7 +45,7 @@
          'solution': 'Solution',
          'editor': 'Edit',
          'hints': 'Hints',
-         'showSolution': 'Show solution',
+         'showSolution': 'Vis løsning',
          'yourScore': "Your score:",
          'canReadSolution': "You can now read the solution at the bottom of this page.",
          'gradeAnswer': 'Test grader'
