@@ -2,11 +2,19 @@ var quickAlgoContext = function(display, infos) {
   var context = {
     display: display,
     infos: infos,
-    nbRobots: 1
+    nbCodes: 1, // How many different codes the user can edit
+    nbNodes: 1 // How many nodes will be executing programs
     };
 
   // Set the localLanguageStrings for this context
   context.setLocalLanguageStrings = function(localLanguageStrings) {
+    if(window.BlocksHelper && infos && infos.blocksLanguage) {
+      localLanguageStrings = BlocksHelper.mutateBlockStrings(
+        localLanguageStrings,
+        infos.blocksLanguage
+        );
+    }
+
     context.localLanguageStrings = localLanguageStrings;
     window.stringsLanguage = window.stringsLanguage || "fr";
     window.languageStrings = window.languageStrings || {};
@@ -36,6 +44,13 @@ var quickAlgoContext = function(display, infos) {
     }
   };
 
+  // Get the list of concepts
+  // List can be defined either in context.conceptList, or by redefining this
+  // function
+  context.getConceptList = function() {
+    return context.conceptList || [];
+  };
+
   // Default implementations
   context.changeDelay = function(newDelay) {
     // Change the action delay while displaying
@@ -60,6 +75,11 @@ var quickAlgoContext = function(display, infos) {
       // When a function is used outside of an execution
       callback(value);
     }
+  };
+
+  context.setCurNode = function(curNode) {
+    // Set the current node
+    context.curNode = curNode;
   };
 
   context.debug_alert = function(message, callback) {
@@ -94,15 +114,6 @@ var quickAlgoContext = function(display, infos) {
   context.provideBlocklyColours = function() {
     // Provide colours for Blockly
     return {};
-  };
-
-  context.program_end = function(callback) {
-    var curRobot = context.curRobot;
-    if (!context.programEnded[curRobot]) {
-      context.programEnded[curRobot] = true;
-      infos.checkEndCondition(context, true);
-    }
-    context.waitDelay(callback);
   };
 
   // Properties we expect the context to have

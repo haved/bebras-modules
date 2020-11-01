@@ -157,7 +157,7 @@ function GraphMouse(graphMouseID, graph, visualGraph) {
    };
 
    this.destroy = function() {
-      this.graph.removeListener(graphMouseID);
+      this.graph.removePostListener(graphMouseID);
       this.removeAll();
    };
 
@@ -506,12 +506,14 @@ function EdgeCreator(id, paperElementID, paper, graph, visualGraph, graphMouse, 
          }
       }
       else if(id == self.parent) {
+         edgeCreator(self.parent, id);
          self.parent = null;
          if(vertexSelector) {
             vertexSelector(id, false);
          }
       }
       else {
+         // edgeCreator(self.parent, id);
          if(vertexSelector) {
             vertexSelector(self.parent, false);
          }

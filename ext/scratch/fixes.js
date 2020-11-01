@@ -436,6 +436,23 @@ Blockly.is3dSupported = function() {
   return Blockly.cache3dSupported_;
 };
 
+Blockly.FieldTextInput.prototype.oldShowEditor_ = Blockly.FieldTextInput.prototype.showEditor_;
+Blockly.FieldTextInput.prototype.showEditor_ = function() {
+  var mobile =
+      goog.userAgent.MOBILE || goog.userAgent.ANDROID || goog.userAgent.IPAD;
+  if(mobile) {
+     // Display a prompt on mobile, as Blockly does
+     var newValue = prompt
+     var newValue = window.prompt(Blockly.Msg.CHANGE_VALUE_TITLE, this.text_);
+     if (this.sourceBlock_) {
+       newValue = this.callValidator(newValue);
+     }
+     this.setValue(newValue);
+  } else {
+     Blockly.FieldTextInput.prototype.oldShowEditor_.apply(this, arguments);
+  }
+}
+
 
 Blockly.Colours['input'] = {
     'primary': '#891431',
@@ -605,6 +622,46 @@ Blockly.Blocks['control_repeat_until'] = {
       "inputsInline": true,
       "previousStatement": null,
       "nextStatement": null,
+      "category": Blockly.Categories.control,
+      "colour": Blockly.Colours.control.primary,
+      "colourSecondary": Blockly.Colours.control.secondary,
+      "colourTertiary": Blockly.Colours.control.tertiary
+    });
+  }
+};
+
+// Fix image path
+Blockly.Blocks['control_forever'] = {
+  /**
+   * Block for repeat n times (external number).
+   * https://blockly-demo.appspot.com/static/demos/blockfactory/index.html#5eke39
+   * @this Blockly.Block
+   */
+  init: function() {
+    this.jsonInit({
+      "id": "control_forever",
+      "message0": "forever",
+      "message1": "%1", // Statement
+      "message2": "%1", // Icon
+      "lastDummyAlign2": "RIGHT",
+      "args1": [
+        {
+          "type": "input_statement",
+          "name": "SUBSTACK"
+        }
+      ],
+      "args2": [
+        {
+          "type": "field_image",
+          "src": Blockly.mainWorkspace.options.pathToMedia + "c_arrow.svg",
+          "width": 16,
+          "height": 16,
+          "alt": "*",
+          "flip_rtl": true
+        }
+      ],
+      "inputsInline": true,
+      "previousStatement": null,
       "category": Blockly.Categories.control,
       "colour": Blockly.Colours.control.primary,
       "colourSecondary": Blockly.Colours.control.secondary,
@@ -873,6 +930,95 @@ Blockly.Blocks['operator_join'] = {
   }
 };
 
+Blockly.Blocks['operator_dividefloor'] = {
+  /**
+   * Block for getting the whole part of dividing two numbers.
+   * @this Blockly.Block
+   */
+  init: function() {
+    this.jsonInit(
+      {
+        "message0": "%1 // %2",
+        "args0": [
+          {
+            "type": "input_value",
+            "name": "NUM1"
+          },
+          {
+            "type": "input_value",
+            "name": "NUM2"
+          }
+        ],
+        "inputsInline": true,
+        "output": "Number",
+        "category": Blockly.Categories.operators,
+        "colour": Blockly.Colours.operators.primary,
+        "colourSecondary": Blockly.Colours.operators.secondary,
+        "colourTertiary": Blockly.Colours.operators.tertiary,
+        "outputShape": Blockly.OUTPUT_SHAPE_ROUND
+      });
+  }
+};
+
+Blockly.Blocks['operator_lte'] = {
+  /**
+   * Block for less than or equal comparator.
+   * @this Blockly.Block
+   */
+  init: function() {
+    this.jsonInit({
+      "message0": "%1 ≤ %2",
+      "args0": [
+        {
+          "type": "input_value",
+          "name": "OPERAND1"
+        },
+        {
+          "type": "input_value",
+          "name": "OPERAND2"
+        }
+      ],
+      "inputsInline": true,
+      "output": "Boolean",
+      "category": Blockly.Categories.operators,
+      "colour": Blockly.Colours.operators.primary,
+      "colourSecondary": Blockly.Colours.operators.secondary,
+      "colourTertiary": Blockly.Colours.operators.tertiary,
+      "outputShape": Blockly.OUTPUT_SHAPE_HEXAGONAL
+    });
+  }
+};
+
+Blockly.Blocks['operator_gte'] = {
+  /**
+   * Block for greater than or equal comparator.
+   * @this Blockly.Block
+   */
+  init: function() {
+    this.jsonInit({
+      "message0": "%1 ≥ %2",
+      "args0": [
+        {
+          "type": "input_value",
+          "name": "OPERAND1"
+        },
+        {
+          "type": "input_value",
+          "name": "OPERAND2"
+        }
+      ],
+      "inputsInline": true,
+      "output": "Boolean",
+      "category": Blockly.Categories.operators,
+      "colour": Blockly.Colours.operators.primary,
+      "colourSecondary": Blockly.Colours.operators.secondary,
+      "colourTertiary": Blockly.Colours.operators.tertiary,
+      "outputShape": Blockly.OUTPUT_SHAPE_HEXAGONAL
+    });
+  }
+};
+
+
 Blockly.Blocks['text_print'] = {
   /**
    * Block for print statement.
@@ -963,21 +1109,21 @@ Blockly.JavaScript['operator_not'] = function(block) {
 
 Blockly.JavaScript['data_listrepeat'] = function(block) {
   // Create a list with one element repeated.
-  var functionName = Blockly.JavaScript.provideFunction_(
-      'listsRepeat',
-      ['function ' + Blockly.JavaScript.FUNCTION_NAME_PLACEHOLDER_ +
-          '(value, n) {',
-       '  var array = [];',
-       '  for (var i = 0; i < n; i++) {',
-       '    array[i] = value;',
-       '  }',
-       '  return array;',
-       '}']);
+  Blockly.JavaScript.externalFunctions['listsRepeat'] = function(value, n) {
+    if(n > FioiBlockly.maxListSize) {
+      throw Blockly.Msg.LISTS_CREATE_WITH_TOO_LARGE.replace('%1', n).replace('%2', FioiBlockly.maxListSize);
+    }
+    var array = [];
+    for (var i = 0; i < n; i++) {
+      array[i] = value;
+    }
+    return array;
+  };
   var element = Blockly.JavaScript.valueToCode(block, 'ITEM',
       Blockly.JavaScript.ORDER_COMMA) || 'null';
   var repeatCount = Blockly.JavaScript.valueToCode(block, 'TIMES',
       Blockly.JavaScript.ORDER_COMMA) || '0';
-  var code = functionName + '(' + element + ', ' + repeatCount + ')';
+  var code = 'listsRepeat(' + element + ', ' + repeatCount + ')';
 
   var blockVarName = block.getFieldValue('LIST');
   if(blockVarName) {
@@ -1084,7 +1230,9 @@ Blockly.JavaScript['operators'] = function(block) {
     'operator_divide': {op: '/', varname: 'NUM', order: Blockly.JavaScript.ORDER_DIVISION},
     'operator_equals': {op: '==', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_EQUALITY},
     'operator_gt': {op: '>', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_RELATIONAL},
+    'operator_gte': {op: '>=', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_RELATIONAL},
     'operator_lt': {op: '<', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_RELATIONAL},
+    'operator_lte': {op: '<=', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_RELATIONAL},
     'operator_and': {op: '&&', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_LOGICAL_AND},
     'operator_or': {op: '||', varname: 'OPERAND', order: Blockly.JavaScript.ORDER_LOGICAL_OR}
   };
@@ -1095,6 +1243,36 @@ Blockly.JavaScript['operators'] = function(block) {
   if(argument1 == 'NaN') { argument1 = '0'; };
   var code = argument0 + ' ' + opInfo.op + ' ' + argument1;
   return [code, opInfo.order];
+}
+
+Blockly.JavaScript['operator_add'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_subtract'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_multiply'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_divide'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_equals'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_gt'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_gte'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_lt'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_lte'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_and'] = Blockly.JavaScript['operators'];
+Blockly.JavaScript['operator_or'] = Blockly.JavaScript['operators'];
+
+Blockly.JavaScript['operator_dividefloor'] = function(block) {
+  var argument0 = Blockly.JavaScript.valueToCode(block, 'NUM1', Blockly.JavaScript.ORDER_DIVISION) || '0';
+  if(argument0 == 'NaN') { argument0 = '0'; };
+  var argument1 = Blockly.JavaScript.valueToCode(block, 'NUM2', Blockly.JavaScript.ORDER_DIVISION) || '0';
+  if(argument1 == 'NaN') { argument1 = '0'; };
+  var code = 'Math.floor(' + argument0 + ' / ' + argument1 + ')';
+  return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+}
+
+Blockly.JavaScript['operator_join'] = function(block) {
+  var argument0 = Blockly.JavaScript.valueToCode(block, 'STRING1', Blockly.JavaScript.ORDER_NONE) || '';
+  if(argument0 == 'NaN') { argument0 = ''; };
+  var argument1 = Blockly.JavaScript.valueToCode(block, 'STRING2', Blockly.JavaScript.ORDER_NONE) || '';
+  if(argument1 == 'NaN') { argument1 = ''; };
+  var code = 'String(' + argument0 + ') + String(' + argument1 + ')';
+  return [code, Blockly.JavaScript.ORDER_ADDITION];
 }
 
 Blockly.JavaScript['text'] = function(block) {
@@ -1110,25 +1288,6 @@ Blockly.JavaScript['text'] = function(block) {
   }
   return [code, Blockly.JavaScript.ORDER_ATOMIC];
 };
-
-Blockly.JavaScript['operator_add'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_subtract'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_multiply'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_divide'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_equals'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_gt'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_lt'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_and'] = Blockly.JavaScript['operators'];
-Blockly.JavaScript['operator_or'] = Blockly.JavaScript['operators'];
-
-Blockly.JavaScript['operator_join'] = function(block) {
-  var argument0 = Blockly.JavaScript.valueToCode(block, 'STRING1', Blockly.JavaScript.ORDER_NONE) || '';
-  if(argument0 == 'NaN') { argument0 = ''; };
-  var argument1 = Blockly.JavaScript.valueToCode(block, 'STRING2', Blockly.JavaScript.ORDER_NONE) || '';
-  if(argument1 == 'NaN') { argument1 = ''; };
-  var code = 'String(' + argument0 + ') + String(' + argument1 + ')';
-  return [code, Blockly.JavaScript.ORDER_ADDITION];
-}
 
 
 Blockly.Python['control_if'] = function(block) {
@@ -1300,9 +1459,12 @@ Blockly.Python['operators'] = function(block) {
     'operator_subtract': {op: '-', varname: 'NUM', order: Blockly.Python.ORDER_ADDITIVE},
     'operator_multiply': {op: '*', varname: 'NUM', order: Blockly.Python.ORDER_MULTIPLICATIVE},
     'operator_divide': {op: '/', varname: 'NUM', order: Blockly.Python.ORDER_MULTIPLICATIVE},
+    'operator_dividefloor': {op: '//', varname: 'NUM', order: Blockly.Python.ORDER_MULTIPLICATIVE},
     'operator_equals': {op: '==', varname: 'OPERAND', order: Blockly.Python.ORDER_RELATIONAL},
     'operator_gt': {op: '>', varname: 'OPERAND', order: Blockly.Python.ORDER_RELATIONAL},
+    'operator_gte': {op: '>=', varname: 'OPERAND', order: Blockly.Python.ORDER_RELATIONAL},
     'operator_lt': {op: '<', varname: 'OPERAND', order: Blockly.Python.ORDER_RELATIONAL},
+    'operator_lte': {op: '<=', varname: 'OPERAND', order: Blockly.Python.ORDER_RELATIONAL},
     'operator_and': {op: 'and', varname: 'OPERAND', order: Blockly.Python.ORDER_LOGICAL_AND},
     'operator_or': {op: 'or', varname: 'OPERAND', order: Blockly.Python.ORDER_LOGICAL_OR}
   };
@@ -1319,9 +1481,12 @@ Blockly.Python['operator_add'] = Blockly.Python['operators'];
 Blockly.Python['operator_subtract'] = Blockly.Python['operators'];
 Blockly.Python['operator_multiply'] = Blockly.Python['operators'];
 Blockly.Python['operator_divide'] = Blockly.Python['operators'];
+Blockly.Python['operator_dividefloor'] = Blockly.Python['operators'];
 Blockly.Python['operator_equals'] = Blockly.Python['operators'];
 Blockly.Python['operator_gt'] = Blockly.Python['operators'];
+Blockly.Python['operator_gte'] = Blockly.Python['operators'];
 Blockly.Python['operator_lt'] = Blockly.Python['operators'];
+Blockly.Python['operator_lte'] = Blockly.Python['operators'];
 Blockly.Python['operator_and'] = Blockly.Python['operators'];
 Blockly.Python['operator_or'] = Blockly.Python['operators'];
 

@@ -96,9 +96,39 @@ function Button(paper, xPos, yPos, width, height, text, repeat, initialDelay, st
       this.mouseover = false;
       this.mousedown = false;
 
+      var touchstart = function() {
+         self.touchInProgress = true;
+         self.lastTouchTime = new Date().getTime();
+         handleMouseDown();
+      }
+
       var mousedown = function() {
+         if (self.touchInProgress) {
+            return;
+         }
+         if (self.lastTouchTime != null) {
+            var timeSinceTouch = new Date().getTime() - self.lastTouchTime;
+            if (timeSinceTouch < 2000) {
+               return;
+            }
+         }
+         handleMouseDown();
+      }
+      
+      var handleMouseDown = function() {
+         if (self.lastMousedownTime != null) {
+            var timeSinceDown = new Date().getTime() - self.lastMousedownTime;
+            if (timeSinceDown < 100) {
+               return;
+            }
+         }
+         self.lastMousedownTime = new Date().getTime();
+         if(self.mousedown){
+            return
+         }
          if(self.enabled) {
             self.mousedown = true;
+            self.mouseover = true;
             self.moder.setMode("mousedown");
             if(repeat) {
                self._startRepeater();
@@ -115,11 +145,17 @@ function Button(paper, xPos, yPos, width, height, text, repeat, initialDelay, st
          }
       };
 
-      var mouseup = function() {
-         if(self.enabled) {
+      var touchend = function() {
+         self.touchInProgress = false;
+         self.lastTouchTime = new Date().getTime();
+         mouseup();
+      }
 
+      var mouseup = function() {
+         self.touchInProgress = false;
+         if(self.enabled) {
             // If we received a mousedown event previously, and now the mouse is up
-            // and the mouse is not over the button, then this was a drag attempt.
+            // and the mouse is not over the button, then this was a drag attempt.            
             if(self.mousedown && !self.mouseover) {
                if(self.dragAttemptHandler) {
                   self.dragAttemptHandler(self.dragAttemptData);
@@ -146,9 +182,14 @@ function Button(paper, xPos, yPos, width, height, text, repeat, initialDelay, st
       };
 
       this.elements.transLayer.click(click);
+      this.lastTouchTime = null;
+      this.touchInProgress = false;
+      this.lastMousedownTime = null;
+      this.elements.transLayer.touchstart(touchstart);
       this.elements.transLayer.mousedown(mousedown);
       this.elements.transLayer.mouseover(mouseover);
       this.elements.transLayer.mouseout(mouseout);
+      this.elements.transLayer.touchend(touchend);
       $(document).bind("mouseup.BUTTON_" + this.guid, mouseup);
       this.moder.setMode("enabled");
    };
@@ -234,5 +275,79 @@ function Button(paper, xPos, yPos, width, height, text, repeat, initialDelay, st
       this.applyFunction("remove");
    };
 
+   this.toFront = function() {
+      this.elements.shadow.toFront();
+      this.elements.rect.toFront();
+      for(var iElement in this.elements) {
+         if(iElement != "shadow" && iElement != "rect"){
+            var element = this.elements[iElement];
+            element.toFront();
+         }
+      }
+      this.elements.transLayer.toFront();
+   };
+
    this.init();
+}
+
+function Keyboard(data) {
+   this.paper = data.paper;
+   this.keys = data.keys;
+   this.nRows = data.nRows;
+   this.nCol = data.nCol;
+   this.keyFiller = data.keyFiller;
+   this.xPos = data.xPos;
+   this.yPos = data.yPos;
+   this.keyWidth = data.keyWidth;
+   this.keyHeight = data.keyHeight;
+   this.marginX = data.marginX;
+   this.marginY = data.marginY;
+   this.shiftOddRows = data.shiftOddRows;
+   this.repeat = data.repeat;
+   this.initialDelay = data.initialDelay;
+   this.stepDelay = data.stepDelay;
+   this.delayFactory = data.delayFactory;
+   this.attr = data.attr;
+   
+   this.keyboard = [];
+
+   for(var iRow = 0; iRow < this.nRows; iRow++){
+      // this.keyboard[iRow] = [];
+      for(var iCol = 0; iCol < this.nCol; iCol++){
+         var x = this.xPos + iCol * (this.keyWidth + this.marginX);
+         var y = this.yPos + iRow * (this.keyHeight + this.marginY);
+         if (this.shiftOddRows && (iRow % 2 == 1)) {
+            x += (this.keyWidth + this.marginX) / 2;
+         }
+         var keyIndex = iCol + iRow * this.nCol;
+         if (this.keys[keyIndex] != null) {
+            var specialKey = (this.keyFiller) ? this.keyFiller(keyIndex,x,y) : null;
+            if(!specialKey){ 
+               var text = this.keys[keyIndex];
+               this.keyboard[keyIndex] = new Button(this.paper,x,y,this.keyWidth,this.keyHeight,text,this.repeat, this.initialDelay, this.stepDelay, this.delayFactory);
+               if(this.attr){
+                  for(var iAttr = 0; iAttr < this.attr.length; iAttr++){
+                     var attr = this.attr[iAttr];
+                     var name = attr.name;
+                     var mode = attr.mode;
+                     this.keyboard[keyIndex].setAttr(name,mode,attr.attr);
+                  }
+               }
+            }else{
+               this.keyboard[keyIndex] = specialKey;
+            }
+         }
+      }
+   }
+   
+   this.remove = function() {
+      for(var iRow = 0; iRow < this.nRows; iRow++){
+         for(var iCol = 0; iCol < this.nCol; iCol++){
+            var keyIndex = iCol + iRow * this.nCol;
+            if (this.keys[keyIndex] != null) {
+               this.keyboard[keyIndex].remove();
+            }
+         }
+      }
+   }
 }

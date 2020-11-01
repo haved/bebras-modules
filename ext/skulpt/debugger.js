@@ -7,7 +7,7 @@ var Sk = Sk || {}; //jshint ignore:line
 function hasOwnProperty(obj, prop) {
   var proto = obj.constructor.prototype;
   return (prop in obj) &&
-    (!(prop in proto) || proto[prop] !== obj[prop]);
+      (!(prop in proto) || proto[prop] !== obj[prop]);
 }
 
 Sk.Breakpoint = function (filename, lineno, colno) {
@@ -86,7 +86,7 @@ Sk.Debugger.prototype.check_breakpoints = function (filename, lineno, colno, glo
 
   var key = this.generate_breakpoint_key(filename, lineno, colno);
   if (hasOwnProperty(this.dbg_breakpoints, key) &&
-    this.dbg_breakpoints[key].enabled === true) {
+      this.dbg_breakpoints[key].enabled === true) {
     var bp = null;
     if (hasOwnProperty(this.tmp_breakpoints, key)) {
       delete this.dbg_breakpoints[key];
@@ -255,6 +255,7 @@ Sk.Debugger.prototype.success = function (r) {
       // The child has completed the execution. So override the child's resume
       // so we can continue the execution.
       parent_suspension.child.resume = function () {
+        return r;
       };
       this.resume();
     } else {

@@ -1,6 +1,6 @@
-// TODO :: move to code-editor
+// TODO :: move to quickAlgo
 
-/* 
+/*
 pythonCount:
    returns number of Blockly blocks corresponding to some Python code.
 
@@ -17,6 +17,7 @@ var pythonCountPatterns = [
    {pattern: /^import\s+[^\n\r]+/, block: false}, // import x, y, z
    {pattern: /^for\s+\w+\s+in\s+range/, block: false}, // for i in range(5): is only one block; it's a bit tricky
 
+   {pattern: /^\d+\.\d*/, block: true},
    {pattern: /^\w+/, block: true},
 
    // Strings
@@ -55,6 +56,12 @@ function pythonCount(text) {
 }
 
 var pythonForbiddenBlocks = {
+    'dicts': {
+      'dicts_create_with': ['dict_brackets'],
+      'dict_get_literal': ['dict_brackets'],
+      'dict_set_literal': ['dict_brackets'],
+      'dict_keys': ['dict_brackets']
+    },
     'logic': {
       'controls_if': ['if', 'else', 'elif'],
       'controls_if_else': ['if', 'else', 'elif'],
@@ -67,7 +74,8 @@ var pythonForbiddenBlocks = {
       'controls_for': ['for'],
       'controls_forEach': ['for'],
       'controls_whileUntil': ['while'],
-      'controls_untilWhile': ['while']
+      'controls_untilWhile': ['while'],
+      'controls_infiniteloop': ['while']
     },
     'lists': {
       'lists_create_with_empty': ['list', 'set', 'list_brackets', '__getitem__', '__setitem__'],
@@ -83,23 +91,37 @@ var pythonForbiddenBlocks = {
       'lists_split' : ['list', 'set', 'list_brackets', '__getitem__', '__setitem__'],
       'lists_append': ['list', 'set', 'list_brackets', '__getitem__', '__setitem__']
     },
+    'maths': {
+      'math_number': ['math_number']
+    },
     'functions': {
-      'procedures_defnoreturn': ['def'],
-      'procedures_defreturn': ['def']
+      'procedures_defnoreturn': ['def', 'lambda'],
+      'procedures_defreturn': ['def', 'lambda']
+    },
+    'variables': {
+      'variables_set': ['var_assign']
     }
 };
 
 function pythonForbiddenLists(includeBlocks) {
    // Check for forbidden keywords in code
-   var forbidden = ['for', 'while', 'if', 'else', 'elif', 'not', 'and', 'or', 'list', 'set', 'list_brackets', 'dict_brackets', '__getitem__', '__setitem__', 'def', 'break', 'continue'];
+   var forbidden = ['for', 'while', 'if', 'else', 'elif', 'not', 'and', 'or', 'list', 'set', 'list_brackets', 'dict_brackets', '__getitem__', '__setitem__', 'var_assign', 'def', 'lambda', 'break', 'continue', 'setattr', 'map', 'split'];
    var allowed = []
 
    if(!includeBlocks) {
      return {forbidden: forbidden, allowed: allowed};
    }
 
+   var forced = includeBlocks.pythonForceForbidden ? includeBlocks.pythonForceForbidden : [];
+   for(var k=0; k<forced.length; k++) {
+      if(!arrayContains(forbidden, forced[k])) {
+         forbidden.push(forced[k]);
+      }
+   }
+
    var removeForbidden = function(kwList) {
       for(var k=0; k<kwList.length; k++) {
+         if(arrayContains(forced, kwList[k])) { continue; }
          var idx = forbidden.indexOf(kwList[k]);
          if(idx >= 0) {
             forbidden.splice(idx, 1);
@@ -111,7 +133,8 @@ function pythonForbiddenLists(includeBlocks) {
    if(includeBlocks && includeBlocks.standardBlocks) {
       if(includeBlocks.standardBlocks.includeAll || includeBlocks.standardBlocks.includeAllPython) {
          // Everything is allowed
-         return {forbidden: [], allowed: forbidden};
+         removeForbidden(forbidden.slice());
+         return {forbidden: forbidden, allowed: allowed};
       }
       if(includeBlocks.standardBlocks.wholeCategories) {
          for(var c=0; c<includeBlocks.standardBlocks.wholeCategories.length; c++) {
@@ -135,27 +158,56 @@ function pythonForbiddenLists(includeBlocks) {
       }
    }
 
+   if(includeBlocks && includeBlocks.variables && includeBlocks.variables.length) {
+      removeForbidden(['var_assign']);
+   }
+
    return {forbidden: forbidden, allowed: allowed};
+}
+
+function removeFromPatterns(code, patterns) {
+   // Remove matching patterns from code
+   for(var i=0; i<patterns.length; i++) {
+      while(patterns[i].exec(code)) {
+         code = code.replace(patterns[i], '');
+     }
+   }
+   return code;
 }
 
 function pythonForbidden(code, includeBlocks) {
    var forbidden = pythonForbiddenLists(includeBlocks).forbidden;
 
-   if(forbidden.length <= 0) { return false; }
-
    // Remove comments and strings before scanning
    var removePatterns = [
-      /#[^\n\r]+/,
+      /#[^\n\r]+/
+      ];
+
+   code = removeFromPatterns(code, removePatterns);
+
+   var stringPatterns = [
       /'''(?:[^\\']|\\.|'[^']|'[^'])+'''/,
       /'(?:[^\\']|\\.)+'/,
       /"""(?:[^\\"]|\\.|"[^"]|""[^"])+"""/,
       /"(?:[^\\"]|\\.)+"/
       ];
-   for(var i=0; i<removePatterns.length; i++) {
-      while(removePatterns[i].exec(code)) {
-         code = code.replace(removePatterns[i], '');
-     }
+
+   code2 = removeFromPatterns(code, stringPatterns);
+   if(window.arrayContains && arrayContains(forbidden, 'strings') && code != code2) {
+      return 'chaînes de caractères';
    }
+
+   code = code2;
+
+   // exec and eval are forbidden anyway
+   if(/(^|\W)exec\((\W|$)/.exec(code)) {
+      return 'exec';
+   }
+   if(/(^|\W)eval\((\W|$)/.exec(code)) {
+      return 'eval';
+   }
+
+   if(forbidden.length <= 0) { return false; }
 
    // Scan for each forbidden keyword
    for(var i=0; i<forbidden.length; i++) {
@@ -173,7 +225,14 @@ function pythonForbidden(code, includeBlocks) {
             // Forbidden keyword found
             return 'accolades { }'; // TODO :: i18n ?
          }
-      } else {
+      } else if(forbidden[i] == 'var_assign') {
+         // Special pattern for lists
+         var re = /[^=!<>]=[^=!<>]/;
+         if(re.exec(code)) {
+            // Forbidden keyword found
+            return '= (assignation de variable)'; // TODO :: i18n ?
+         }
+      } else if(forbidden[i] != 'strings') {
          var re = new RegExp('(^|\\W)'+forbidden[i]+'(\\W|$)');
          if(re.exec(code)) {
             // Forbidden keyword found
@@ -220,11 +279,24 @@ function pythonFindLimited(code, limitedUses, blockToCode) {
    }
 
    for(var pyKey in limitedPointers) {
+      // Keys to ignore
+      if(pyKey == 'else') {
+         continue;
+      }
+      // Special keys
       if(pyKey == 'list_brackets') {
          var re = /[\[\]]/g;
       } else if(pyKey == 'dict_brackets') {
          var re = /[\{\}]/g;
+      } else if(pyKey == 'math_number') {
+         var re = /\W\d+(\.\d*)?/g;
       } else {
+         // Check for assign statements
+         var re = new RegExp('=\\W*'+pyKey+'([^(]|$)');
+         if(re.exec(code)) {
+            return {type: 'assign', name: pyKey};
+         }
+
          var re = new RegExp('(^|\\W)'+pyKey+'(\\W|$)', 'g');
       }
       var count = (code.match(re) || []).length;
@@ -234,13 +306,17 @@ function pythonFindLimited(code, limitedUses, blockToCode) {
          if(!usesCount[pointer]) { usesCount[pointer] = 0; }
          usesCount[pointer] += count;
          if(usesCount[pointer] > limitedUses[pointer].nbUses) {
+            // TODO :: i18n ?
             if(pyKey == 'list_brackets') {
-               return 'crochets [ ]'; // TODO :: i18n ?
+               var name = 'crochets [ ]';
             } else if(pyKey == 'dict_brackets') {
-               return 'accolades { }'; // TODO :: i18n ?
+               var name = 'accolades { }';
+            } else if(pyKey == 'math_number') {
+               var name = 'nombres';
             } else {
-               return pyKey;
+               var name = pyKey;
             }
+            return {type: 'uses', name: name};
          }
       }
    }

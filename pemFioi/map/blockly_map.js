@@ -1,7 +1,7 @@
 var getContext = function(display, infos) {
 
     var map_strings = {
-        fr: {
+        en: {
             categories: {
                 map: 'Carte'
             },
@@ -38,7 +38,7 @@ var getContext = function(display, infos) {
                 shortestPath: 'Returns the shortest path between the two cities, using geoDistance',
                 echo: 'Afficher'
             },
-            startingBlockName: "Programme",
+            startingBlockName: "Program",
             constantLabel: {
             },
             messages: {
@@ -129,12 +129,13 @@ var getContext = function(display, infos) {
                     params_names: ['cityName']
                 },
                 { name: 'shortestPath',
+                    yieldsValue: true,
                     params: ['String', 'String'],
                     params_names: ['cityName1', 'cityName2']
                 },
                 { name: 'echo',
                     params: ['String'],
-                    params_names: ['longitude', 'latitude', 'label']
+                    params_names: ['value']
                 }
             ]
         }

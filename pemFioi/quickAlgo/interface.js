@@ -11,6 +11,7 @@ var quickAlgoInterface = {
    loadInterface: function(context) {
       // Load quickAlgo interface into the DOM
       this.context = context;
+      quickAlgoImportLanguage();
       this.strings = window.languageStrings;
 
       var gridHtml = "<center>";
@@ -87,24 +88,29 @@ var quickAlgoInterface = {
       $('#scaleDrawing').change(this.onScaleDrawingChange.bind(this));
    },
 
+   bindBlocklyHelper: function(blocklyHelper) {
+      this.blocklyHelper = blocklyHelper;
+   },
+
    setOptions: function(opt) {
       // Load options from the task
-      if(opt.hideSaveOrLoad) {
-         $('#saveOrLoadBtn').hide();
-      } else {
-         $('#saveOrLoadBtn').show();
-      }
-      if(opt.hasExample) {
-         $('#loadExampleBtn').show();
-      } else {
-         $('#loadExampleBtn').hide();
-      }
+      var hideControls = opt.hideControls ? opt.hideControls : {};
+      $('#saveOrLoadBtn').toggle(!hideControls.saveOrLoad);
+      $('#loadExampleBtn').toggle(!!opt.hasExample);
       if(opt.conceptViewer) {
          conceptViewer.load(opt.conceptViewerLang);
          $('#displayHelpBtn').show();
       } else {
          $('#displayHelpBtn').hide();
       }
+   },
+
+   appendTaskIntro: function(html) {
+      $('#taskIntro').append(html);
+   },
+
+   toggleLongIntro: function(forceNewState) {
+      // For compatibility with new interface
    },
 
    onScaleDrawingChange: function(e) {
@@ -114,6 +120,10 @@ var quickAlgoInterface = {
       this.context.setScale(scaled ? 2 : 1);
    },
 
+   onEditorChange: function() {},
+   onResize: function() {},
+   updateBestAnswerStatus: function() {},
+
    blinkRemaining: function(times, red) {
       var capacity = $('#capacity');
       if(times % 2 == 0) {
@@ -121,12 +131,24 @@ var quickAlgoInterface = {
       } else {
          capacity.addClass('capacityRed');
       }
+      this.delayFactory.destroy('blinkRemaining');
       if(times > (red ? 1 : 0)) {
          var that = this;
-         this.delayFactory.destroy('blinkRemaining');
-         this.delayFactory.createTimeout('blinkRemaining', function() { that.blinkRemaining(times - 1, red); }, 200);
+         this.delayFactory.createTimeout('blinkRemaining', function() { that.blinkRemaining(times - 1, red); }, 400);
       }
    },
+
+   displayCapacity: function(info) {
+      $('#capacity').html(info.text ? info.text : '');
+      if(info.invalid) {
+         this.blinkRemaining(11, true);
+      } else if(info.warning) {
+         this.blinkRemaining(6);
+      } else {
+         this.blinkRemaining(0);
+      }
+   },
+
 
    initTestSelector: function (nbTestCases) {
       // Create the DOM for the tests display (typically on the left side)
@@ -251,5 +273,30 @@ var quickAlgoInterface = {
       message ? $('#errors').html(message) : $('#errors').empty();
    },
 
-   setPlayPause: function(isPlaying) {} // Does nothing
+   displayResults: function(mainResults, worstResults) {
+      this.displayError('<span class="testError">'+mainResults.message+'</span>');
+   },
+
+   setPlayPause: function(isPlaying) {}, // Does nothing
+
+   exportCurrentAsPng: function(name) {
+      if(typeof window.saveSvgAsPng == 'undefined') {
+         throw "Unable to export without save-svg-as-png. Please add 'save-svg-as-png' to the importModules statement.";
+      }
+      if(!name) { name = 'export.png'; }
+      var svgBbox = $('#blocklyDiv svg')[0].getBoundingClientRect();
+      var blocksBbox = $('#blocklyDiv svg > .blocklyWorkspace > .blocklyBlockCanvas')[0].getBoundingClientRect();
+      var svg = $('#blocklyDiv svg').clone();
+      svg.find('.blocklyFlyout, .blocklyMainBackground, .blocklyTrash, .blocklyBubbleCanvas, .blocklyScrollbarVertical, .blocklyScrollbarHorizontal, .blocklyScrollbarBackground').remove();
+      var options = {
+         backgroundColor: '#FFFFFF',
+         top: blocksBbox.top - svgBbox.top - 4,
+         left: blocksBbox.left - svgBbox.left - 4,
+         width: blocksBbox.width + 8,
+         height: blocksBbox.height + 8
+         };
+      window.saveSvgAsPng(svg[0], name, options);
+   },
+
+   updateControlsDisplay: function() {}
 };

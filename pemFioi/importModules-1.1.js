@@ -26,18 +26,26 @@ var importableModules = function () {
       'drag_lib-2.0': {src: modulesPath+"/pemFioi/drag_lib-2.0.js", id: "http://www.france-ioi.org/modules/pemFioi/drag_lib-2.0.js"},
       'randomGenerator-1.0': {src: modulesPath+"/pemFioi/randomGenerator-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/randomGenerator-1.0.js"},
       'simpleKeyboard-1.0': {src: modulesPath+"/pemFioi/simpleKeyboard-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/simpleKeyboard-1.0.js"},
+      'save-svg-as-png': {src: modulesPath+"/ext/save-svg-as-png/saveSvgAsPng.js", id: "save-svg-as-png"},
 
       'platform-pr': {classStr: "proxy module", src: modulesPath+"/integrationAPI.01/official/platform-pr.js", id: "http://www.france-ioi.org/modules/integrationAPI.01/official/platform-pr.js"},
       'buttonsAndMessages': {classStr: "stdButtonsAndMessages module", src: modulesPath+"/integrationAPI.01/installationAPI.01/pemFioi/buttonsAndMessages.js",  id: "http://www.france-ioi.org/modules/integrationAPI.01/installationAPI.01/pemFioi/buttonsAndMessages.js"},
       'installationAPI.01': {classStr: "remove", src: modulesPath+"/integrationAPI.01/installationAPI.01/pemFioi/installation.js"},
       'miniPlatform': {classStr: "remove", src: modulesPath+"/integrationAPI.01/official/miniPlatform.js"},
+      'static-task': {src: modulesPath+"/pemFioi/static-task.js"},
+      'fonts-loader-1.0': {src: modulesPath+"/pemFioi/fontsLoader-1.0.js", id: "fonts-loader"},
 
       'acorn': {src: modulesPath+"/ext/js-interpreter/acorn.js", id: "acorn"},
       'acorn-walk': {src: modulesPath+"/ext/acorn/walk.js", id: "acorn-walk"},
       'interpreter': {src: modulesPath+"/ext/js-interpreter/interpreter.js", id: "interpreter"},
       'ace': {src: modulesPath+"/ext/ace/ace.js", id: "ace"},
       'ace_python': {src: modulesPath+"/ext/ace/mode-python.js", id: "ace_python"},
+      'ace_language_tools': {src: modulesPath+"/ext/ace/ext-language_tools.js", id: "ace_language_tools"},
       'processing-1.4.8': {src: modulesPath+"/ext/processing/1.4.8/processing.min.js", id: "https://raw.github.com/processing-js/processing-js/v1.4.8/processing.min.js"},
+      'zen3d': { src: modulesPath + "/ext/zen3d/zen3d.min.js", id: "zen3d" },
+      'zen3d_OrbitControls': { src: modulesPath + "/ext/zen3d/controls/OrbitControls.js", id: "zen3d_OrbitControls" },
+      'zen3d_Sprite': { src: modulesPath + "/ext/zen3d/objects/Sprite.js", id: "zen3d_Sprite" },
+      
 
       'taskStyles-0.1': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-0.1.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-0.1.css"},
 
@@ -62,6 +70,7 @@ var importableModules = function () {
       'blockly-printer2': {src: modulesPath+"/pemFioi/blocklyPrinter_lib-2.1.js", id: "blocklyPrinter_lib"},
       'blockly-turtle': {src: modulesPath+"/pemFioi/blocklyTurtle_lib.js", id: "blocklyTurtle_lib"},
       'blockly-processing': {src: modulesPath+"/pemFioi/blocklyProcessing_lib.js", id: "blocklyProcessing_lib"},
+      'blockly-processing-v2': {src: modulesPath+"/pemFioi/blocklyProcessing_lib_v2.js", id: "blocklyProcessing_lib_v2"},
       'blockly-template': {src: modulesPath+"/pemFioi/blocklyTemplate_lib.js", id: "blocklyTemplate_lib"},
       'jwinf_css': {type: "stylesheet", src: modulesPath+"/pemFioi/jwinf.css", id: "jwinf_css"}, // for BWINF
 
@@ -100,8 +109,13 @@ var importableModules = function () {
       'player_p5': {src: modulesPath+"/pemFioi/p5/player_p5.js", id: "player_p5"},
       'blockly_p5': {src: modulesPath+"/pemFioi/p5/blockly_p5.js", id: "blockly_p5"},
 
+      'geography': {src: modulesPath+"/pemFioi/components/geography/geography.js", id: "geography"},
+
       'blockly_map': {src: modulesPath+"/pemFioi/map/blockly_map.js", id: "blockly_map"},
       'map': {src: modulesPath+"/pemFioi/map/map.js", id: "map"},
+
+      'blockly_map_v2': {src: modulesPath+"/pemFioi/map_v2/blockly_map.js", id: "blockly_map_v2"},
+      'map_v2': {src: modulesPath+"/pemFioi/map_v2/map.js", id: "map_v2"},            
 
       'blockly_database': {src: modulesPath+"/pemFioi/database/blockly_database.js", id: "blockly_database"},
       'database': {src: modulesPath+"/pemFioi/database/database.js", id: "database"},
@@ -113,7 +127,22 @@ var importableModules = function () {
 
       'taskVideo': {src: modulesPath+"/pemFioi/taskVideo/taskVideo.js", id: "taskVideo"},
       'taskVideoPlayer': {src: modulesPath+"/pemFioi/taskVideo/player.js", id: "taskVideoPlayer"},
-      'taskVideo_css': {type: "stylesheet", src: modulesPath+"/pemFioi/taskVideo/player.css", id: "taskVideo_css"}
+      'taskVideo_css': {type: "stylesheet", src: modulesPath+"/pemFioi/taskVideo/player.css", id: "taskVideo_css"},
+
+      // earth3d and earth textures
+      'earth3d': {src: modulesPath+"/pemFioi/components/earth3d/earth3d.js", id: "earth3d"},
+      'earth3d_512': {src: modulesPath+"/pemFioi/components/earth3d/textures/512.js", id: "earth3d_512"},
+      'earth3d_1024': {src: modulesPath+"/pemFioi/components/earth3d/textures/1024.js", id: "earth3d_1024"},
+      'earth3d_2048': {src: modulesPath+"/pemFioi/components/earth3d/textures/2048.js", id: "earth3d_2048"},
+
+      // Bundles
+      'bebras-base': {src: modulesPath+"bundles/bebras-base.js", id: "bundle-bebras-base"},
+      'bebras-interface': {src: modulesPath+"bundles/bebras-interface.js", id: "bundle-bebras-interface"},
+      'js-interpreter': {src: modulesPath+"bundles/js-interpreter.js", id: "bundle-js-interpreter"},
+      'blockly-base': {src: modulesPath+"bundles/blockly-base.js", id: "bundle-blockly-base"},
+      'scratch-base': {src: modulesPath+"bundles/scratch-base.js", id: "bundle-scratch-base"},
+      'quickAlgo-all-blockly': {src: modulesPath+"bundles/quickAlgo-all-blockly.js", id: "bundle-quickAlgo-all-blockly"},
+      'quickAlgo-all-python': {src: modulesPath+"bundles/quickAlgo-all-python.js", id: "bundle-quickAlgo-all-python"}
    }
 }
 
@@ -167,6 +196,7 @@ var languageScripts = function () {
          'python_count',
          'ace',
          'ace_python',
+         'ace_language_tools',
          'skulpt_quickAlgo',
          'skulpt_stdlib',
          'skulpt_debugger',
@@ -182,6 +212,19 @@ var languageScripts = function () {
    }
 }
 
+var bundledModules = function () {
+   // List of bundles and which modules they include
+   // How to import the bundles is defined in importableModules
+   return [
+      {name: 'bebras-base', included: ['jquery-1.7.1', 'JSON-js', 'raphael-2.2.1', 'beaver-task-2.0', 'jschannel', 'raphaelFactory-1.0', 'delayFactory-1.0', 'simulationFactory-1.0']},
+      {name: 'bebras-interface', included: ['platform-pr', 'buttonsAndMessages', 'beav-1.0', 'installationAPI.01', 'miniPlatform']},
+      {name: 'js-interpreter', included: ['acorn', 'acorn-walk', 'interpreter']},
+      {name: 'blockly-base', included: ['blockly', 'blockly_blocks', 'blockly_javascript', 'blockly_python']},
+      {name: 'scratch-base', included: ['scratch', 'scratch_blocks_common', 'scratch_blocks', 'blockly_javascript', 'blockly_python']},
+      {name: 'quickAlgo-all-blockly', included: ['quickAlgo_utils', 'quickAlgo_i18n', 'quickAlgo_interface', 'quickAlgo_blockly_blocks','quickAlgo_blockly_interface', 'quickAlgo_blockly_runner', 'quickAlgo_subtask', 'quickAlgo_context']},
+      {name: 'quickAlgo-all-python', included: ['python_count', 'ace', 'ace_python', 'skulpt_quickAlgo', 'skulpt_stdlib', 'skulpt_debugger', 'quickAlgo_utils', 'quickAlgo_i18n', 'quickAlgo_interface', 'quickAlgo_python_interface', 'quickAlgo_python_runner', 'quickAlgo_subtask', 'quickAlgo_context']}
+   ];
+};
 
 // from http://stackoverflow.com/questions/979975/
 var QueryString = function () {
@@ -208,10 +251,47 @@ var QueryString = function () {
 }();
 
 
+function getBundles(modulesList) {
+   // Check modulesList for modules which are already bundled together
+
+   // For now, only do it if useBundles is true
+   if(!window.useBundles) { return modulesList; }
+
+   if(typeof bundledModules == 'function') {
+      bundledModules = bundledModules();
+   }
+   for(var iBundle in bundledModules) {
+      var bundleIncludes = bundledModules[iBundle].included;
+      var newModulesList = modulesList.slice();
+      var isFirst = true;
+      var ok = true;
+      for(var iMod in bundleIncludes) {
+         var idx = newModulesList.indexOf(bundleIncludes[iMod]);
+         if(idx == -1) {
+            ok = false;
+            break;
+         }
+         if(isFirst) {
+            // Include the name of the bundle to include instead
+            newModulesList.splice(idx, 1, bundledModules[iBundle].name);
+            isFirst = false;
+         } else {
+            newModulesList.splice(idx, 1);
+         }
+      }
+      if(ok) {
+         modulesList = newModulesList;
+      }
+   }
+   return modulesList;
+}
+
+
 function importModules(modulesList) {
    if(typeof importableModules == 'function') {
       importableModules = importableModules();
    };
+   modulesList = getBundles(modulesList);
    var modulesStr = '';
    for(var iMod in modulesList) {
       var moduleName = modulesList[iMod];

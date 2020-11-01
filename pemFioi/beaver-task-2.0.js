@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is to be included by beaver contest tasks, it defines a basic
  * implementation of the main functions of the task object, as well as a grader.
  *
@@ -88,31 +88,24 @@ function getUrlParameter(sParam) {
 };
 
 window.forcedLevel = getUrlParameter("level");
+window.initialLevel = getUrlParameter("initialLevel");
 
-function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) { 
-   if (window.forcedLevel !== undefined) {
-      var oldInitSubTask = initSubTask;
-      if (window.forcedLevel) {
-         levels = null;
-      }
-   }
-  
-   
+function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
    // Create a subTask instance, possibly operating on an existing object.
    function createTask(displayFlag) {
       var subTask = {};
       subTask.delayFactory = new DelayFactory();
       subTask.raphaelFactory = new RaphaelFactory();
-      
+
       // Simulation factory needs a specific corresponding delay factory.
       // TODO should it expect something else? subTask? A list of factories?
       subTask.simulationFactory = new SimulationFactory(subTask.delayFactory);
-      
+
       subTask.display = displayFlag;
       initSubTask(subTask);
       return subTask;
    }
-   
+
    // Destroy a subTask instance.
    function destroyTask(subTask, callback) {
       var doUnload = function() {
@@ -132,7 +125,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          subTask.unload(doUnload);
       }
    }
-   
+
    // Invoke a function for each level, and wait for callback.
    // When done, invoke finalCallback (optional).
    function callbackLoop(array, itemCallback, finalCallback) {
@@ -151,50 +144,79 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
       }
       innerLoop();
    }
-   
+
    // Main subTask instance, for user display.
    var mainTask;
    var mainTaskParams;
-   
+
    // The state of the task, including current level and levelState for each level.
    var state = null;
-   
+
    // Instances of subTask intended for grading.
    var gradingTasks = {};
 
    // Store whether this task has loaded but reloadAnswer was not yet called.
    // Used for automatically changing to the first level that can gain points.
    var hasJustLoaded = false;
-   
+
    task.load = function(views, callback) {
       hasJustLoaded = true;
       platform.getTaskParams(null, null, function(taskParams) {
+         if(taskParams.options && taskParams.options.level) {
+            window.forcedLevel = taskParams.options.level;
+         }
+         if(taskParams.options && taskParams.options.initialLevel) {
+            window.initialLevel = taskParams.options.initialLevel;
+         }
+         if(window.forcedLevel) {
+            window.initialLevel = window.forcedLevel;
+            levels = [window.forcedLevel];
+         }
+         if(window.initialLevel) {
+            defaultLevel = window.initialLevel;
+         }
+
+         if(levels) {
+            var found = {};
+            for(var i = 0; i < levels.length ; i++) {
+               found[levels[i]] = true;
+            }
+            if(!found[window.initialLevel]) {
+               window.initialLevel = found['easy'] ? 'easy' : levels[0];
+            }
+         }
+
          mainTask = createTask(true);
          mainTask.taskParams = taskParams;
          mainTaskParams = taskParams;
          task.displayedSubTask = mainTask;
+
          if(levels || mainTask.assumeLevels) {
-            // TODO okay to assume default level is the first level, if not supplied?
-            if(defaultLevel === null || defaultLevel === undefined) {
-               if (window.forcedLevel) {
-                  defaultLevel = window.forcedLevel;
-                  $("." + window.forcedLevel).show(); // TODO: why is it needed here?
-               } else if(mainTask.assumeLevels) {
-                  defaultLevel = "easy";
-               } else {
-                  defaultLevel = levels[0];
-               }
+            // mainTask.assumeLevels is used for some quickAlgo tasks which
+            // don't declare any levels at all
+            if (window.forcedLevel) {
+               $("." + window.forcedLevel).show(); // TODO: why is it needed here?
             }
-            
+            if(!window.initialLevel) {
+               // Should happen only if mainTask.assumeLevels
+               window.initialLevel = "easy";
+            }
+            if(defaultLevel === null || defaultLevel === undefined) {
+               defaultLevel = window.initialLevel;
+            }
+
             // The objects levelAnswers and levelStates are indexed by level names.
             state = {
                levelAnswers: {},
                levelStates: {},
                level: defaultLevel
             };
+            if(window.displayHelper) {
+               displayHelper.displayLevel(state.level);
+            }
             mainTask.loadLevel(state.level, null, views);
             if(levels) {
-               displayHelper.setupLevels(null, reloadWithCallbacks);
+               displayHelper.setupLevels(defaultLevel, reloadWithCallbacks, levels);
             }
             callback();
          }
@@ -204,7 +226,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          }
       });
    };
-   
+
    task.getState = function(callback) {
       if(levels || mainTask.assumeLevels) {
          // Update state to reflect latest user interaction.
@@ -220,13 +242,13 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          callback(JSON.stringify(currentState));
       }
    };
-   
+
    task.getStateObject = function() {
       state.levelStates[state.level] = mainTask.getStateObject();
       state.levelAnswers[state.level] = mainTask.getAnswerObject();
       return state;
    };
-   
+
    task.reloadAnswer = function(strAnswer, callback) {
       if(hasJustLoaded && levels) {
          // If this is the first time we reload an answer, jump to the first
@@ -234,12 +256,11 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          hasJustLoaded = false;
          task.gradeAnswer(strAnswer, null, function(score, message) {
             var maxScores = displayHelper.getLevelsMaxScores();
-            var level = "easy";
-            if(score >= maxScores.medium) {
-               level = "hard";
-            }
-            else if(score >= maxScores.easy) {
-               level = "medium";
+            var level = window.initialLevel;
+            for(var i=1; i < levels.length; i++) {
+               if(score >= maxScores[levels[i-1]]) {
+                  level = levels[i];
+               }
             }
             if (window.forcedLevel != null) {
                level = window.forcedLevel;
@@ -265,7 +286,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
       }
       task.reloadAnswerObject(newAnswer, callback);
    };
-   
+
    task.reloadAnswerObject = function(newAnswers, callback) {
       if(levels || mainTask.assumeLevels) {
          if (!newAnswers) {
@@ -274,7 +295,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          else {
             state.levelAnswers = newAnswers;
          }
-         
+
          // Recreate the main task and load the relevant answer.
          var level = state.level;
          var levelAnswer = state.levelAnswers[level];
@@ -289,11 +310,14 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
             levelState = mainTask.getDefaultStateObject();
             state.levelStates[level] = levelState;
          }
-         
+
          destroyTask(mainTask, function() {
             mainTask = createTask(true);
             mainTask.taskParams = mainTaskParams;
             task.displayedSubTask = mainTask;
+            if(window.displayHelper) {
+               displayHelper.displayLevel(level);
+            }
             mainTask.loadLevel(level, levelState);
             mainTask.reloadAnswerObject(levelAnswer);
             if(mainTask.resetDisplay) {
@@ -332,11 +356,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          if(!state.levelStates) { state.levelStates = {}; }
          if(!state.levelAnswers) { state.levelAnswers = {}; }
          if(!state.level) {
-            if (window.forcedLevel != null) {
-               state.level = window.forcedLevel;
-            } else {
-               state.level = 'easy';
-            }
+            state.level = window.forcedLevel || window.initialLevel;
          }
          var level = state.level;
          var levelState = state.levelStates[level];
@@ -344,6 +364,9 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
             mainTask = createTask(false);
             mainTask.taskParams = mainTaskParams;
             task.displayedSubTask = mainTask;
+            if(window.displayHelper) {
+               displayHelper.displayLevel(level);
+            }
             mainTask.loadLevel(level, levelState);
             mainTask.reloadAnswerObject(state.levelAnswers[level]);
             if(callback && typeof callback === "function") {
@@ -363,7 +386,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          }
       }
    };
-   
+
    task.getDefaultStateObject = function() {
       return {
          level: defaultLevel,
@@ -371,7 +394,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          levelAnswers: {}
       };
    };
-   
+
    task.getDefaultAnswerObject = function() {
       return {};
    };
@@ -388,7 +411,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          callback(JSON.stringify(answerObj));
       }
    };
-   
+
    task.getAnswerObject = function() {
       if(levels || mainTask.assumeLevels) {
          state.levelAnswers[state.level] = mainTask.getAnswerObject();
@@ -434,7 +457,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
       if(answer === undefined || answer === null) {
          answer = gradingTask.getDefaultAnswerObject();
       }
-      if (window.forcedLevel != null) {
+      if (window.forcedLevel != null && answer[window.forcedLevel]) {
          answer = answer[window.forcedLevel];
       } else if(!levels && mainTask.assumeLevels && answer.easy) {
          answer = answer.easy;
@@ -452,10 +475,10 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          });
       });
    }
-   
+
    function gradeAnswerByLevel(taskParams, level, seed, levelAnswer, minScore, maxScore, callback) {
       var gradingTask;
-      
+
       if(!gradingTasks[level]) {
          gradingTasks[level] = {};
       }
@@ -526,7 +549,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          doGrading();
       }
    }
-   
+
    task.gradeAnswer = function(strAnswer, answerToken, callback) {
       task.getLevelGrade(strAnswer, answerToken, callback, null);
    };
@@ -540,21 +563,20 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
             callback(taskParams.minScore, '');
             return;
          }
-         
+
          var seed = taskParams.randomSeed;
          var parsedAnswer = $.parseJSON(strAnswer);
-         
+
          if(levels) {
             var maxScores = displayHelper.getLevelsMaxScores();
-            var minScores = {
-               easy: 0,
-               medium: maxScores.easy,
-               hard: maxScores.medium
-            };
+            var minScores = {};
+            for(var i=0; i < levels.length; i++) {
+                minScores[levels[i]] = i > 0 ? maxScores[levels[i-1]] : 0;
+            }
             var levelAnswers = parsedAnswer;
             var scores = {};
             var messages = {};
-            
+
             callbackLoop(levels, function(level, loopCallback) {
                if(gradedLevel !== null && gradedLevel !== undefined && level !== gradedLevel) {
                   loopCallback();
@@ -582,7 +604,7 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          }
       });
    };
-   
+
    // TODO is this the correct behavior?
    grader.gradeTask = task.gradeAnswer;
    task.gradeTask = grader.gradeTask;
@@ -593,8 +615,13 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
  ************************************************************************/
 
 function extractLevelSpecific(item, level) {
-   if ((typeof item != "object") || $.isArray(item)) {
+   if ((typeof item != "object")) {
       return item;
+   }
+   if($.isArray(item)) {
+      return $.map(item, function(val) {
+         return extractLevelSpecific(val, level);
+         });
    }
    if (item.shared === undefined) {
       if (item[level] === undefined) {

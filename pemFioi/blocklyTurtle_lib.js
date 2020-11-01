@@ -1,12 +1,13 @@
 
 
 var makeTurtle = function(coords) {
-   this.reset = function(stepsize) {
+   this.reset = function(stepsize, newcoords) {
       this.x = 150;
       this.y = 150;
-      if(coords !== undefined) {
-         this.x = coords.x;
-         this.y = coords.y;
+      var initcoords = newcoords || coords;
+      if(initcoords) {
+         this.x = initcoords.x;
+         this.y = initcoords.y;
       }
       this.stepsize = 1;
       this.direction = 0;
@@ -16,9 +17,8 @@ var makeTurtle = function(coords) {
          this.drawingContext.clearRect(0, 0, 300, 300);
       if (this.turtle) {
          this.turtle.src = this.turtle.getAttribute("pendown");
-         this.turtle.style.left= this.x - 11 + "px";
-         this.turtle.style.top= this.y - 13 + "px";
          this.turtle.style.transform = "none";
+         this.placeTurtle();
       }
       if (stepsize) {
          this.stepsize = stepsize;
@@ -29,6 +29,7 @@ var makeTurtle = function(coords) {
    this.turn = function(angle) {
       this.direction += angle*Math.PI/180;
       if (this.turtle) {
+         // TODO :: Do we need to put "none" first?
          this.turtle.style.transform = "none";
          this.turtle.style.transform = "rotate(" + (-this.direction) + "rad)";
       }
@@ -46,11 +47,8 @@ var makeTurtle = function(coords) {
          this.drawingContext.lineTo(this.x, this.y);
          this.drawingContext.stroke();
       }
-      
-      if (this.turtle) {
-         this.turtle.style.left= this.x - 11 + "px";
-         this.turtle.style.top= this.y - 13 + "px";
-      }
+
+      this.placeTurtle();      
    }
    this.start_painting = function() {
       this.paint = true;
@@ -78,9 +76,20 @@ var makeTurtle = function(coords) {
    }
    this.setTurtle = function(turtle) {
       this.turtle = turtle;
-
-      this.turtle.style.left= this.x - 11 + "px";
-      this.turtle.style.top= this.y - 13 + "px";
+      this.placeTurtle();
+   }
+   this.placeTurtle = function() {
+      if(!this.turtle) { return; }
+      this.turtle.style.left= this.x - 12 + "px";
+      this.turtle.style.top= this.y - 15 + "px";
+   }
+   this.fixTurtle = function() {
+      // Add padding so the turtle styas centered
+      this.turtle.style.paddingRight = '2px';
+      this.turtle.style.paddingBottom = '3px';
+   }
+   this.getCoords = function() {
+      return {x: this.x, y: this.y};
    }
 };
 
@@ -93,7 +102,8 @@ var getContext = function(display, infos) {
          penup: "lever le pinceau",
          pendown: "baisser le pinceau",
          categories: {
-            turtle: "Tortue"
+            turtle: "Tortue",
+            turtleInput: "Entrée"
          },
          label: {
             move: "avancer",
@@ -115,6 +125,8 @@ var getContext = function(display, infos) {
             turnrightamountvalue_moreoptions: "drehe um %1 nach rechts ↻",
             turneitheramount: "tourner de %1° vers la %2",
             turneitheramountvalue: "tourner de %1 vers la %2",
+            row: "ligne de la tortue",
+            col: "colonne de la tortue",
             penup: "lever le pinceau",
             pendown: "baisser le pinceau",
             peneither: "%1",
@@ -123,7 +135,7 @@ var getContext = function(display, infos) {
             turn: "drehe (Grad) ",
             alert: "messagebox",
             log: "logge",
-            inputvalue: "Eingabewert"
+            inputvalue: "lire un nombre sur l'entrée"
          },
          code: {
             move: "avancer",
@@ -145,6 +157,8 @@ var getContext = function(display, infos) {
             turnrightamountvalue_moreoptions: "dreheRechtsGrad",
             turneitheramount: "tourner",
             turneitheramountvalue: "tourner",
+            row: "ligneTortue",
+            col: "colonneTortue",
             penup: "leverPinceau",
             pendown: "baisserPinceau",
             peneither: "stift",
@@ -156,6 +170,20 @@ var getContext = function(display, infos) {
             inputvalue: "eingabewert"
          },
          description: {
+            moveamount: 'forward() la tortue avance du nombre de pas indiqué en paramètre. Exemple : forward(50)',
+            moveamountvalue: 'forward() la tortue avance du nombre de pas indiqué en paramètre. Exemple : forward(50)',
+            movebackamount: 'backward() la tortue recule du nombre de pas indiqué en paramètre. Exemple : backward(50)',
+            movebackamountvalue: 'backward() la tortue recule du nombre de pas indiqué en paramètre. Exemple : backward(50)',
+            turnleftamount: 'left() la tortue pivote vers la gauche du nombre de degrés indiqué en paramètre. Exemple : left(90)',
+            turnleftamountvalue: 'left() la tortue pivote vers la gauche du nombre de degrés indiqué en paramètre. Exemple : left(90)',
+            turnrightamount: 'right() la tortue pivote vers la droite du nombre de degrés indiqué en paramètre. Exemple : right(90)',
+            turnrightamountvalue: 'right() la tortue pivote vers la droite du nombre de degrés indiqué en paramètre. Exemple : right(90)',
+            row: 'row() capteur qui renvoie la ligne sur laquelle se trouve la tortue',
+            col: 'col() capteur qui renvoie la colonne sur laquelle se trouve la tortue',
+            penup: 'liftBrush() la tortue lève son pinceau. Dans cette position, le pinceau ne laisse pas de trace.',
+            pendown: 'lowerBrush() la tortue place son pinceau dans la position où il laisse une trace.',
+            colourvalue: 'color() la trace du pinceau aura la couleur indiquée en paramètre. Exemple : color(\'red\')',
+            inputvalue: 'inputvalue() lire un nombre en entrée.'
          },
          startingBlockName: "Programme de la tortue",
          messages: {
@@ -196,6 +224,8 @@ var getContext = function(display, infos) {
             turnrightamountvalue_nikolaus: "drehe um %1 nach rechts ↻",
             turneitheramount: "drehe um %1° nach %2",
             turneitheramountvalue: "drehe um %1 nach %2",
+            row: "turtle's row", // TODO :: translate
+            col: "turtle's column",
             penup: "hebe Stift ab",
             pendown: "setze Stift auf",
             peneither: "%1",
@@ -230,6 +260,8 @@ var getContext = function(display, infos) {
             turnrightamountvalue_nikolaus: "dreheRechtsGrad",
             turneitheramount: "dreheGrade",
             turneitheramountvalue: "dreheGrad",
+            row: "turtleRow", // TODO :: translate
+            col: "turtleColumn",
             penup: "stiftHoch",
             pendown: "stiftRunter",
             peneither: "stift",
@@ -249,6 +281,88 @@ var getContext = function(display, infos) {
             paintingFree: "La tortue a tracé le dessin que vous avez programmé. Si vous voulez le garder, vous pouvez faire une capture d'écran."
          }
       },
+      en: {
+         turnleft: "right ↺",
+         turnright: "left ↻",
+         penup: "lift the paintbrush",
+         pendown: "lower the paintbrush",
+         categories: {
+            turtle: "Tortue"
+         },
+         label: {
+            move: "move forward",
+            moveamount: "move forward by %1 step(s)",
+            movebackamount: "move back by %1 step(s)",
+            moveamountvalue: "move forward by %1 step(s)",
+            movebackamountvalue: "move back by %1 step(s)",
+            turnleft: "turn right ↺",
+            turnright: "turn left ↻",
+            turnleftamount: "turn to the left by %1° ↺",
+            turnrightamount: "turn to the right by %1° ↻",
+            turnleftamountvalue: "turn to the left by %1 ↺",
+            turnrightamountvalue: "turn to the right by %1 ↻",
+            turnleftamountvalue_noround: "drehe um %1 Grad nach links ↺",
+            turnrightamountvalue_noround: "drehe um %1 Grad nach rechts ↻",
+            turnleftamountvalue_options: "drehe um %1 nach links ↺",
+            turnrightamountvalue_options: "drehe um %1 nach rechts ↻",
+            turnleftamountvalue_moreoptions: "drehe um %1 nach links ↺",
+            turnrightamountvalue_moreoptions: "drehe um %1 nach rechts ↻",
+            turneitheramount: "turn by %1° to the %2",
+            turneitheramountvalue: "turn by %1 to the %2",
+            row: "turtle's row",
+            col: "turtle's column",
+            penup: "lift the paintbrush",
+            pendown: "lower the paintbrush",
+            peneither: "%1",
+            colour2: "setze Farbe",
+            colourvalue: "use color %1",
+            turn: "drehe (Grad) ",
+            alert: "messagebox",
+            log: "logge",
+            inputvalue: "Eingabewert"
+         },
+         code: {
+            move: "forward",
+            moveamount: "forward",
+            movebackamount: "backward",
+            moveamountvalue: "forward",
+            movebackamountvalue: "backward",
+            turnleft: "turnLeft",
+            turnright: "turnRight",
+            turnleftamount: "left",
+            turnrightamount: "right",
+            turnleftamountvalue: "left",
+            turnrightamountvalue: "right",
+            turnleftamountvalue_noround: "dreheLinksGrad",
+            turnrightamountvalue_noround: "dreheRechtsGrad",
+            turnleftamountvalue_options: "dreheLinksGrad",
+            turnrightamountvalue_options: "dreheRechtsGrad",
+            turnleftamountvalue_moreoptions: "dreheLinksGrad",
+            turnrightamountvalue_moreoptions: "dreheRechtsGrad",
+            turneitheramount: "turn",
+            turneitheramountvalue: "turn",
+            row: "row",
+            col: "col",
+            penup: "liftBrush",
+            pendown: "lowerBrush",
+            peneither: "stift",
+            colour2: "setzeFarbe",
+            colourvalue: "color",
+            turn: "drehe",
+            alert: "alert",
+            log: "log",
+            inputvalue: "inputvalue"
+         },
+         description: {
+            
+         },
+         startingBlockName: "Program of the turtle",
+         messages: {
+            paintingWrong: "The turtle didn't draw everything correctly.",
+            paintingCorrect: "Congratulations, the turtle has drawn everything correctly.",
+            paintingFree: "The turtle painted according to your program. If you want to keep it, do a screenshot."
+         }
+      },
       none: {
          comment: {
          }
@@ -257,7 +371,14 @@ var getContext = function(display, infos) {
 
    var context = quickAlgoContext(display, infos);
    var strings = context.setLocalLanguageStrings(localLanguageStrings);
-   
+
+   if(infos.turtleInputValueLabel) {
+      strings.label.inputvalue = infos.turtleInputValueLabel;
+   }
+   if(infos.turtleInputValueDescription) {
+      strings.description.inputvalue = infos.turtleInputValueDescription;
+   }
+
    var cells = [];
    var texts = [];
    var scale = 1;
@@ -316,8 +437,8 @@ var getContext = function(display, infos) {
          context.turtle.displayTurtle.setDrawingContext(document.getElementById('displayfield').getContext('2d'));
          context.turtle.displaySolutionTurtle.setDrawingContext(document.getElementById('solutionfield').getContext('2d'));
 
-         context.turtle.displayTurtle.reset(context.infos.turtleStepSize);
-         context.turtle.displaySolutionTurtle.reset(context.infos.turtleStepSize);
+         context.turtle.displayTurtle.reset(context.infos.turtleStepSize, gridInfos.coords || infos.coords);
+         context.turtle.displaySolutionTurtle.reset(context.infos.turtleStepSize, gridInfos.coords || infos.coords);
       }
     
       function createMeACanvas() {
@@ -337,8 +458,8 @@ var getContext = function(display, infos) {
          context.turtle.invisibleTurtle.setDrawingContext(createMeACanvas().getContext('2d'));
          context.turtle.invisibleSolutionTurtle.setDrawingContext(createMeACanvas().getContext('2d'));
 
-         context.turtle.invisibleTurtle.reset(context.infos.turtleStepSize);
-         context.turtle.invisibleSolutionTurtle.reset(context.infos.turtleStepSize);
+         context.turtle.invisibleTurtle.reset(context.infos.turtleStepSize, gridInfos.coords);
+         context.turtle.invisibleSolutionTurtle.reset(context.infos.turtleStepSize, gridInfos.coords);
          
          context.drawSolution = gridInfos.drawSolution;
          context.inputValue   = gridInfos.inputValue;
@@ -360,10 +481,11 @@ var getContext = function(display, infos) {
       if ($("#turtleUpImg").length > 0) {
          turtleUpFileName = $("#turtleUpImg").attr("src");
       }
-      $("#grid").html("<div id='output'  style='height: 300px;width: 300px;border: solid 2px;margin: 12px;position:relative;background-color:white;'> <img id='drawinggrid' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=10);' src='" + context.infos.overlayFileName + "'><canvas id='solutionfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=20);'></canvas><canvas id='displayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;'></canvas><canvas id='invisibledisplayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;visibility:hidden;'></canvas><img id='turtle' pendown='" + turtleFileName + "' penup='" + turtleUpFileName + "' src='" + turtleFileName + "' style='width: 22px; height: 27px; position:absolute; left: 139px; top: 136px;'></img></div>")
+      $("#grid").html("<div id='output'  style='height: 300px;width: 300px;border: solid 2px;margin: 12px auto;position:relative;background-color:white;'> <img id='drawinggrid' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=10);' src='" + context.infos.overlayFileName + "'><canvas id='solutionfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=20);'></canvas><canvas id='displayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;'></canvas><canvas id='invisibledisplayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;visibility:hidden;'></canvas><img id='turtle' pendown='" + turtleFileName + "' penup='" + turtleUpFileName + "' src='" + turtleFileName + "' style='width: 22px; height: 27px; position:absolute; left: 139px; top: 136px;'></img></div>")
       
       context.blocklyHelper.updateSize();
       context.turtle.displayTurtle.setTurtle(document.getElementById('turtle'));
+      context.turtle.displayTurtle.fixTurtle(); // TODO :: find a way to define whether the turtle needs fixing or not
       context.turtle.displayTurtle.reset();
       
       context.updateScale(); // does nothing for now 
@@ -455,6 +577,12 @@ var getContext = function(display, infos) {
       context.waitDelay(callback);
    }
 
+   context.turtle.row = function(callback) {
+      context.runner.noDelay(callback, context.turtle.invisibleTurtle.getCoords().y);
+   }
+   context.turtle.col = function(callback) {
+      context.runner.noDelay(callback, context.turtle.invisibleTurtle.getCoords().x);
+   }
    context.turtle.move = function(callback) {
       context.turtle.moveamount(1, callback);
    }
@@ -521,15 +649,15 @@ var getContext = function(display, infos) {
             { name: "move" },
             { name: "moveamount", params: [null]},
             { name: "movebackamount", params: [null]},
-            { name: "moveamountvalue", blocklyJson: {"args0": [{"type": "field_number", "name": "PARAM_0", "value": defaultMoveAmount}]}},
-            { name: "movebackamountvalue", blocklyJson: {"args0": [{"type": "field_number", "name": "PARAM_0", "value": defaultMoveAmount}]}},
+            { name: "moveamountvalue", params: [null], blocklyJson: {"args0": [{"type": "field_number", "name": "PARAM_0", "value": defaultMoveAmount}]}},
+            { name: "movebackamountvalue", params: [null], blocklyJson: {"args0": [{"type": "field_number", "name": "PARAM_0", "value": defaultMoveAmount}]}},
             { name: "turnleft" },
             { name: "turnright" },
             { name: "turn",      params: [null]},
             { name: "turnleftamount", params: [null]},
             { name: "turnrightamount", params: [null]},
-            { name: "turnleftamountvalue", blocklyJson: {"args0": [{"type": "field_angle", "name": "PARAM_0", "angle": 90}]}},
-            { name: "turnrightamountvalue", blocklyJson: {"args0": [{"type": "field_angle", "name": "PARAM_0", "angle": 90}]}},
+            { name: "turnleftamountvalue", params: [null], blocklyJson: {"args0": [{"type": "field_angle", "name": "PARAM_0", "angle": 90}]}},
+            { name: "turnrightamountvalue", params: [null], blocklyJson: {"args0": [{"type": "field_angle", "name": "PARAM_0", "angle": 90}]}},
             { name: "turnleftamountvalue_noround", blocklyJson: {"args0": [{"type": "field_number", "name": "PARAM_0", "value": 90}]}},
             { name: "turnrightamountvalue_noround", blocklyJson: {"args0": [{"type": "field_number", "name": "PARAM_0", "value": 90}]}},
             { name: "turnleftamountvalue_options", blocklyJson: {"args0": [{"type": "field_dropdown", "name": "PARAM_0", "options": [
@@ -556,13 +684,15 @@ var getContext = function(display, infos) {
                {"type": "field_angle", "name": "PARAM_0", "angle": 90},
                {"type": "field_dropdown", "name": "PARAM_1", "options":
                  [[localLanguageStrings[window.stringsLanguage]["left"],"l"],[localLanguageStrings[window.stringsLanguage]["right"],"r"]]}]}},
+            { name: "row", yieldsValue: true },
+            { name: "col", yieldsValue: true },
             { name: "penup" },
             { name: "pendown" },
             { name: "peneither", blocklyJson: {"args0": [
                {"type": "field_dropdown", "name": "PARAM_0", "options":
                  [[localLanguageStrings[window.stringsLanguage]["penup"],"up"],[localLanguageStrings[window.stringsLanguage]["pendown"],"down"]]}]}},
             { name: "colour2", params: [null]},
-            { name: "colourvalue", blocklyJson: {"args0": [{"type": "field_colour", "name": "PARAM_0", "colour": "#ff0000"}]}}
+            { name: "colourvalue", params: [null], blocklyJson: {"args0": [{"type": "field_colour", "name": "PARAM_0", "colour": "#ff0000"}]}}
          ],
          turtleInput: [
             { name: "inputvalue", yieldsValue: true }

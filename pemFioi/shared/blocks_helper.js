@@ -29,6 +29,32 @@ BlocksHelper = {
                })();
             }
         }
+    },
+
+
+
+
+    mutateBlockStrings: function(strings, blocksLanguage) {
+        var src = window.stringsLanguage;
+        if(typeof blocksLanguage == 'string') {
+            src = blocksLanguage;
+        } else if(typeof blocksLanguage == 'object' && window.modulesLanguage in blocksLanguage) {
+            src = blocksLanguage[window.modulesLanguage];
+        }
+        var dst = window.stringsLanguage;
+
+        for(var k in strings[dst].description) {
+            strings[dst].description[k] = strings[dst].description[k].replace(
+                new RegExp('%' + k, 'g'),
+                strings[src].code[k]
+            );
+        }
+        if(src == dst) return strings;
+
+        strings[dst].label = strings[src].label;
+        strings[dst].code = strings[src].code;
+        return strings;
     }
+
 
 }

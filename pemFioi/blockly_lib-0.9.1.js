@@ -388,7 +388,78 @@ var localLanguageStrings = {
       resultsNoSuccess: "Du passerte ikke noen av testene.",
       resultsPartialSuccess: "Du passerte bare {nbSuccess} av {nbTests} tester.",
       gradingInProgress: "Vurdering underveis"
-   }   
+   },
+   es: {
+      categories: {
+         actions: "Acciones",
+         sensors: "Sensores",
+         debug: "Depurar",
+         colour: "Colores",
+         dicts: "Diccionarios",
+         input: "Entradas",
+         lists: "Listas",
+         logic: "Logica",
+         loops: "Bucles",
+         control: "Control",
+         operator: "Operadores",
+         math: "Matemáticas",
+         texts: "Texto",
+         variables: "Variables",
+         functions: "Funciones",
+         read: "Leyendo",
+         print: "Escribiendo",
+         turtle: "Tortuga"
+      },
+      invalidContent: "Contenido inválido",
+      unknownFileType: "Tipo de archivo no reconocido",
+      download: "descargar",
+      smallestOfTwoNumbers: "El más pequeño de los dos números",
+      greatestOfTwoNumbers: "El mas grande de los dos numeros",
+      flagClicked: "Al hace clic en %1",
+      tooManyIterations: "¡Demasiadas iteraciones!",
+      tooManyIterationsWithoutAction: "¡Demasiadas iteraciones sin una acción!",
+      submitProgram: "Validar este programa",
+      runProgram: "Ejecutar este programa",
+      stopProgram: "|<",
+      speed: "Velocidad:",
+      stepProgram: "|>",
+      slowSpeed: ">",
+      mediumSpeed: ">>",
+      fastSpeed: ">>>",
+      ludicrousSpeed: ">|",
+      stopProgramDesc: "Reiniciar desde el principio",
+      stepProgramDesc: "Ejecución paso a paso",
+      slowSpeedDesc: "Ejecutar en esta prueba",
+      mediumSpeedDesc: "Velocidad media",
+      fastSpeedDesc: "Velocidad rápido",
+      ludicrousSpeedDesc: "Velocidad ridícula",
+      selectLanguage: "Lenguaje :",
+      blocklyLanguage: "Blockly",
+      javascriptLanguage: "Javascript",
+      importFromBlockly: "Generar desde blockly",
+      saveOrLoadProgram: "Guarda o recarga tu código:",
+      avoidReloadingOtherTask: "!Advertencia: no recargue el código para otra tarea!",
+      reloadProgram: "Recarga:",
+      saveProgram: "Guardar",
+      limitBlocks: "{remainingBlocks} bloques restantes de {maxBlocks} disponible.",
+      limitBlocksOver: "{remainingBlocks} bloques por encima del limite de {maxBlocks} disponibles.",
+      previousTestcase: "Previo",
+      nextTestcase: "Siguiente",
+      allTests: "Todas las pruebas: ",
+      errorEmptyProgram: "¡El programa está vacío! Conecte algunos bloques.",
+      tooManyBlocks: "¡Usaste demasiados bloques!",
+      uninitializedVar: "Variable no inicializada:",
+      valueTrue: 'verdadero',
+      valueFalse: 'false',
+      correctAnswer: 'Respuesta correcta',
+      partialAnswer: 'Respuesta parcial',
+      wrongAnswer: 'Respuesta incorrecta',
+      resultsNoSuccess: "No aprobaste ninguna de las pruebas.",
+      resultsPartialSuccess: "Aprobaste solo {nbSuccess} prueba(s) de {nbTests}.",
+      gradingInProgress: "Calificación en proceso",
+      textVariable: "texto",
+      listVariable: "lista"
+   }
 };
 
 // Blockly to Scratch translations
@@ -1051,7 +1122,8 @@ function getBlocklyHelper(maxBlocks, nbTestCases) {
                       || block.blocklyJson.args0[iArgs0].type == "field_number"
                       || block.blocklyJson.args0[iArgs0].type == "field_angle"
                       || block.blocklyJson.args0[iArgs0].type == "field_colour"
-                      || block.blocklyJson.args0[iArgs0].type == "field_dropdown") {
+                      || block.blocklyJson.args0[iArgs0].type == "field_dropdown"
+                      || block.blocklyJson.args0[iArgs0].type == "field_input") {
                      block.blocklyJson.message0 += " %" + (iArgs0 + 1);
                   }
                }
@@ -1124,7 +1196,8 @@ function getBlocklyHelper(maxBlocks, nbTestCases) {
                         }
                         if (args0[iArgs0].type == "field_number"
                             || args0[iArgs0].type == "field_angle"
-                            || args0[iArgs0].type == "field_dropdown") {
+                            || args0[iArgs0].type == "field_dropdown"
+                            || args0[iArgs0].type == "field_input") {
                            if (iParam) {
                               params += ", ";
                            }

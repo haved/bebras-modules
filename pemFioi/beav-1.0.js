@@ -10,8 +10,9 @@ Beav.Object.eq = function eq(x, y) {
    // assumes arguments to be of same type
    var tx = typeof(x);
    var ty = typeof(y);
-   if (tx != ty)
+   if (tx != ty) {
       throw "Beav.Object.eq incompatible types";
+   }
    if (tx == "boolean" || tx == "number" || tx == "string" || tx == "undefined") {
       return x == y;
    }
@@ -52,6 +53,10 @@ Beav.Object.eq = function eq(x, y) {
    throw "Beav.Object.eq unsupported types";
 };
 
+Beav.Object.clone = function(obj) {
+   return JSON.parse(JSON.stringify(obj))
+};
+
 
 /**********************************************************************************/
 /* Array */
@@ -62,14 +67,14 @@ Beav.Array.make = function(nb, initValue) {
    var t = [];
    for (var i = 0; i < nb; i++)
       t[i] = initValue;
-   return t;                  
+   return t;
 };
 
 Beav.Array.init = function(nb, initFct) {
    var t = [];
    for (var i = 0; i < nb; i++)
       t.push(initFct(i));
-   return t;                  
+   return t;
 };
 
 Beav.Array.indexOf = function(t, v, eq) {
@@ -117,7 +122,7 @@ Beav.Array.stableSort = function(t, compFct) {
    };
    var msort = function msort(i, j) {
       var size = j - i;
-      if (size < 2) 
+      if (size < 2)
          return;
       var k = i + Math.floor(size/2);
       msort(i, k);
@@ -155,7 +160,7 @@ Beav.Matrix.init = function(nbRows, nbCols, initFct) {
       }
       m.push(t);
    }
-   return m;                  
+   return m;
 };
 
 Beav.Matrix.map = function(m, mapFct) {
@@ -166,7 +171,7 @@ Beav.Matrix.map = function(m, mapFct) {
          r[x][y] = mapFct(m[x][y], x, y, m);
       }
    }
-   return r;                  
+   return r;
 };
 
 Beav.Matrix.copy = function(m) {
@@ -210,13 +215,13 @@ Beav.Matrix3D.init = function(nbX, nbY, nbZ, initFct) {
       for (var y = 0; y < nbY; y++) {
          var r = [];
          for (var z = 0; z < nbZ; z++) {
-            r.push(initFct(x, y, z));   
+            r.push(initFct(x, y, z));
          }
          t.push(r);
       }
       m.push(t);
    }
-   return m;                  
+   return m;
 };
 
 Beav.Matrix3D.map = function(m, mapFct) {
@@ -230,7 +235,7 @@ Beav.Matrix3D.map = function(m, mapFct) {
          }
       }
    }
-   return r;                  
+   return r;
 };
 
 Beav.Matrix3D.copy = function(m) {
@@ -270,12 +275,12 @@ Beav.Matrix3D.filterCount = function(m, selectFct) {
 /**********************************************************************************/
 /* Exception */
 
-/* Mechanism for having user exceptions that cannot be confused 
-   with JavaScript builtin exceptions. 
+/* Mechanism for having user exceptions that cannot be confused
+   with JavaScript builtin exceptions.
 
    To throw the exception myExn, do:
 
-      Beav.Exception.throw(myExn);         
+      Beav.Exception.throw(myExn);
 
    To catch only user exceptions, do:
 
@@ -311,6 +316,16 @@ Beav.Exception.extract = function(exn) {
 */
 
 /**********************************************************************************/
+/* Navigator */
+
+Beav.Navigator = new Object();
+
+Beav.Navigator.isIE8 = function() {
+  return navigator.appVersion.indexOf("MSIE 8.") != -1;
+}
+
+
+/**********************************************************************************/
 /* Dom */
 
 Beav.Dom = new Object();
@@ -331,7 +346,7 @@ Beav.Html = new Object();
 // Escape the html characters in a string
 Beav.Html.escape = function(stringToEncode) {
    var entityMap = {
-      "&": "&amp;", 
+      "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
       '"': '&quot;',
@@ -339,7 +354,7 @@ Beav.Html.escape = function(stringToEncode) {
       "/": '&#x2F;' };
    return String(stringToEncode).replace(/[&<>"'\/]/g, function (s) {
       return entityMap[s];
-   }); 
+   });
 };
 
 
@@ -377,3 +392,74 @@ Beav.Task.scoreInterpolate = function(minScore, maxScore, minResult, maxResult, 
    return Math.round(minScore + (maxScore - minScore) * (result - minResult) / (maxResult - minResult));
 };
 
+
+/**********************************************************************************/
+/* Geometry */
+
+Beav.Geometry = new Object();
+
+Beav.Geometry.distance = function(x1,y1,x2,y2) {
+   return Math.sqrt(Math.pow(x2 - x1,2) + Math.pow(y2 - y1,2));
+};
+
+/*
+   This is used to handle drag on devices that have both a touch screen and a mouse.
+   Can be tested on chrome by loading a task in desktop mode, then switching to tablet mode.
+   To call instead of element.drag(onMove, onStart, onEnd);
+*/
+Beav.dragWithTouch = function(element, onMove, onStart, onEnd) {
+   var touchingX = 0;
+   var touchingY = 0;
+   var disabled = false;
+
+   function onTouchStart(evt) {
+      if (disabled) {
+         return;
+      }
+      var touches = evt.changedTouches;
+      touchingX = touches[0].pageX;
+      touchingY = touches[0].pageY;
+      onStart(touches[0].pageX, touches[0].pageY, evt);         
+   }
+
+   function onTouchEnd(evt) {
+      if (disabled) {
+         return;
+      }
+      onEnd(null);
+   }
+   
+   function onTouchMove(evt) {
+      if (disabled) {
+         return;
+      }
+      var touches = evt.changedTouches;
+      var dx = touches[0].pageX - touchingX;
+      var dy = touches[0].pageY - touchingY;
+      onMove(dx, dy, touches[0].pageX, touches[0].pageY, evt);
+   }
+   
+   function callOnStart(x,y,event) {
+      disabled = true;
+      onStart(x,y,event);
+   }
+   
+   function callOnMove(dx,dy,x,y,event) {
+      disabled = true;
+      onMove(dx,dy,x,y,event);
+   }
+   
+   function callOnEnd(event) {
+      disabled = false;
+      onEnd(event);
+   }
+
+   // element.undrag();
+   element.drag(callOnMove,callOnStart,callOnEnd);
+   if (element.touchstart) {
+      element.touchstart(onTouchStart);
+      element.touchend(onTouchEnd);
+      element.touchcancel(onTouchEnd);
+      element.touchmove(onTouchMove);
+   }
+}

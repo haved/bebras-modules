@@ -17,20 +17,32 @@ function PythonInterpreter(context, msgCallback) {
   this._paused = false;
   this._isRunning = false;
   this._stepInProgress = false;
+  this._resetDone = true;
   this.stepMode = false;
   this._steps = 0;
   this._stepsWithoutAction = 0;
   this._lastNbActions = null;
   this._hasActions = false;
   this._nbActions = 0;
+  this._allowStepsWithoutDelay = 0;
   this._timeouts = [];
   this._editorMarker = null;
   this.availableModules = [];
   this._argumentsByBlock = {};
+  this._definedFunctions = [];
+
+  this.nbNodes = 0;
+  this.curNode = 0;
+  this.readyNodes = [];
+  this.finishedNodes = [];
+  this.nodeStates = [];
+  this.waitingOnReadyNode = false;
 
   var that = this;
 
   this._skulptifyHandler = function (name, generatorName, blockName, nbArgs, type) {
+    if(!arrayContains(this._definedFunctions, name)) { this._definedFunctions.push(name); }
+
     var handler = '';
     handler += "\tcurrentPythonContext.runner.checkArgs('" + name + "', '" + generatorName + "', '" + blockName + "', arguments);";
 
@@ -38,8 +50,8 @@ function PythonInterpreter(context, msgCallback) {
     handler += "\n\tvar result = Sk.builtin.none.none$;";
 
     // If there are arguments, convert them from Skulpt format to the libs format
-    handler += "\n\tvar args = Array.from(arguments);";
-    handler += "\n\tfor(var i=0; i<args.length; i++) { args[i] = args[i].v; };";
+    handler += "\n\tvar args = Array.prototype.slice.call(arguments);";
+    handler += "\n\tfor(var i=0; i<args.length; i++) { args[i] = currentPythonContext.runner.skToJs(args[i]); };";
 
     handler += "\n\tsusp.resume = function() { return result; };";
     handler += "\n\tsusp.data = {type: 'Sk.promise', promise: new Promise(function(resolve) {";
@@ -74,6 +86,8 @@ function PythonInterpreter(context, msgCallback) {
 
   this._injectFunctions = function () {
     // Generate Python custom libraries from all generated blocks
+    this._definedFunctions = [];
+
     if(this.context.infos && this.context.infos.includeBlocks && this.context.infos.includeBlocks.generatedBlocks) {
       // Flatten customBlocks information for easy access
       var blocksInfos = {};
@@ -179,6 +193,75 @@ function PythonInterpreter(context, msgCallback) {
     }
   };
 
+  this._definePythonNumber = function() {
+    // Create a class which behaves as a Number, but can have extra properties
+    this.pythonNumber = function(val) {
+      this.val = new Number(val);
+    }
+    this.pythonNumber.prototype = Object.create(Number.prototype);
+    function makePrototype(func) {
+      return function() { return Number.prototype[func].call(this.val); }
+    }
+    var funcs = ['toExponential', 'toFixed', 'toLocaleString', 'toPrecision', 'toSource', 'toString', 'valueOf'];
+    for(var i = 0; i < funcs.length ; i++) {
+      this.pythonNumber.prototype[funcs[i]] = makePrototype(funcs[i]);
+    }
+  }
+
+  this.skToJs = function(val) {
+    // Convert Skulpt item to JavaScript
+    // TODO :: Might be partly replaceable with Sk.ffi.remapToJs
+    if(val instanceof Sk.builtin.bool) {
+      return val.v ? true : false;
+    } else if(val instanceof Sk.builtin.func) {
+      return function() {
+        var args = [];
+        for(var i = 0; i < arguments.length; i++) {
+          args.push(that._createPrimitive(arguments[i]));
+        }
+        var retp = new Promise(function(resolve, reject) {
+          var p = Sk.misceval.asyncToPromise(function() { return val.tp$call(args); });
+          p.then(function(val) { resolve(that.skToJs(val)); });
+        });
+        return retp;
+      }
+    } else if(val instanceof Sk.builtin.dict) {
+      var dictKeys = Object.keys(val);
+      var retVal = {};
+      for(var i = 0; i < dictKeys.length; i++) {
+        var key = dictKeys[i];
+        if(key == 'size' || key == '__class__') { continue; }
+        var subItems = val[key].items;
+        for(var j = 0; j < subItems.length; j++) {
+          var subItem = subItems[j];
+          retVal[subItem.lhs.v] = this.skToJs(subItem.rhs);
+        }
+      }
+      return retVal;
+    } else {
+      var retVal = val.v;
+      if(val instanceof Sk.builtin.tuple || val instanceof Sk.builtin.list) {
+        retVal = [];
+        for(var i = 0; i < val.v.length; i++) {
+          retVal[i] = this.skToJs(val.v[i]);
+        }
+      }
+      if(val instanceof Sk.builtin.tuple) {
+        retVal.isTuple = true;
+      }
+      if(val instanceof Sk.builtin.float_) {
+        retVal = new this.pythonNumber(retVal);
+        retVal.isFloat = true;
+      }
+      return retVal;
+    }
+  };
+
+  this.getDefinedFunctions = function() {
+    this._injectFunctions();
+    return this._definedFunctions.slice();
+  };
+
   this._setTimeout = function(func, time) {
     var timeoutId = null;
     var that = this;
@@ -196,6 +279,8 @@ function PythonInterpreter(context, msgCallback) {
     if (delay > 0) {
       var _noDelay = this.noDelay.bind(this, callback, value);
       this._setTimeout(_noDelay, delay);
+      // We just waited some time, allow next steps to not be delayed
+      this._allowStepsWithoutDelay = Math.min(this._allowStepsWithoutDelay + Math.ceil(delay / 10), 100);
     } else {
       this.noDelay(callback, value);
     }
@@ -212,11 +297,11 @@ function PythonInterpreter(context, msgCallback) {
     target.addEventListener(eventName, listenerFunc);
   };
 
-  this.waitCallback = function (callback, value) {
+  this.waitCallback = function (callback) {
     // Returns a callback to be called once we can continue the execution
     this._paused = true;
     var that = this;
-    return function() {
+    return function(value) {
       that.noDelay(callback, value);
     };
   };
@@ -234,8 +319,77 @@ function PythonInterpreter(context, msgCallback) {
     this._setTimeout(this._continue.bind(this), 10);
   };
 
+  this.allowSwitch = function(callback) {
+    // Tells the runner that we can switch the execution to another node
+    var curNode = context.curNode;
+    var ready = function(readyCallback) {
+      that.readyNodes[curNode] = function() {
+        readyCallback(callback);
+      };
+      if(that.waitingOnReadyNode) {
+        that.waitingOnReadyNode = false;
+        that.startNode(that.curNode, curNode);
+      }
+    };
+    this.readyNodes[curNode] = false;
+    this.startNextNode(curNode);
+    return ready;
+  };
+
+  this.defaultSelectNextNode = function(runner, previousNode) {
+    var i = previousNode + 1;
+    if(i >= runner.nbNodes) { i = 0; }
+    do {
+      if(runner.readyNodes[i]) {
+        break;
+      } else {
+        i++;
+      }
+      if(i >= runner.nbNodes) { i = 0; }
+    } while(i != previousNode);
+    return i;
+  };
+
+  // Allow the next node selection process to be customized
+  this.selectNextNode = this.defaultSelectNextNode;
+
+  this.startNextNode = function(curNode) {
+    // Start the next node when one has been switched from
+    var newNode = this.selectNextNode(this, curNode);
+    this._paused = true;
+    if(newNode == curNode) {
+      // No ready node
+      this.waitingOnReadyNode = true;
+    } else {
+      // TODO :: switch execution
+      this.startNode(curNode, newNode);
+    }
+  };
+
+  this.startNode = function(curNode, newNode) {
+    setTimeout(function() {
+      that.nodeStates[curNode] = that._debugger.suspension_stack.slice();
+      that._debugger.suspension_stack = that.nodeStates[newNode];
+      that.curNode = newNode;
+      var ready = that.readyNodes[newNode];
+      if(ready) {
+        that.readyNodes[newNode] = false;
+        context.setCurNode(newNode);
+        if(typeof ready == 'function') {
+          ready();
+        } else {
+          that._paused = false;
+          that._continue();
+        }
+      } else {
+        that.waitingOnReadyNode = true;
+      }
+    }, 0);
+  };
+
   this._createPrimitive = function (data) {
-    if (data === undefined) {
+    // TODO :: Might be replaceable with Sk.ffi.remapToPy
+    if (data === undefined || data === null) {
       return Sk.builtin.none.none$;  // Reuse the same object.
     }
     var type = typeof data;
@@ -256,6 +410,21 @@ function PythonInterpreter(context, msgCallback) {
         skl.push(this._createPrimitive(data[i]));
       }
       result = new Sk.builtin.list(skl);
+    } else if (data) {
+      // Create a dict if it's an object with properties
+      var props = [];
+      for(var prop in data) {
+        if(data.hasOwnProperty(prop)) {
+          // We can pass a list [prop1name, prop1val, ...] to Skulpt's dict
+          // constructor ; however to work properly they need to be Skulpt
+          // primitives too
+          props.push(this._createPrimitive(prop));
+          props.push(this._createPrimitive(data[prop]));
+        }
+      }
+      if(props.length > 0) {
+        result = new Sk.builtin.dict(props);
+      }
     }
     return result;
   };
@@ -280,6 +449,12 @@ function PythonInterpreter(context, msgCallback) {
     });
     Sk.pre = "edoutput";
     Sk.pre = "codeoutput";
+
+    // Disable document library
+    delete Sk.builtinFiles["files"]["src/lib/document.js"];
+
+    this._definePythonNumber();
+
     this.context.callCallback = this.noDelay.bind(this);
   };
 
@@ -293,7 +468,17 @@ function PythonInterpreter(context, msgCallback) {
   };
 
   this._onFinished = function () {
-    this.stop();
+    this.finishedNodes[this.curNode] = true;
+    this.readyNodes[this.curNode] = false;
+
+    if(this.finishedNodes.indexOf(false) != -1) {
+      // At least one node is not finished
+      this.startNextNode(this.curNode);
+    } else {
+      // All nodes are finished, stop the execution
+      this.stop();
+    }
+
     try {
       this.context.infos.checkEndCondition(this.context, true);
     } catch (e) {
@@ -312,9 +497,17 @@ function PythonInterpreter(context, msgCallback) {
   };
 
   this._continue = function () {
-    if (this._steps >= this._maxIterations) {
+    if (this.context.infos.checkEndEveryTurn) {
+      try {
+        this.context.infos.checkEndCondition(context, false);
+      } catch(e) {
+        this._onStepError(e);
+        return;
+      }
+    }
+    if (!this.context.allowInfiniteLoop && this._steps >= this._maxIterations) {
       this._onStepError(window.languageStrings.tooManyIterations);
-    } else if (this._stepsWithoutAction >= this._maxIterWithoutAction) {
+    } else if (!this.context.allowInfiniteLoop && this._stepsWithoutAction >= this._maxIterWithoutAction) {
       this._onStepError(window.languageStrings.tooManyIterationsWithoutAction);
     } else if (!this._paused && this._isRunning) {
       this.step();
@@ -351,15 +544,32 @@ function PythonInterpreter(context, msgCallback) {
       this._maxIterWithoutAction = this._maxIterations;
     }
 
-    try {
-      var susp_handlers = {};
-      susp_handlers["*"] = this._debugger.suspension_handler.bind(this);
-      var promise = this._debugger.asyncToPromise(this._asyncCallback.bind(this), susp_handlers, this._debugger);
-      promise.then(this._debugger.success.bind(this._debugger), this._debugger.error.bind(this._debugger));
-    } catch (e) {
-      this._onOutput(e.toString() + "\n");
-      //console.log('exception');
+    var susp_handlers = {};
+    susp_handlers["*"] = this._debugger.suspension_handler.bind(this);
+
+    this.nbNodes = codes.length;
+    this.curNode = 0;
+    context.setCurNode(this.curNode);
+    this.readyNodes = [];
+    this.finishedNodes = [];
+    this.nodeStates = [];
+    
+    for(var i = 0; i < codes.length ; i++) {
+      this.readyNodes.push(true);
+      this.finishedNodes.push(false);
+
+      try {
+        var promise = this._debugger.asyncToPromise(this._asyncCallback(this._editor_filename, codes[i]), susp_handlers, this._debugger);
+        promise.then(this._debugger.success.bind(this._debugger), this._debugger.error.bind(this._debugger));
+      } catch (e) {
+        this._onOutput(e.toString() + "\n");
+      }
+
+      this.nodeStates.push(this._debugger.suspension_stack);
+      this._debugger.suspension_stack = [];
     }
+
+    this._debugger.suspension_stack = this.nodeStates[0];
 
     this._resetInterpreterState();
     Sk.running = true;
@@ -407,8 +617,8 @@ function PythonInterpreter(context, msgCallback) {
       var dictElems = [];
       for(var i=0; i<keys.length; i++) {
         if(keys[i] == 'size' || keys[i] == '__class__'
-                             || !origValue[keys[i]].items
-                             || !origValue[keys[i]].items[0]) {
+            || !origValue[keys[i]].items
+            || !origValue[keys[i]].items[0]) {
           continue;
         }
         var items = origValue[keys[i]].items[0];
@@ -435,8 +645,8 @@ function PythonInterpreter(context, msgCallback) {
 
   this.reportValue = function (origValue, varName) {
     // Show a popup displaying the value of a block in step-by-step mode
-    if(origValue.constructor === Sk.builtin.func
-        || value === undefined
+    if(origValue === undefined
+        || (origValue && origValue.constructor === Sk.builtin.func)
         || !this._editorMarker
         || !context.display
         || !this.stepMode) {
@@ -458,23 +668,29 @@ function PythonInterpreter(context, msgCallback) {
     var leftPos = bbox.left+10;
     var topPos = bbox.top-14;
 
-    var displayStr = value.toString();
     if(typeof value == 'boolean') {
-       displayStr = value ? window.languageStrings.valueTrue : window.languageStrings.valueFalse;
+      var displayStr = value ? window.languageStrings.valueTrue : window.languageStrings.valueFalse;
+    } else if(value === null) {
+      var displayStr = "None"
+    } else {
+      var displayStr = value.toString();
+    }
+    if(typeof value == 'boolean') {
+      displayStr = value ? window.languageStrings.valueTrue : window.languageStrings.valueFalse;
     }
     if(varName) {
-       displayStr = '' + varName + ' = ' + displayStr;
+      displayStr = '' + varName + ' = ' + displayStr;
     }
 
     var dropDownDiv = '' +
-      '<div class="blocklyDropDownDiv" style="transition: transform 0.25s, opacity 0.25s; background-color: rgb(255, 255, 255); border-color: rgb(170, 170, 170); left: '+leftPos+'px; top: '+topPos+'px; display: block; opacity: 1; transform: translate(0px, -20px);">' +
-      '  <div class="blocklyDropDownContent">' +
-      '    <div class="valueReportBox">' +
-      displayStr +
-      '    </div>' +
-      '  </div>' +
-      '  <div class="blocklyDropDownArrow arrowBottom" style="transform: translate(22px, 15px) rotate(45deg);"></div>' +
-      '</div>';
+        '<div class="blocklyDropDownDiv" style="transition: transform 0.25s, opacity 0.25s; background-color: rgb(255, 255, 255); border-color: rgb(170, 170, 170); left: '+leftPos+'px; top: '+topPos+'px; display: block; opacity: 1; transform: translate(0px, -20px);">' +
+        '  <div class="blocklyDropDownContent">' +
+        '    <div class="valueReportBox">' +
+        displayStr +
+        '    </div>' +
+        '  </div>' +
+        '  <div class="blocklyDropDownArrow arrowBottom" style="transform: translate(22px, 15px) rotate(45deg);"></div>' +
+        '</div>';
 
     $('.blocklyDropDownDiv').remove();
     $('body').append(dropDownDiv);
@@ -496,6 +712,9 @@ function PythonInterpreter(context, msgCallback) {
         }
       }
     }
+    if(window.quickAlgoInterface) {
+      window.quickAlgoInterface.setPlayPause(false);
+    }
     this._resetInterpreterState();
   };
 
@@ -508,13 +727,17 @@ function PythonInterpreter(context, msgCallback) {
     this._stepsWithoutAction = 0;
     this._lastNbActions = 0;
     this._nbActions = 0;
+    this._allowStepsWithoutDelay = 0;
 
     this._isRunning = false;
+    this._resetDone = false;
     this.stepMode = false;
     this._stepInProgress = false;
     this._resetCallstackOnNextStep = false;
     this._paused = false;
+    this.waitingOnReadyNode = false;
     Sk.running = false;
+
     if(Sk.runQueue && Sk.runQueue.length > 0) {
       var nextExec = Sk.runQueue.shift();
       setTimeout(function () { nextExec.ctrl.runCodes(nextExec.codes); }, 100);
@@ -528,11 +751,20 @@ function PythonInterpreter(context, msgCallback) {
     }
   };
 
+  this.reset = function() {
+    if(this._resetDone) { return; }
+    if(this.isRunning()) {
+      this.stop();
+    }
+    this.context.reset();
+    this._resetDone = true;
+  };
+
   this.step = function () {
     this._resetCallstack();
     this._stepInProgress = true;
     var editor = this.context.blocklyHelper._aceEditor;
-    var markDelay = this.context.infos ? this.context.infos.actionDelay/4 : 0;
+    var markDelay = this.context.infos ? Math.floor(this.context.infos.actionDelay/4) : 0;
     if(this.context.display && (this.stepMode || markDelay > 30)) {
       var curSusp = this._debugger.suspension_stack[this._debugger.suspension_stack.length-1];
       if(curSusp && curSusp.lineno) {
@@ -540,14 +772,30 @@ function PythonInterpreter(context, msgCallback) {
         var splitCode = this._code.split(/[\r\n]/);
         var Range = ace.require('ace/range').Range;
         this._editorMarker = editor.session.addMarker(
-          new Range(curSusp.lineno-1, curSusp.colno, curSusp.lineno, 0),
-          "aceHighlight",
-          "line");
+            new Range(curSusp.lineno-1, curSusp.colno, curSusp.lineno, 0),
+            "aceHighlight",
+            "line");
       }
-      this._paused = true;
-      setTimeout(this.realStep.bind(this), this.context.infos.actionDelay/4);
     } else {
       this.removeEditorMarker();
+    }
+
+    var stepDelay = 0;
+    if(!this.stepMode && this.context.allowInfiniteLoop) {
+      // Add a delay in infinite loops to avoid using all CPU
+      if(this._allowStepsWithoutDelay > 0) {
+        // We just had a waitDelay, don't delay further
+        this._allowStepsWithoutDelay -= 1;
+      } else {
+        stepDelay = 10;
+      }
+    }
+    var realStepDelay = markDelay + stepDelay;
+
+    if(realStepDelay > 0) {
+      this._paused = true;
+      setTimeout(this.realStep.bind(this), realStepDelay);
+    } else {
       this.realStep();
     }
   };
@@ -597,9 +845,6 @@ function PythonInterpreter(context, msgCallback) {
       message = this.context.messagePrefixFailure + message;
     }
 
-    if(window.quickAlgoInterface) {
-      window.quickAlgoInterface.setPlayPause(false);
-    }
     this.messageCallback(message);
   };
 
@@ -607,11 +852,18 @@ function PythonInterpreter(context, msgCallback) {
     this._debugger.add_breakpoint(this._editor_filename + ".py", bp, "0", isTemporary);
   };
 
-  this._asyncCallback = function () {
-    return Sk.importMainWithBody(this._editor_filename, true, this._code, true);
-  }
+  this._asyncCallback = function (editor_filename, code) {
+    return function() {
+      return Sk.importMainWithBody(editor_filename, true, code, true);
+    };
+  };
+
+  this.signalAction = function () {
+    // Allows a context to signal an "action" happened
+    this._stepsWithoutAction = 0;
+  };
 }
 
 function initBlocklyRunner(context, msgCallback) {
-   return new PythonInterpreter(context, msgCallback);
+  return new PythonInterpreter(context, msgCallback);
 };

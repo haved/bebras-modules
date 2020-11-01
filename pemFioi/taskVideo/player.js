@@ -4,6 +4,39 @@
     var ready = false;
     var state_cache;
 
+
+
+    // time formatter and parser
+    var time_string = {
+
+        parse: function(value) {
+            if(typeof value === 'string') {
+                var mult = 1,
+                    parts = value.split(':'),
+                    res = 0;
+                while(parts.length) {
+                    res += mult * parseFloat(parts.pop());
+                    mult *= 60;
+                }
+                return res;
+            }
+            return value || 0;
+        },
+
+        format: function(value) {
+            var v = parseInt(value, 10),
+                h = Math.floor(v / 3600);
+                m = Math.floor((v - (h * 3600)) / 60),
+                s = v - (h * 3600) - (m * 60);
+
+            function zero(v) {
+                return v < 10 ? '0' + v : v;
+            }
+            return (h > 0 ? h + ':' : '') + zero(m) + ':' + zero(s);
+        }
+    }
+
+
     // load youtube IFrame Player API
     var apiLoader = {
         callbacks: [],
@@ -37,7 +70,6 @@
                 this.loading = true;
                 this.fetch();
             }
-
         }
     }
 
@@ -50,6 +82,7 @@
         active: null,
         visible: true,
         show_viewed: true,
+        callback: null,
 
         generateSections: function(amount, start, end) {
             if(!start) start = 0;
@@ -64,7 +97,7 @@
                     viewed: false,
                     parts: [
                         {
-                            vieved: false,
+                            viewed: false,
                             start: i * duration,
                             end: (i + 1) * duration
                         }
@@ -76,9 +109,43 @@
         },
 
 
-        init: function(player, config, parent) {
+        prepareSectionsArray: function(sections) {
+            for(var i=0; i<sections.length; i++) {
+                if('start' in sections[i]) {
+                    sections[i].start = time_string.parse(sections[i].start);
+                }
+                if('end' in sections[i]) {
+                    sections[i].end = time_string.parse(sections[i].end);
+                }
+            }
+            for(var i=0; i<sections.length; i++) {
+                if('start' in sections[i]) continue;
+                if(i == 0) {
+                    sections[i].start = 0;
+                } else if('end' in sections[i - 1]) {
+                    sections[i].start = sections[i - 1].end;
+                } else {
+                    console.error('Section #' + i + ' start time not computable');
+                }
+            }
+            for(var i=0; i<sections.length; i++) {
+                if('end' in sections[i]) continue;
+                if(i == sections.length - 1) {
+                    sections[i].end = player.getDuration();
+                } else if('start' in sections[i + 1]) {
+                    sections[i].end = sections[i + 1].start;
+                } else {
+                    console.error('Section #' + i + ' end time not computable');
+                }
+            }
+            return sections;
+        },
+
+
+        init: function(config, parent) {
             this.active = null;
             this.show_viewed = !!config.show_viewed;
+            this.callback = config.callback;
             if(!config.sections) {
                 this.visible = false;
                 this.data = this.generateSections(1);
@@ -87,12 +154,14 @@
                 this.data = this.generateSections(config.sections);
             } else {
                 this.visible = true;
-                this.data = config.sections.slice();
+                this.data = this.prepareSectionsArray(config.sections.slice());
                 for(var i=0,section; section = this.data[i]; i++) {
                     section.viewed = false;
                     var parts_amount = Number.isInteger(section.parts) ? section.parts : 1;
                     var part_duraton = (section.end - section.start) / parts_amount;
-
+                    if(config.layout.enumerate_sections) {
+                        section.number = 1 + i;
+                    }
                     section.parts = [];
                     for(var j=0; j<parts_amount; j++) {
                         section.parts[j] = {
@@ -110,22 +179,77 @@
         },
 
 
-        render: function(parent, onClick) {
-            if(!this.visible) return;
+        renderTitle: function(parent, idx, section, onClick) {
             var that = this;
             function makeClickCallback(idx) {
                 return function() {
                     onClick(that.data[idx].start);
                 }
             }
+            var el = $(
+                '<div class="title">' + ('number' in section ? section.number + '. ' : '') + section.title +
+                    '<div class="duration">' + time_string.format(section.start) + '</div>' +
+                '</div>'
+            );
+            el.click(makeClickCallback(idx));
+            parent.append(el);
+        },
+
+        renderDescription: function(parent, idx, section) {
+            if(!section.image && !section.description) {
+                return;
+            }
+            var description = section.description.replace(/\{[^\}]+\}/g, function(m) {
+                m = m.substr(1, m.length - 2).split('|');
+                if(m.length > 1) {
+                    var time = time_string.parse(m[1]);
+                    var title = m[0];
+                } else {
+                    var time = time_string.parse(m[0]);
+                    var title = time_string.format(time);
+                }
+
+                return '<span class="time-link" data-time="' + time + '">' + title + '</span>';
+            });
+            if(section.image) { 
+                // section.image is either an URL to an image, or a #id
+                // identifier for an image tag to fetch the URL from
+                var html = '<div class="description hasImage">';
+                var imgSrc = section.image;
+                if(imgSrc[0] == '#') {
+                    imgSrc = $('img' + imgSrc).attr('src');
+                }
+                html += '<div class="image"><img src="' + imgSrc + '"></img></div>';
+                html += '<div>' + description + '</div>';
+                html += '</div>';
+            } else {
+                var html = '<div class="description">';
+                html += description;
+                html += '</div>';
+            }
+            var el = $(html);
+
+            function makeClickCallback(link) {
+                var time = parseFloat($(link).data('time'));
+                return function() {
+                    player.seekTo(time);
+                    player.playVideo();
+                }
+            }
+            el.find('span.time-link').each(function() {
+                $(this).click(makeClickCallback(this));
+            });
+            parent.append(el);
+        },
+
+
+        render: function(parent, onClick) {
+            if(!this.visible) return;
+
             for(var i=0,section; section = this.data[i]; i++) {
-                section.element = $(
-                    '<div class="section">' +
-                        '<div class="title">' + section.title + '</div>' +
-                        (section.description ? '<div class="description">' + section.description + '</div>' : '') +
-                    '</div>'
-                );
-                section.element.click(makeClickCallback(i));
+                section.element = $('<div class="section"></div>');
+                this.renderTitle(section.element, i, section, onClick);
+                this.renderDescription(section.element, i, section);
                 parent.append(section.element);
             }
         },
@@ -146,6 +270,7 @@
                     this.setActive(i);
                     var cnt = 0;
                     var refresh = false;
+                    var scoreUpdate = false;
                     for(var j=0,part; part=this.data[i].parts[j]; j++) {
                         if(!part.viewed && time >= part.start && time < part.end) {
                             part.viewed = true;
@@ -154,11 +279,16 @@
                         if(part.viewed) cnt++;
                     }
                     if(cnt && cnt > Math.floor(section.parts.length * 0.5)) {
+                        var wasViewed = section.viewed;
                         section.viewed = true;
-                        refresh = true;
+                        refresh = refresh || !wasViewed;
+                        scoreUpdate = !wasViewed
                     }
                     if(refresh) {
                         this.refresh();
+                    }
+                    if(scoreUpdate && this.callback) {
+                        this.callback();
                     }
                     return;
                 }
@@ -176,9 +306,7 @@
         getViewed: function() {
             var res = [];
             for(var i=0,section; section=this.data[i]; i++) {
-                if(section.viewed) {
-                    res.push(i);
-                }
+                res.push({viewed: !!section.viewed, parts: section.parts});
             }
             return res;
         },
@@ -186,7 +314,15 @@
 
         setViewed: function(viewed) {
             for(var i=0,section; section=this.data[i]; i++) {
-                section.viewed = viewed.indexOf(i) !== -1;
+                var v = viewed[i];
+                if(!v) { continue; }
+                section.viewed = v.viewed;
+                if(section.parts && v.parts) {
+                    for(var j=0, part; part=section.parts[j]; j++) {
+                        if(!v.parts[j]) { continue; }
+                        part.viewed = !!v.parts[j].viewed;
+                    }
+                }
             }
             this.refresh();
         },
@@ -207,20 +343,78 @@
 
         elements: {},
 
-        init: function(parent) {
-            this.elements = {
-                wrapper: $('<div class="task-video"></div>'),
-                introduction: $('<div class="introduction"></div>'),
-                video: $('<div class="video"></div>'),
-                sections: $('<div class="sections"></div>'),
-                conclusion: $('<div class="conclusion"></div>'),
-            };
-            parent.html('');
-            parent.append(this.elements.wrapper)
-            for(var name in this.elements) {
-                if(name !== 'wrapper') {
-                    this.elements.wrapper.append(this.elements[name]);
+        init: function(parent, config) {
+            this.render(parent);
+            var refreshLayout = this.getRefreshLayoutFunc(config);
+            $(window).scroll(refreshLayout);
+            $(window).resize(refreshLayout);
+            refreshLayout();
+        },
+
+
+        render: function(parent) {
+            this.elements.root = $(
+                '<div class="task-video">\
+                    <div class="task-video-content" data-key="content">\
+                        <div class="player" data-key="player"><div></div></div>\
+                        <div class="sections" data-key="sections"></div>\
+                    </div>\
+                </div>'
+            );
+            var self = this;
+            this.elements.root.find('[data-key]').each(function() {
+                self.elements[$(this).data('key')] = $(this);
+            });
+            parent.html('').append(this.elements.root);
+        },
+
+
+        getRefreshLayoutFunc: function(config) {
+            var elements = this.elements,
+                win = $(window),
+                doc = $(window.document),
+                is_wide_mode_old = null;
+
+            return function() {
+                var is_fixed_content = win.scrollTop() > elements.root.position().top;
+                var is_wide_mode = win.width() >= config.layout.wide_mode_min_width;
+
+                elements.root.toggleClass('task-video-wide-mode', is_wide_mode);
+                elements.root.toggleClass('task-video-narrow-mode', !is_wide_mode);
+
+                var scroll = Math.max(0, win.scrollTop() - elements.root.position().top);
+
+                if(is_wide_mode_old !== is_wide_mode) {
+                    is_wide_mode_old = is_wide_mode;
+                    elements.root.height('');
+                    elements.content.width('');
+                    elements.content.height('');
+                    elements.player.height('');
+                    elements.player.width('');
+                    elements.sections.height('');
+                    elements.sections.width('');
+                    elements.sections.css('margin-top', '');
                 }
+
+                if(is_wide_mode) {
+                    var video_width = config.layout.wide_mode_video_width * elements.root.width();
+                    elements.player.width(video_width);
+                    elements.sections.width(elements.root.width() - video_width);
+                    elements.content.width(elements.root.width());
+
+                    var max_height = video_width / config.layout.video_aspect_ratio;
+                    var height = Math.floor(Math.max(0.5 * max_height, max_height - scroll));
+                    elements.root.height(height);
+                    elements.content.height(height);
+                } else {
+                    var max_height = elements.root.width() / config.layout.video_aspect_ratio;
+                    elements.sections.height(max_height);
+                    var player_height = Math.max(0.5 * max_height, max_height - scroll);
+                    elements.player.height(player_height);
+                    elements.sections.css('margin-top', is_fixed_content ? max_height : '');
+                }
+
+                elements.content.toggleClass('fixed-content', is_fixed_content);
             }
         },
 
@@ -230,28 +424,12 @@
         },
 
 
-        html: function(name, html) {
-            if(typeof html === 'undefined') {
-                this.elements[name].hide();
-            } else {
-                this.elements[name].show();
-                this.elements[name].html(html);
-            }
-        },
-
-
-        width: function(name, width) {
-            this.elements[name].width(width);
-        },
-
-
-        height: function(name, height) {
-            this.elements[name].height(height);
-        },
 
 
         destroy: function() {
-            this.elements.wrapper && this.elements.wrapper.remove();
+            $(window).unbind('scroll');
+            $(window).unbind('resize');
+            this.elements.root && this.elements.root.remove();
             this.elements = {};
         }
     }
@@ -300,7 +478,7 @@
             playerVars: youtube,
             events: {
                 'onReady': function(e) {
-                    sections.init(player, config, template.get('sections'));
+                    sections.init(config, template.get('sections'));
                     ready = true;
                     if(state_cache) {
                         stateHandler(state_cache);
@@ -325,10 +503,15 @@
     }
 
 
-    function makeConfig(params) {
+    function makeConfig(params, callback) {
         var defaults = {
-            width: '100%',
-            height: '400px'
+            layout: {
+                video_aspect_ratio: 16/9,
+                wide_mode_min_width: 1024,
+                wide_mode_video_width: 0.6,
+                enumerate_sections: true
+            },
+            callback: callback
         }
         return Object.assign(defaults, params);
     }
@@ -342,38 +525,39 @@
         }
 
         if(state) {
-            if('viewed' in state) {
-                sections.setViewed(state.viewed);
+            if('sections' in state) {
+                sections.setViewed(state.sections);
             }
             if('timestamp' in state) {
                 player.seekTo(state.timestamp);
-            }
-            if('playing' in state && state.playing) {
-                player.playVideo();
-            } else {
-                player.pauseVideo();
+                //player.playVideo();
             }
         } else {
+            var sectionsData = sections.getViewed();
+            var nbViewed = 0;
+            for(var i=0, section; section=sectionsData[i]; i++) {
+                if(section.viewed) { nbViewed += 1; }
+            }
             return {
                 timestamp: player.getCurrentTime(),
                 playing: player.getPlayerState() === YT.PlayerState.PLAYING,
-                viewed: sections.getViewed()
+                viewed: nbViewed,
+                total: sectionsData.length,
+                sections: sectionsData
             }
         }
     }
 
     // jQuery plugin interface
 
-    $.fn.taskVideo = function(params, events) {
+    $.fn.taskVideo = function(params, callback, events) {
         var that = this;
-        var config = makeConfig(params)
+        var config = makeConfig(params, callback);
+        if(!events) { events = {}; }
+        if(callback) { events.onPlaybackEnd = callback; }
         apiLoader.load(function() {
-            template.init(that);
-            template.html('introduction', config['introduction']);
-            template.html('conclusion', config['conclusion']);
-            template.width('wrapper', config.width);
-            template.height('video', config.height);
-            player = createPlayer(template.get('video')[0], config, events);
+            template.init(that, config);
+            player = createPlayer(template.get('player').find('div')[0], config, events);
         });
         return this;
     }

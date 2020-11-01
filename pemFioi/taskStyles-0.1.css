@@ -311,6 +311,14 @@ h1 .stars {
    border-radius: 8px;
    text-align: justify;
 }
+#popupMessage.noAvatar img.beaver, #popupMessage.noAvatar img.messageArrow {
+   display: none;
+}
+
+#popupMessage.noAvatar .message {
+   margin-left: 0px;
+   max-width: 615px;
+}
 #popupMessage p {
    margin: .5em 0 0;
 }
@@ -341,9 +349,9 @@ h1 .stars {
 #displayHelper_cancel {
    display: inline-block;
 }
-#displayHelper_validate > [value="Valider"],
-#displayHelper_cancel > [value="Recommencer"] {
-   margin: 0 10px;
+#displayHelper_validate > input,
+#displayHelper_cancel > input {
+   margin: 0 20px;
    width: 9em;
 }
 #displayHelper_saved {

@@ -24,11 +24,15 @@ function LogicController(nbTestCases, maxInstructions) {
   this._visible = true;
   this._strings = window.languageStrings;
   this._options = {};
+  this._readOnly = false;
   this.includeBlocks = null;
+
+  /** @type {React.Component|null} */
+  this.analysisComponent = null;
 
   this.loadContext = function (mainContext) {
     this._mainContext = mainContext;
-  }
+  };
 
   this.savePrograms = function () {
     if(this._aceEditor) {
@@ -37,7 +41,7 @@ function LogicController(nbTestCases, maxInstructions) {
   };
 
   this.loadPrograms = function () {
-    if(this._aceEditor) {
+    if(this._aceEditor && this.programs[0].blockly) {
       this._aceEditor.setValue(''+this.programs[0].blockly);
       this._aceEditor.selection.clearSelection();
     }
@@ -55,6 +59,10 @@ function LogicController(nbTestCases, maxInstructions) {
   };
 
   this.load = function (language, display, nbTestCases, options) {
+    if (this.skulptAnalysisEnabled() && !this.skulptAnalysisShouldByEnabled()) {
+      console.log('Module "python-analysis" is loaded but not used.');
+    }
+
     this._nbTestCases = nbTestCases;
     this._options = options;
     this._loadBasicEditor();
@@ -74,15 +82,11 @@ function LogicController(nbTestCases, maxInstructions) {
 
   this.unloadLevel = this.unload;
 
-  this.getCodeFromXml = function (code, lang) {
-    // TODO :: rename
-    return code;
+  this.getCode = function(language) {
+    if (language == "python")
+      return this._aceEditor.getValue();
+    return "";
   };
-
-  this.getFullCode = function (code) {
-    // TODO :: simplify
-    return code;
-  }
 
   this.checkCode = function(code, display) {
     // Check a code before validation; display is a function which will get
@@ -101,8 +105,12 @@ function LogicController(nbTestCases, maxInstructions) {
       return false;
     }
     var limited = this.findLimited(code);
-    if(limited) {
-      display('Vous utilisez trop souvent un mot-clé à utilisation limitée : "'+limited+'".');
+    if(limited && limited.type == 'uses') {
+      display('Vous utilisez trop souvent un mot-clé à utilisation limitée : "'+limited.name+'".');
+      return false;
+    } else if(limited && limited.type == 'assign') {
+      display('Vous n\'avez pas le droit de réassigner un mot-clé à utilisation limitée : "'+limited.name+'".');
+      return false;
     }
     if(pythonCount(code) <= 0) {
       display("Vous ne pouvez pas valider un programme vide !");
@@ -117,10 +125,38 @@ function LogicController(nbTestCases, maxInstructions) {
         return false;
       }
     }
+
+    // Check for functions used as values
+    var re = /def\W+([^(]+)\(/g;
+    var foundFuncs = this._mainContext && this._mainContext.runner ? this._mainContext.runner.getDefinedFunctions() : [];
+    var match;
+    while(match = re.exec(code)) {
+       foundFuncs.push(match[1]);
+    }
+    for(var j=0; j<foundFuncs.length; j++) {
+       var re = new RegExp('\\W' + foundFuncs[j] + '([^A-Za-z0-9_( ]| +[^ (]|$)');
+       if(re.exec(code)) {
+          display("Vous utilisez la fonction '" + foundFuncs[j] + "' sans les parenthèses. Ajoutez les parenthèses pour appeler la fonction.");
+          return false;
+       }
+    }
     return true;
-  }
+  };
+
+  this.checkCodes = function(codes, display) {
+    // Check multiple codes before validation
+    for(var i = 0; i < codes.length; i++) {
+      if(!this.checkCode(codes[i], display)) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   this.getDefaultContent = function () {
+    if(this._options.startingExample && this._options.startingExample.python) {
+      return this._options.startingExample.python;
+    }
     var availableModules = this.getAvailableModules();
     var content = '';
     for(var i=0; i < availableModules.length; i++) {
@@ -134,65 +170,117 @@ function LogicController(nbTestCases, maxInstructions) {
    */
   this.stopAndTryAgain = function () {
     this.stop();
-    window.setTimeout(this.run.bind(this), 100);
+    if(type == 'run') {
+      window.setTimeout(this.run.bind(this), 100);
+    } else if(type == 'step') {
+      window.setTimeout(this.step.bind(this), 100);
+    }
   };
 
   this.getLanguage = function () {
     return this.language;
   };
 
-  this.prepareRun = function () {
-    if (!this._mainContext) { return; }
+  this.getAllCodes = function(answer) {
+     // Generate codes for each node
+     var codes = [];
+     for (var iNode = 0; iNode < this._mainContext.nbNodes; iNode++) {
+        if(this._mainContext.codeIdForNode) {
+           var iCode = this._mainContext.codeIdForNode(iNode);
+        } else {
+           var iCode = Math.min(iNode, this._mainContext.nbCodes-1);
+        }
+        if(answer) {
+           // Generate codes for specified answer
+           codes[iNode] = answer[iCode].blockly;
+        } else {
+           // Generate codes for current program
+           codes[iNode] = this.programs[iCode].blockly;
+        }
+     }
+
+     return codes;
+  },
+
+
+  this.prepareRun = function (type) {
+    if (!this._mainContext) { return false; }
 
     var nbRunning = this._mainContext.runner.nbRunning();
     if (nbRunning > 0) {
-      this.stopAndTryAgain();
-      return undefined;
+      this.stopAndTryAgain(type);
+      return false;
     }
 
     // Get code
     this.savePrograms();
-    var codes = [];
-    codes.push(this.programs[0].blockly);
+    var codes = this.getAllCodes();
     var code = codes[0];
+    // TODO :: check all codes
 
     // Abort if code is not valid
     if(!this.checkCode(code, function(err) {
       if(window.quickAlgoInterface) {
         window.quickAlgoInterface.displayError(err);
+        window.quickAlgoInterface.setPlayPause(false);
       } else {
         $('#errors').html(err);
       }
     })) {
-       return;
+       return false;
     }
 
     // Initialize runner
     this._mainContext.runner.initCodes(codes);
+
+    if (this.skulptAnalysisEnabled()) {
+      this.loadSkulptAnalysis();
+    }
+
+    return true;
   };
 
   this.run = function () {
-    this.prepareRun();
+    if(!this.prepareRun('run')) {
+      return;
+    }
     this._mainContext.runner.run();
   };
 
   this.step = function () {
+    var self = this;
+
     if(!this._mainContext.runner._isRunning) {
-      this.prepareRun();
+      // No run in progress, start a new one
+      if(!this.prepareRun('step')) {
+        return;
+      }
     }
-    this._mainContext.runner.runStep();
-  }
+
+    this._mainContext.runner.runStep(function() {
+      // After the step is complete.
+      if (self.skulptAnalysisEnabled() && self.analysisComponent) {
+        // Compute and update the internal analysis.
+        var skulptSuspensions = self._mainContext.runner._debugger.suspension_stack;
+        var oldAnalysis = self.analysisComponent.props.analysis;
+
+        self.analysisComponent.props.analysis = analyseSkulptState(skulptSuspensions, oldAnalysis);
+
+        self.analysisComponent.forceUpdate();
+      }
+    });
+  };
 
   this.stop = function () {
     if(this._mainContext.runner) {
       this._mainContext.runner.stop();
     }
-  }
+  };
 
   /**
    *  IO specific operations
    */
-  this._handleFiles = function (files) {
+  this.handleFiles = function (files) {
     var that = this;
     if (files.length < 0) {
       return;
@@ -205,6 +293,8 @@ function LogicController(nbTestCases, maxInstructions) {
       reader.onload = function (e) {
         var code = reader.result;
         if (code[0] == "<") {
+          // XXX :: what is this code about? Is it actually used? Blockly isn't
+          // even loaded
           try {
             var xml = Blockly.Xml.textToDom(code);
             that.programs[0][that.player].blockly = code;
@@ -216,10 +306,8 @@ function LogicController(nbTestCases, maxInstructions) {
               $("#errors").html(that._strings.invalidContent);
             }
           }
-          that.languages[that.player] = "blockly";
         } else {
-          that.programs[0][that.player].javascript = code;
-          that.languages[that.player] = "javascript";
+          that.programs[0].blockly = code;
         }
         that.loadPrograms();
       };
@@ -281,25 +369,297 @@ function LogicController(nbTestCases, maxInstructions) {
    * DOM specific operations
    */
   this._loadEditorWorkSpace = function () {
-    return "<div id='blocklyContainer'>" + // TODO :: change ID here and in CSS
-           "<div id='python-workspace' class='language_python' style='width: 100%; height: 100%'></div>" +
-           "</div>";
+    return "<div id='python-analysis'></div>" +
+        "<div id='blocklyContainer'>" + // TODO :: change ID here and in CSS
+        "<div id='python-workspace' class='language_python' style='width: 100%; height: 100%'></div>" +
+        "</div>";
   };
   this._loadBasicEditor = function () {
     if (this._mainContext.display) {
       $('#languageInterface').html(
         this._loadEditorWorkSpace()
       );
+      if(window.quickAlgoResponsive) {
+        $('#blocklyLibContent').prepend('<div class="pythonIntroSimple"></div>');
+        $('#editorBar').prependTo('#languageInterface');
+      }
       this._loadAceEditor();
       this._bindEditorEvents();
+      this.updateTaskIntro();
     }
   };
+
+  /**
+   * Load the skulp analysis block in React.
+   */
+  this.loadSkulptAnalysis = function() {
+    var self = this;
+    var domContainer = document.querySelector('#python-analysis');
+
+    ReactDOM.render(React.createElement(PythonStackViewContainer, {
+      ref: function(componentReference) {
+        if (componentReference) {
+          self.analysisComponent = componentReference;
+
+          /**
+           * Move the analysis container with the mouse.
+           */
+          document.addEventListener('mouseup', function () {
+            self.analysisComponent.mouseUpHandler();
+          });
+          document.addEventListener('mousemove', function (event) {
+            self.analysisComponent.mouseMoveHandler(event.clientX, event.clientY);
+          });
+        }
+      },
+      analysis: null,
+      show: true
+    }), domContainer);
+  };
+
+  /**
+   * Whether skulpt analysis should be enabled given the current task.
+   *
+   * @return {boolean}
+   */
+  this.skulptAnalysisShouldByEnabled = function() {
+    var variablesEnabled = true;
+    var taskInfos = this._mainContext.infos;
+    var forbidden = pythonForbiddenLists(taskInfos.includeBlocks).forbidden;
+    if (forbidden.indexOf('var_assign') !== -1) {
+      variablesEnabled = false;
+    }
+
+    return variablesEnabled;
+  };
+
+  /**
+   * Whether skulpt analysis is enabled.
+   *
+   * @return {boolean}
+   */
+  this.skulptAnalysisEnabled = function() {
+    return (this.language === 'python' && typeof analyseSkulptState === 'function');
+  };
+
+  /**
+   * Clears the skulpt analysis window.
+   */
+  this.clearSkulptAnalysis = function() {
+    if (this.skulptAnalysisEnabled() && this.analysisComponent) {
+      this.analysisComponent.props.analysis = null;
+      this.analysisComponent.forceUpdate();
+    }
+  };
+
+  /**
+   * Shows the skulpt analysis window.
+   */
+  this.showSkulptAnalysis = function() {
+    if (this.skulptAnalysisEnabled() && this.analysisComponent) {
+      this.analysisComponent.props.show = true;
+      this.analysisComponent.forceUpdate();
+    }
+  };
+
+  /**
+   * Hides the skulpt analysis window.
+   */
+  this.hideSkulptAnalysis = function() {
+    if (this.skulptAnalysisEnabled() && this.analysisComponent) {
+      this.analysisComponent.props.show = false;
+      this.analysisComponent.forceUpdate();
+    }
+  };
+
+  this.onResize = function() {
+    // On resize function to be called by the interface
+    this._aceEditor.resize();
+  };
+
+  this._addAutoCompletion = function() {
+    function getSnippet(proto) {
+      var parenthesisOpenIndex = proto.indexOf("(");
+      if (proto.charAt(parenthesisOpenIndex + 1) == ')') {
+        return proto;
+      } else {
+        var ret = proto.substring(0, parenthesisOpenIndex + 1);
+        var commaIndex = parenthesisOpenIndex;
+        var snippetIndex = 1;
+        while (proto.indexOf(',', commaIndex + 1) != -1) {
+          var newCommaIndex = proto.indexOf(',', commaIndex + 1);
+          // we want to keep the space.
+          if (proto.charAt(commaIndex + 1) == ' ') {
+            commaIndex += 1;
+            ret += ' ';
+          }
+          ret += "${" + snippetIndex + ':';
+          ret += proto.substring(commaIndex + 1, newCommaIndex);
+          ret += "},";
+
+          commaIndex = newCommaIndex;
+          snippetIndex += 1;
+        }
+
+        // the last one is with the closing parenthesis.
+        var parenthesisCloseIndex = proto.indexOf(')');
+        if (proto.charAt(commaIndex + 1) == ' ') {
+          commaIndex += 1;
+          ret += ' ';
+        }
+        ret += "${" + snippetIndex + ':';
+        ret += proto.substring(commaIndex + 1, parenthesisCloseIndex);
+        ret += "})";
+
+        return ret;
+      }
+    }
+
+    var langTools = ace.require("ace/ext/language_tools");
+
+
+    // This array will contain all functions for which we must add autocompletion
+    var completions = [];
+
+    // we add completion on functions
+    if (this.includeBlocks && this.includeBlocks.generatedBlocks) {
+      for (var categoryIndex in this.includeBlocks.generatedBlocks) {
+        for (var funIndex in this.includeBlocks.generatedBlocks[categoryIndex]) {
+          var fun = this.includeBlocks.generatedBlocks[categoryIndex][funIndex];
+          var funInfos = this._getFunctionsInfo(fun);
+          var funProto = funInfos.proto;
+          var funHelp = funInfos.help;
+          var funSnippet = getSnippet(funProto);
+          completions.push({
+            caption: funProto,
+            snippet: funSnippet,
+            type: "snippet",
+            docHTML: "<b>" + funProto + "</b><hr></hr>" + funHelp
+          })
+        }
+      }
+      if(this._mainContext.customConstants && this._mainContext.customConstants[categoryIndex]) {
+        var constList = this._mainContext.customConstants[categoryIndex];
+        for(var iConst=0; iConst < constList.length; iConst++) {
+          var name = constList[iConst].name;
+          if(this._mainContext.strings.constant && this._mainContext.strings.constant[name]) {
+            name = this._mainContext.strings.constant[name];
+          }
+          completions.push({
+            name: name,
+            value: name,
+            meta: this._strings.constant
+          })
+        }
+      }
+    }
+
+    // Adding allowed consts (for, while...)
+    var allowedConsts = pythonForbiddenLists(this.includeBlocks).allowed;
+    hideHiddenWords(allowedConsts);
+
+    // This blocks are blocks which are not special but must be added
+    var toAdd = ["True", "False"];
+    for (var toAddId = 0; toAddId < toAdd.length; toAddId++) {
+      allowedConsts.push(toAdd[toAddId]);
+    }
+
+    var keywordi18n = this._strings.keyword;
+
+    // if we want to modify the result of certain keys
+    var specialSnippets = {
+      // list_brackets and dict_brackets are not working
+      list_brackets:
+          {
+            name: "[]",
+            value: "[]",
+            meta: keywordi18n
+          },
+      dict_brackets: {
+        name: "{}",
+        value: "{}",
+        meta: keywordi18n
+      },
+      var_assign: {
+        caption: "x =",
+        snippet: "x = $1",
+        type: "snippet",
+        meta: this._strings.variable
+      },
+      if: {
+        caption: "if",
+        snippet: "if ${1:condition}:\n\t${2:pass}",
+        type: "snippet",
+        meta: keywordi18n
+      },
+      while: {
+        caption: "while",
+        snippet: "while ${1:condition}:\n\t${2:pass}",
+        type: "snippet",
+        meta: keywordi18n
+      },
+      elif: {
+        caption: "elif",
+        snippet: "elif ${1:condition}:\n\t${2:pass}",
+        type: "snippet",
+        meta: keywordi18n
+      }
+    };
+
+    for (var constId = 0; constId < allowedConsts.length; constId++) {
+
+      if (specialSnippets.hasOwnProperty(allowedConsts[constId])) {
+        // special constant, need to create snippet
+        completions.push(specialSnippets[allowedConsts[constId]]);
+      } else {
+        // basic constant (just printed)
+        completions.push({
+          name: allowedConsts[constId],
+          value: allowedConsts[constId],
+          meta: keywordi18n
+        })
+      }
+    }
+
+    // creating the completer
+    var completer = {
+      getCompletions : function(editor, session, pos, prefix, callback) {
+        callback(null, completions);
+      }
+    };
+
+    // we set the completer to only what we want instead of all the noisy default stuff
+    if(langTools) { langTools.setCompleters([completer]); }
+  };
+
   this._loadAceEditor = function () {
     this._aceEditor = ace.edit('python-workspace');
-    this._aceEditor.setOption('readOnly', !!this._options.readOnly);
+    if (!this._mainContext.disableAutoCompletion)
+      this._addAutoCompletion();
+
+    this._aceEditor.setOptions({
+      readOnly: !!this._options.readOnly,
+      enableBasicAutocompletion: !this._mainContext.disableAutoCompletion,
+      enableLiveAutocompletion: !this._mainContext.disableAutoCompletion,
+      enableSnippets: false
+    });
     this._aceEditor.$blockScrolling = Infinity;
     this._aceEditor.getSession().setMode("ace/mode/python");
     this._aceEditor.setFontSize(16);
+
+    if (!this._mainContext.disableAutoCompletion) {
+      // we resize the completer window, because some functions are too big so we need more place:
+      if (!this._aceEditor.completer) {
+        // make sure completer is initialized
+        this._aceEditor.execCommand("startAutocomplete");
+        this._aceEditor.completer.detach();
+      }
+      this._aceEditor.completer.popup.container.style.width = "22%";
+
+      // removal of return for autocomplete
+      if (this._aceEditor.completer.keyboardHandler.commandKeyBinding.return)
+        delete this._aceEditor.completer.keyboardHandler.commandKeyBinding.return;
+    }
   };
 
   this.findLimited = function(code) {
@@ -310,15 +670,13 @@ function LogicController(nbTestCases, maxInstructions) {
     }
   };
 
-  this.getCapacityText = function() {
+  this.getCapacityInfo = function() {
     // Handle capacity display
     var code = this._aceEditor.getValue();
-    var blinkRemaining = window.quickAlgoInterface ? window.quickAlgoInterface.blinkRemaining.bind(window.quickAlgoInterface) : function() {};
 
     var forbidden = pythonForbidden(code, this.includeBlocks);
     if(forbidden) {
-      blinkRemaining(5, true);
-      return "Mot-clé interdit utilisé : "+forbidden;
+      return {text: "Mot-clé interdit utilisé : "+forbidden, invalid: true, type: 'forbidden'};
     }
     var text = '';
     var remaining = 1;
@@ -332,24 +690,22 @@ function LogicController(nbTestCases, maxInstructions) {
       text = strLimitElements.format(optLimitElements);
     }
     if(remaining < 0) {
-      blinkRemaining(5, true);
-      return text;
+      return {text: text, invalid: true, type: 'capacity'};
     }
     var limited = this.findLimited(code);
-    if(limited) {
-      blinkRemaining(5, true);
-      return 'Vous utilisez trop souvent un mot-clé à utilisation limitée : "'+limited+'".';
+    if(limited && limited.type == 'uses') {
+      return {text: 'Vous utilisez trop souvent un mot-clé à utilisation limitée : "'+limited.name+'".', invalid: true, type: 'limited'};
+    } else if(limited && limited.type == 'assign') {
+      return {text: 'Vous n\'avez pas le droit de réassigner un mot-clé à utilisation limitée : "'+limited.name+'".', invalid: true, type: 'limited'};
     } else if(remaining == 0) {
-       blinkRemaining(4);
-    } else {
-       blinkRemaining(0);
+      return {text: text, warning: true, type: 'capacity'};
     }
-    return text;
+    return {text: text, type: 'capacity'};
   };
 
   this._removeDropDownDiv = function() {
     $('.blocklyDropDownDiv').remove();
-  }
+  };
 
   this._bindEditorEvents = function () {
     $('body').on('click', this._removeDropDownDiv);
@@ -358,16 +714,21 @@ function LogicController(nbTestCases, maxInstructions) {
       if(!that._aceEditor) { return; }
 
       if(that._mainContext.runner && that._mainContext.runner._editorMarker) {
+        that.clearSkulptAnalysis();
+
         that._aceEditor.session.removeMarker(that._mainContext.runner._editorMarker);
         that._mainContext.runner._editorMarker = null;
       }
 
-      $('#capacity').html(that.getCapacityText());
+      if(window.quickAlgoInterface) {
+        window.quickAlgoInterface.displayCapacity(that.getCapacityInfo());
+      } else {
+        $('#capacity').html(that.getCapacityInfo().text);
+      }
 
       // Interrupt any ongoing execution
       if(that._mainContext.runner) {
-         that._mainContext.runner.stop();
-         that._mainContext.reset();
+         that._mainContext.runner.reset();
       }
 
       if(window.quickAlgoInterface) {
@@ -378,13 +739,13 @@ function LogicController(nbTestCases, maxInstructions) {
 
       // Close reportValue popups
       $('.blocklyDropDownDiv').remove();
-    }
+    };
     this._aceEditor.getSession().on('change', debounce(onEditorChange, 500, false))
   };
 
   this._unbindEditorEvents = function () {
     $('body').off('click', this._removeDropDownDiv);
-  }
+  };
 
   this.getAvailableModules = function () {
     if(this.includeBlocks && this.includeBlocks.generatedBlocks) {
@@ -400,31 +761,82 @@ function LogicController(nbTestCases, maxInstructions) {
     }
   };
 
+  /**
+   * This method allow us to get the informations about the function, pasted from updateTaskIntro
+   * This function was separated from updateTaskIntro because it will also be used by the
+   * autocompletion generator.
+   * @param functionName The name of the function
+   * @return {{help: string, proto: string, desc: *}} The informations about the function
+   */
+  this._getFunctionsInfo = function(functionName) {
+    var blockDesc = '', funcProto = '', blockHelp = '';
+    if (this._mainContext.docGenerator) {
+      blockDesc = this._mainContext.docGenerator.blockDescription(functionName);
+      funcProto = blockDesc.substring(blockDesc.indexOf('<code>') + 6, blockDesc.indexOf('</code>'));
+      blockHelp = blockDesc.substring(blockDesc.indexOf('</code>') + 7);
+    } else {
+      var blockName = functionName;
+      blockDesc = this._mainContext.strings.description[blockName];
+      if (!blockDesc) {
+        funcProto = (this._mainContext.strings.code[blockName] || blockName) + '()';
+        blockDesc = '<code>' + funcProto + '</code>';
+      } else if (blockDesc.indexOf('</code>') < 0) {
+        var funcProtoEnd = blockDesc.indexOf(')') + 1;
+        if(funcProtoEnd > 0) {
+          funcProto = blockDesc.substring(0, funcProtoEnd);
+          blockHelp = blockDesc.substring(funcProtoEnd);
+          blockDesc = '<code>' + funcProto + '</code>' + blockHelp;
+        } else {
+          console.error("Description for block '" + blockName + "' needs to be of the format 'function() : description', auto-generated one used instead could be wrong.");
+          funcProto = blockName + '()';
+          blockDesc = '<code>' + funcProto + '</code> : ' + blockHelp;
+        }
+      }
+    }
+    return {
+      desc: blockDesc,
+      proto: funcProto,
+      help: blockHelp
+    };
+  };
+
+  function hideHiddenWords(list) {
+    var hiddenWords = ['__getitem__', '__setitem__'];
+    for(var i = 0; i < hiddenWords.length; i++) {
+      var word = hiddenWords[i];
+      var wIdx = list.indexOf(word);
+      if(wIdx > -1) {
+        list.splice(wIdx, 1);
+      }
+    }
+  }
+
   this.updateTaskIntro = function () {
     if(!this._mainContext.display) { return; }
-    var pythonDiv = $('#taskIntro .pythonIntro');
-    if(pythonDiv.length == 0) {
-      pythonDiv = $('<hr />'
-        + '<div class="pythonIntro">'
+    if($('.pythonIntro').length == 0) {
+      quickAlgoInterface.appendTaskIntro('<hr class="pythonIntroElement long" />'
+        + '<div class="pythonIntro pythonIntroElement long">'
         + '  <div class="pythonIntroSimple"></div>'
         + '  <div class="pythonIntroFull"></div>'
         + '  <div class="pythonIntroBtn"></div>'
-        + '</div>').appendTo('#taskIntro');
+        + '</div>');
     }
 
-    pythonDiv.off('click', 'code');
+    $('.pythonIntro').off('click', 'code');
     if(this._mainContext.infos.noPythonHelp) {
-       pythonDiv.html('');
+       $('.pythonIntroElement').css('display', 'none');
        return;
     }
+    $('.pythonIntroElement').css('display', '');
 
     var fullHtml = '';
     var simpleHtml = '';
 
     var availableModules = this.getAvailableModules();
     if(availableModules.length) {
-      fullHtml += '<p>Votre programme doit commencer par ';
-      fullHtml += (availableModules.length > 1) ? 'les lignes' : 'la ligne';
+      fullHtml += '<p>' + (availableModules.length > 1) ? 
+                  window.languageStrings.startingLine :
+                  window.languageStrings.startingLines;
       fullHtml += ' :</p>'
                  +  '<p><code>'
                  +  'from ' + availableModules[0] + ' import *';
@@ -432,35 +844,52 @@ function LogicController(nbTestCases, maxInstructions) {
         fullHtml += '\nfrom ' + availableModules[i] + ' import *';
       }
       fullHtml += '</code></p>'
-                 +  '<p>Les fonctions disponibles pour contrôler le robot sont :</p>'
+                 +  '<p>' + window.languageStrings.availableFunctionsVerbose + '</p>'
                  +  '<ul>';
-      simpleHtml += 'Fonctions disponibles : ';
+      simpleHtml += window.languageStrings.availableFunctions;
 
       var availableConsts = [];
+
+      // Display a list for the simpleHtml version
+      function displaySimpleList(elemList) {
+        var html = '';
+        if(window.quickAlgoResponsive && elemList.length > 0) {
+          // Dropdown mode
+          html  = '<div class="pythonIntroSelect">';
+          html += '<select>';
+          for(var i=0 ; i < elemList.length; i++) {
+            var elem = elemList[i];
+            html += '<option' + (elem.desc ? ' data-desc="' + elem.desc.replace('"', '&quot;') + '"' : '') + '>';
+            html += (typeof elem == 'string' ? elem : elem.func);
+            html += '</option>';
+          }
+          html += '</select>';
+          html += '<div class="pythonIntroSelectBtn pythonIntroSelectBtnCopy"><span class="fas fa-clone"></span></div>';
+          html += '<div class="pythonIntroSelectBtn pythonIntroSelectBtnHelp"><span class="fas fa-question"></span></div>';
+          html += '<span class="pythonIntroSelectDesc"></span>';
+          html += '</div>';
+        } else {
+          // Normal mode
+          for(var i=0 ; i < elemList.length; i++) {
+            var elem = elemList[i];
+            if(i > 0) { html += ', '; }
+            html += '<code>' + (typeof elem == 'string' ? elem : elem.func) + '</code>';
+          }
+        }
+        return html;
+      };
 
       // Generate list of functions available
       var simpleElements = [];
       for (var generatorName in this.includeBlocks.generatedBlocks) {
         var blockList = this.includeBlocks.generatedBlocks[generatorName];
         for (var iBlock=0; iBlock < blockList.length; iBlock++) {
-          var blockDesc = '', funcProto = '';
-          if (this._mainContext.docGenerator) {
-            blockDesc = this._mainContext.docGenerator.blockDescription(blockList[iBlock]);
-          } else {
-            var blockName = blockList[iBlock];
-            blockDesc = this._mainContext.strings.description[blockName];
-            if (!blockDesc) {
-              funcProto = (this._mainContext.strings.code[blockName] || blockName) + '()';
-              blockDesc = '<code>' + funcProto + '</code>';
-            } else if (blockDesc.indexOf('</code>') < 0) {
-              var funcProtoEnd = blockDesc.indexOf(')') + 1;
-              funcProto = blockDesc.substring(0, funcProtoEnd);
-              blockDesc = '<code>' + funcProto + '</code>' + blockDesc.substring(funcProtoEnd);
-            }
-          }
-          funcProto = funcProto || blockDesc.substring(blockDesc.indexOf('<code>') + 6, blockDesc.indexOf('</code>'));
+          var infos = this._getFunctionsInfo(blockList[iBlock]);
+          var blockDesc = infos.desc;
+          var funcProto = infos.proto;
+          var blockHelp = infos.help;
           fullHtml += '<li>' + blockDesc + '</li>';
-          simpleElements.push(funcProto);
+          simpleElements.push({func: funcProto, desc: blockHelp});
         }
 
         // Handle constants as well
@@ -475,24 +904,23 @@ function LogicController(nbTestCases, maxInstructions) {
           }
         }
       }
-      simpleHtml += '<code>' + simpleElements.join('</code>, <code>') + '</code>.';
+      simpleHtml += displaySimpleList(simpleElements);
       fullHtml += '</ul>';
     }
 
     if(availableConsts.length) {
       fullHtml += '<p>Les constantes disponibles sont : <code>' + availableConsts.join('</code>, <code>') + '</code>.</p>';
-      simpleHtml += '<br />Constantes disponibles : <code>' + availableConsts.join('</code>, <code>') + '</code>.';
+      simpleHtml += '<br />Constantes disponibles : ' + displaySimpleList(availableConsts);
     }
 
     var pflInfos = pythonForbiddenLists(this.includeBlocks);
 
-    function processForbiddenList(list, word) {
-      var elifIdx = list.indexOf('elif');
-      if(elifIdx >= 0) {
-        list.splice(elifIdx, 1);
-      }
+    function processForbiddenList(origList, allowed) {
+      var list = origList.slice();
 
-      var bracketsWords = { list_brackets: 'crochets [ ]', dict_brackets: 'accolades { }' };
+      hideHiddenWords(list);
+
+      var bracketsWords = { list_brackets: 'crochets [ ]+[]', dict_brackets: 'accolades { }+{}', var_assign: 'variables+x =' };
       for(var bracketsCode in bracketsWords) {
         var bracketsIdx = list.indexOf(bracketsCode);
         if(bracketsIdx >= 0) {
@@ -500,29 +928,94 @@ function LogicController(nbTestCases, maxInstructions) {
         }
       }
 
+      var word = allowed ? window.languageStrings.keywordAllowed : window.languageStrings.keywordForbidden;
+      var words = allowed ? window.languageStrings.keywordsAllowed : window.languageStrings.keywordsForbidden;
+      var cls = allowed ? '' : ' class="pflForbidden"';
       if(list.length == 1) {
-        fullHtml += '<p>Le mot-clé suivant est ' + word + ' : <code>' + list[0] + '</code>.</p>';
+        fullHtml += '<p>' + word + ' <code'+cls+'>' + list[0] + '</code>.</p>';
       } else if(list.length > 0) {
-        fullHtml += '<p>Les mots-clés suivants sont ' + word + 's : <code>' + list.join('</code>, <code>') + '</code>.</p>';
+        fullHtml += '<p>' + words + ' <code'+cls+'>' + list.join('</code>, <code'+cls+'>') + '</code>.</p>';
       }
       return list;
     }
-    var pflAllowed = processForbiddenList(pflInfos.allowed, 'autorisé');
-    processForbiddenList(pflInfos.forbidden, 'interdit');
+    var pflAllowed = processForbiddenList(pflInfos.allowed, true);
+    processForbiddenList(pflInfos.forbidden, false);
     if(pflAllowed.length) {
-      simpleHtml += '<br />Mots-clés autorisés : <code>' + pflAllowed.join('</code>, <code>') + '</code>.';
+      simpleHtml += '<br />' + this._strings.autorizedKeyWords + displaySimpleList(pflAllowed);
     }
 
-    fullHtml += '<p>Vous êtes autorisé(e) à lire de la documentation sur Python et à utiliser un moteur de recherche pendant le concours.</p>';
+    if(pflInfos.allowed.indexOf('var_assign') > -1) {
+      fullHtml += '<p>' + window.languageStrings.variablesAllowed + '</p>';
+    } else {
+      fullHtml += '<p>' + window.languageStrings.variablesForbidden + '</p>';
+    }
+
+    fullHtml += '<p>' + window.languageStrings.readDocumentation + '</p>';
 
     $('.pythonIntroSimple').html(simpleHtml);
     $('.pythonIntroFull').html(fullHtml);
 
-    this.collapseTaskIntro(true);
+    // Display the full details in the responsive version
+    this.collapseTaskIntro(!window.quickAlgoResponsive);
+    if(window.quickAlgoResponsive) {
+        $('.pythonIntroBtn').hide();
+    }
+
+    function updateIntroSelect(elem) {
+       elem = $(elem);
+       var code = elem.find('option:selected').text();
+       var funcName = code.split('(')[0];
+       var conceptId = null;
+       if(window.conceptViewer) {
+          conceptId = window.conceptViewer.hasPythonConcept(funcName);
+       }
+       if(conceptId) {
+          elem.parent().find('.pythonIntroSelectBtnHelp').attr('data-concept', conceptId).show();
+       } else {
+          elem.parent().find('.pythonIntroSelectBtnHelp').hide();
+       }
+
+       var desc = elem.find('option:selected').attr('data-desc');
+       elem.parent().find('.pythonIntroSelectDesc').html(desc || "");
+    }
+
+    $('.pythonIntroSelect select').each(function(idx, elem) { updateIntroSelect(elem); });
+
+    $('.pythonIntroSimple code, .pythonIntroSimple option, .pythonIntroFull code').each(function() {
+      var elem = $(this);
+      var txt = elem.text();
+      var pIdx = txt.indexOf('+');
+      if(pIdx > -1) {
+        var newTxt = txt.substring(0, pIdx);
+        var code = txt.substring(pIdx+1);
+      } else {
+        var newTxt = txt;
+        var code = txt;
+      }
+      elem.attr('data-code', code);
+      elem.text(newTxt);
+    });
 
     var controller = this;
-    pythonDiv.on('click', 'code', function() {
-      controller._aceEditor && controller._aceEditor.insert(this.textContent);
+    $('.pythonIntroSimple code, .pythonIntroFull code').not('.pflForbidden').on('click', function() {
+      quickAlgoInterface.toggleLongIntro(false);
+      if(controller._aceEditor) {
+        controller._aceEditor.insert(this.getAttribute('data-code'));
+        controller._aceEditor.focus();
+      }
+    });
+    $('.pythonIntroSelectBtn.pythonIntroSelectBtnCopy').on('click', function() {
+      var code = $(this).parent().find('option:selected').attr('data-code');
+      if(controller._aceEditor) {
+        controller._aceEditor.insert(code);
+        controller._aceEditor.focus();
+      }
+    });
+    $('.pythonIntroSelectBtn.pythonIntroSelectBtnHelp').on('click', function() {
+      window.conceptViewer.showConcept($(this).attr('data-concept'));
+    });
+    $('.pythonIntroSelect select').on('change', function() {
+      updateIntroSelect(this);
     });
   };
 
@@ -530,13 +1023,13 @@ function LogicController(nbTestCases, maxInstructions) {
     var that = this;
     var div = $('.pythonIntroBtn').html('');
     if(collapse) {
-      $('<a>Plus de détails</a>').appendTo(div).on('click', function() { that.collapseTaskIntro(false); });
-      $('.pythonIntroFull').hide();
-      $('.pythonIntroSimple').show();
+      $('<a>' + window.languageStrings.showDetails + '</a>').appendTo(div).on('click', function() { that.collapseTaskIntro(false); });
+      $('.pythonIntro .pythonIntroFull').hide();
+      $('.pythonIntro .pythonIntroSimple').show();
     } else {
-      $('<a>Moins de détails</a>').appendTo(div).on('click', function() { that.collapseTaskIntro(true); });
-      $('.pythonIntroFull').show();
-      $('.pythonIntroSimple').hide();
+      $('<a>' + window.languageStrings.hideDetails + '</a>').appendTo(div).on('click', function() { that.collapseTaskIntro(true); });
+      $('.pythonIntro .pythonIntroFull').show();
+      $('.pythonIntro .pythonIntroSimple').hide();
     }
   };
 
@@ -555,12 +1048,54 @@ function LogicController(nbTestCases, maxInstructions) {
   };
   this.updateSize = function () {
     var panelWidth = 500;
-    panelWidth = $('#editorContainer').width() - 30;
-    if (panelWidth != this._prevWidth) {
-      $("#taskIntro").css("width", panelWidth);
-      $("#grid").css("left", panelWidth + 20 + "px");
+
+    if ($("#editorContainer").length > 0) {
+      panelWidth = $('#editorContainer').width() - 30;
+      if (panelWidth != this._prevWidth) {
+          $("#taskIntro").css("width", panelWidth);
+          $("#grid").css("left", panelWidth + 20 + "px");
+      }
     }
     this._prevWidth = panelWidth;
+  };
+  this.resetDisplay = function () {
+    if(this._mainContext.runner) {
+      this._mainContext.runner.removeEditorMarker();
+    }
+  };
+  this.reload = function () {};
+  this.setReadOnly = function(newState) {
+    // setReadOnly called by quickAlgoInterface
+
+    // TODO :: should we actually set the readOnly flag?
+    return;
+
+    if(!!newState == this._readOnly) { return; }
+    this._readOnly = !!newState;
+
+    // options.readOnly has priority
+    if(this._options.readOnly) { return; }
+
+    this._aceEditor.setOption('readOnly', this._readOnly);
+  };
+
+  this.canPaste = function() {
+    return window.pythonClipboard ? true : null;
+  };
+  this.canConvertBlocklyToPython = function() {
+    return false;
+  };
+  this.copyProgram = function() {
+    var code = this._aceEditor.getSelectedText();
+    if(!code) { code = this._aceEditor.getValue(); }
+    window.pythonClipboard = code;
+  };
+  this.pasteProgram = function() {
+    if(!window.pythonClipboard) { return; }
+    var curCode = this._aceEditor.getValue();
+    this._aceEditor.setValue(curCode + '\n\n' + window.pythonClipboard);
+    var Range = ace.require('ace/range').Range;
+    this._aceEditor.selection.setRange(new Range(curCode.split(/\r\n|\r|\n/).length + 1, 0, this._aceEditor.getValue().split(/\r\n|\r|\n/).length, 0), true);
   };
 }
 

@@ -1,4 +1,5 @@
 function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gridTop, defaultLineAttr) {
+   var self = this;
    this.raphaelID = raphaelID;
    this.paper = paper;
    this.rows = rows;
@@ -60,7 +61,10 @@ function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gri
       this.gridHeight = this.gridBottom - this.gridTop;
    };
 
+
+
    this.initTable = function() {
+
       this.table = [];
       for (var iRow = 0; iRow < this.rows; iRow++) {
          this.table.push([]);
@@ -111,6 +115,7 @@ function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gri
 
    this.unclickCell = function() {
       this.element.unbind("click", internalClickHandler);
+      this.element.off("click");
    };
 
    var internalClickHandler = function(event) {
@@ -134,7 +139,7 @@ function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gri
    };
 
    this.getPaperMouse = function(event) {
-      var offset = $(this.paper.canvas).offset();
+      var offset = $(self.paper.canvas).offset();
       return {
          left: event.pageX - offset.left,
          top: event.pageY - offset.top
@@ -395,6 +400,16 @@ function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gri
       return !!this.cellHighlights[id];
    };
 
+   this.unhighlightAllCells = function() {
+      for(var iRow = 0; iRow < this.rows; iRow++){
+         for(var iCol = 0; iCol < this.cols; iCol++){
+            if(this.isCellHighlighted(iRow,iCol)){
+               this.unhighlightCell(iRow,iCol);
+            }
+         }
+      }
+   };
+
    this._cellToHighlightID = function(row, col) {
       return row + "," + col;
    };
@@ -509,6 +524,14 @@ function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gri
          this.verticalLines[iCol].toBack();
       }
    };
+   this.linesToFront = function() {
+      for (var iRow = 0; iRow <= this.rows; iRow++) {
+         this.horizontalLines[iRow].toFront();
+      }
+      for (var iCol = 0; iCol <= this.cols; iCol++) {
+         this.verticalLines[iCol].toFront();
+      }
+   };
 
    this.getLeftX = function() {
       return this.gridLeft;
@@ -556,6 +579,45 @@ function Grid(raphaelID, paper, rows, cols, cellWidth, cellHeight, gridLeft, gri
 
       this.disableDragSelection();
       this.unclickCell();
+   };
+
+   this.getRaphaelSet = function() {
+      var set = this.paper.set();
+      var iRow, iCol;
+      for (iRow = 0; iRow < this.rows; iRow++) {
+         for (iCol = 0; iCol < this.cols; iCol++) {
+            var cell = this.table[iRow][iCol];
+            for (var iContent = 0; iContent < cell.length; iContent++) {
+               set.push(cell[iContent]);
+            }
+         }
+      }
+      for (iRow = 0; iRow <= this.rows; iRow++) {
+         set.push(this.horizontalLines[iRow]);
+      }
+      for (iCol = 0; iCol <= this.cols; iCol++) {
+         set.push(this.verticalLines[iCol].show());
+      }
+      for(var iCell in this.cellHighlights) {
+         set.push(this.cellHighlights[iCell].show());
+      }
+      return set
+   };
+
+   this.display = function(show) {
+      var raph = this.getRaphaelSet();
+      if(show){
+         raph.show();
+      }else{
+         raph.hide();
+      }
+   };
+
+   this.hide = function() {
+      this.display(0);
+   };
+   this.show = function() {
+      this.display(1);
    };
 
    function getVectorLength(x, y) {

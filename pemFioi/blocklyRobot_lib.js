@@ -139,8 +139,6 @@ var getRobotGridContext = function(display, infos, curLevel) {
       context.runner.noDelay(callback, value);
    }
 
-   context.nbRobots = 1;
-
    context.getRobotItem = function(iRobot) {
       var items = context.getItems(undefined, undefined, {category: "robot"});
       return items[iRobot];
@@ -666,15 +664,6 @@ var getRobotGridContext = function(display, infos, curLevel) {
    context.robot_dir = function(callback) {
       var item = context.getRobotItem(context.curRobot);
       context.callCallback(callback, dirNames[item.dir]);
-   };
-
-   context.program_end = function(callback) {
-      var curRobot = context.curRobot;
-      if (!context.programEnded[curRobot]) {
-         context.programEnded[curRobot] = true;
-         infos.checkEndCondition(context, true);
-      }
-      context.waitDelay(callback);
    };
 
    context.reset = function(gridInfos) {

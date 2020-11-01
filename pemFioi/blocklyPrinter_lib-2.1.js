@@ -211,15 +211,25 @@ var getContext = function(display, infos) {
 
       // Fix display of arrays
       var valueToStr = function(value) {
-         if(value && value.length && typeof value == 'object') {
-            for(var i=0; i < value.length; i++) {
-               if(value[i] && typeof value[i].v != 'undefined') {
+         if(value && value.length !== undefined && typeof value == 'object') {
+            var oldValue = value;
+            value = [];
+            for(var i=0; i < oldValue.length; i++) {
+               if(oldValue[i] && typeof oldValue[i].v != 'undefined') {
                    // When used inside Skulpt (Python mode)
-                   value[i] = value[i].v;
+                   value.push(oldValue[i].v);
+               } else {
+                   value.push(oldValue[i]);
                }
                value[i] = valueToStr(value[i]);
             }
-            return '[' + value + ']';
+            return '[' + value.join(', ') + ']';
+         } else if(value && value.isFloat && Math.floor(value) == value) {
+            return value + '.0';
+         } else if(value === true) {
+            return 'True';
+         } else if(value === false) {
+            return 'False';
          }
          return value;
       }
@@ -332,10 +342,10 @@ var getContext = function(display, infos) {
             { name: "print_end", params: [null, null], variants: [[null], [null, null]], anyArgs: true, blocklyJson: {inputsInline: true}}
          ],
          read:  [
-            { name: "read", yieldsValue: true },
-            { name: "readInteger", yieldsValue: true },
-            { name: "readFloat", yieldsValue: true },
-            { name: "eof", yieldsValue: true }
+         { name: "read", yieldsValue: true, blocklyJson: {output: "String"} },
+            { name: "readInteger", yieldsValue: true, blocklyJson: {output: "Number"} },
+            { name: "readFloat", yieldsValue: true, blocklyJson: {output: "Number"} },
+            { name: "eof", yieldsValue: true, blocklyJson: {output: "Boolean"}}
          ],
          manipulate: [
             { name: "charToNumber", params: ["String"], yieldsValue: true, blocklyJson: {output: "Number"}},
