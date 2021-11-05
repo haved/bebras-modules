@@ -174,6 +174,8 @@ function initWrapper(initSubTask, levels, defaultLevel, reloadWithCallbacks) {
          }
          if(window.initialLevel) {
             defaultLevel = window.initialLevel;
+         } else if(defaultLevel) {
+            window.initialLevel = defaultLevel;
          }
 
          if(levels) {
@@ -666,6 +668,18 @@ function extractLevelSpecific(item, level) {
    console.error("Invalid type for shared property");
 }
 
+
+function sendErrorLog() {
+   // Send errors to the platform
+   var args = Array.prototype.slice.call(arguments);
+   var key = args.join(':');
+   if(key == window.lastErrorLogSentKey) { return; }
+   try {
+      window.platform.log(["error", args]);
+   } catch(e) {}
+}
+
+window.onerror = sendErrorLog;
 
 $('document').ready(function() {
    platform.initWithTask(window.task);

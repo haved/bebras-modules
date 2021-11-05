@@ -26,7 +26,7 @@ function Automata(settings) {
 
    this.circleAttr = settings.circleAttr;
    this.edgeAttr = settings.edgeAttr;
-   this.graphDrawer = settings.graphDrawer || new SimpleGraphDrawer(this.circleAttr,this.edgeAttr,null,true);
+   this.graphDrawer = settings.graphDrawer || (this.circleAttr && this.edgeAttr && new SimpleGraphDrawer(this.circleAttr,this.edgeAttr,null,true)) || null;
 
    this.startID = [];
    this.endID = [];
@@ -48,6 +48,8 @@ function Automata(settings) {
    this.NFA;
    this.targetNFA = settings.targetNFA;
    this.callback = settings.callback;
+   this.mustBeDFA = settings.mustBeDFA;
+   this.singleStartingState = settings.singleStartingState;
 
    this.acceptedByRegex = settings.acceptedByRegex;
    this.acceptedByAutomaton = settings.acceptedByAutomaton;
@@ -59,6 +61,9 @@ function Automata(settings) {
    this.enabled = false;
 
    this.margin = 10;
+   var animTime = 500;
+
+   var sim;
    var comparisonMessages = [
       [
          "accepted by the automaton but doesn't match the regex: ",
@@ -99,7 +104,7 @@ function Automata(settings) {
       this.enabled = enabled;
       if(this.visualGraphJSON){
          this.graphEditor.setEnabled(enabled);
-         this.reset.setEnabled(enabled);
+         // this.reset.setEnabled(enabled);
          
          this.graphEditor.setGraphDragEnabled(false);
          this.graphEditor.setScaleGraphEnabled(false);
@@ -165,6 +170,7 @@ function Automata(settings) {
          graphMouse: this.graphMouse,
          dragThreshold: 10,
          edgeThreshold: 20,
+         vertexThreshold: 0,
          dragLimits: {
             minX: this.visualGraph.graphDrawer.circleAttr.r,
             maxX: this.graphPaper.width - this.visualGraph.graphDrawer.circleAttr.r,
@@ -174,9 +180,12 @@ function Automata(settings) {
          alphabet: this.alphabet,
          callback: this.callback,
          onDragEnd: this.callback,
+         fuzzyClickCallback: this.resetAnimation,
+         maxEdgeLabelLength: 1,
          enabled: false
       };
       this.graphEditor = new GraphEditor(editorSettings);
+      this.graphEditor.setAllowMultipleInitial(!this.singleStartingState);
    };
 
    this.initStaticGraph = function() {
@@ -230,6 +239,12 @@ function Automata(settings) {
          cy: pos.y,
          x: pos.x,
          y: pos.y
+      });
+      this.beaver.click(function() {
+         self.stopAnimation();
+         self.beaver.remove();
+         self.beaver = null;
+         $('#feedback').html('');
       });
    };
 
@@ -285,7 +300,7 @@ function Automata(settings) {
       }
       var e_c = dfa.find_equivalence_counterexamples(targetDFA);
       var equivalent = false;
-      if(!e_c[0] && !e_c[1]){
+      if(e_c[0] == null && e_c[1] == null){
          equivalent = true;
       }
       var noUnreachableDFA = dfa.without_unreachables();
@@ -561,94 +576,131 @@ function Automata(settings) {
       return arrow;
    };
 
-   this.run = function(callback) {
-      this.initSequence();
+   this.run = function() {
+      sim = subTask.simulationFactory.create("sim");
       this.initBeaver();
-      this.result = null;
-      var edges = this.graph.getAllEdges();
-      for(edge of edges){
-         var info = this.graph.getEdgeInfo(edge);
-         if(!info.label || info.label === "?"){
-            this.result = { message: "missingLabel", nEdges: null};
-            if(callback)
-               callback(this.result);
-         }
+      var accepts = this.NFA.accepts(this.sequence);
+      var path = this.getPath(0,[],'v_0',accepts);
+      if(path.length > 0){
+         this.loop(path,0);
+         this.initSequence();
+         sim.setAutoPlay(true);
+         sim.play();
       }
-      this.loop(self.startID,0,callback);
    };
 
-   this.loop = function(vID,step,callback) {
-      var nextStep = self.checkNext(vID,step);
-      vID = nextStep.vID;
-      var eID = nextStep.edgeID;
-      var oldEdgeID = null;
-      this.result = { message: nextStep.message, nEdges: nextStep.nEdges };
-      if(callback){
-         callback(this.result);
+   this.loop = function(path,step) {
+      if(!path[step]){
+         return
       }
-      if(vID){
-         this.animate(step,vID,eID,function(){
-            if(oldEdgeID === eID)   // to avoid multiple calls when animated object is a set of elements
-               return;
-            oldEdgeID = eID;
+      var edgeID = path[step].edge;
+      var vID = path[step].child;
+      var epsilon = path[step].epsilon;
+      if(epsilon){
+         this.sequence.splice(step,0,"ε");
+      }
+      var stepData = { vID: vID, edgeID: edgeID };
+      if(this.endID.includes(vID)){
+         this.result = { message: "success" };
+      }else if(path.length < step + 1){
+         this.result = { message: "next", nEdges: 1 };
+      }else{
+         this.result = { message: "noGoodWay", nEdges: 1 };
+      }
 
-            step++;
-            if(!self.endID.includes(vID)){
-               subTask.delayFactory.create("delay"+step,function(){
-                  self.loop(vID,step,callback);
-               },100);
+      if(edgeID){
+         var simStep = new SimulationStep();
+         var simAction = {onExec: animStep(edgeID,step), duration: animTime, params: {}};
+         var simEntry = {name: "entry"+step, action: simAction};
+         simStep.addEntryAllParents(simEntry);
+         sim.addStep(simStep);
+         step++;
+         if(!self.endID.includes(vID)){
+            self.loop(path,step);
+         }
+      }
+   };
+
+   this.getPath = function(i,path,state,accepts) {
+      if(this.NFA.final.includes(state)){
+         return path
+      }
+      var nextEdges = this.checkNext(state, i);
+      if(nextEdges.length > 0){
+         for(var edge of nextEdges){
+            var edgeID = edge.edge;
+            var epsilon = edge.epsilon;
+            var child = edge.child;
+            var nextIndex = (epsilon) ? i : i + 1;
+            var currPath = path.slice();
+            currPath.push(edge);
+            if(this.NFA.final.includes(state)){
+               return currPath
             }
-         });
+            var nextPath = this.getPath(nextIndex,currPath,child,accepts);
+            if(nextPath){
+               var lastEdge = nextPath[nextPath.length - 1];
+               if(accepts && this.NFA.final.includes(lastEdge.child)){
+                  return nextPath
+               }
+               if(!accepts){
+                  return nextPath
+               }
+            }
+         }
+      }else{
+         return path
       }
    };
 
    this.checkNext = function(vID,step) {
       var children = this.graph.getChildren(vID);
-      var nextVertex = null;
-      var way = null;
-      var nEdges = 0;
+      var nextEdges = [];
       if(children.length == 0){
-         return { vID: null, edgeID: null, nEdges: 0, message: "noChildren"};
+         return nextEdges;
       }
-      
       for(child of children){
          var edges = this.graph.getEdgesFrom(vID,child);
          for(edge of edges){
             var info = this.graph.getEdgeInfo(edge);
-            if(info.label == this.sequence[step]){
-               if(nextVertex && nextVertex !== child){
-                  return { vID: null, edgeID: null, nEdges: 0, message: "tooManyWays" };
-               }
-               nextVertex = nextVertex || child;
-               way = way || edge;
-               nEdges++;
+            if(info.label == this.sequence[step] || !info.label){
+               nextEdges.push({ edge: edge, epsilon: !info.label, child: child });
             }
          }
       }
-      if(!nextVertex){
-         return { vID: null, edgeID: null, nEdges: 0, message: "noGoodWay" };
-      }
-      if(nextVertex !== this.endID)
-         return { vID: nextVertex, edgeID: way, nEdges: nEdges, message: "next" };
-      return { vID: nextVertex, edgeID: way, nEdges: nEdges, message: "success" };
+      return nextEdges
    };
 
-   this.animate = function(step,vID,eID,callback) {
+   function animStep(nextStep,step) {
+      return function(params,duration,callback){
+         // console.log(nextStep,step);
+         // var vID = nextStep.vID;
+         var eID = nextStep;
+         if(!eID){
+            subTask.simulationFactory.destroy("sim");
+         }else{
+            self.animate(step,eID,duration,callback);
+         }
+      }
+   };
+
+   this.animate = function(step,eID,duration,callback) {
       var xi = this.cursorX;
       var xf = this.seqLettersPos[step].x + this.margin/2 + this.seqLettersAttr["font-size"]/2;
       var translation = xf - xi;
       this.cursorX = xf;
-      var animCursor = new Raphael.animation({"transform":"...T"+translation+",0"},500,callback);
+      var animCursor = new Raphael.animation({"transform":"...T"+translation+",0"},duration,callback);
       subTask.raphaelFactory.animate("animCursor",this.cursor,animCursor);
 
       var transformStr = this.getTransformString(eID);
-      var animBeaver = new Raphael.animation({"transform":"..."+transformStr},500);
+      var animBeaver = new Raphael.animation({"transform":"..."+transformStr},duration);
       subTask.raphaelFactory.animate("animBeaver",this.beaver,animBeaver);
    };
 
    this.stopAnimation = function() {
       subTask.raphaelFactory.stopAnimate("animCursor");
       subTask.raphaelFactory.stopAnimate("animBeaver");
+      subTask.simulationFactory.destroy("sim");
    };
 
    this.getTransformString = function(eID) {
@@ -656,25 +708,37 @@ function Automata(settings) {
       var vertices = this.graph.getEdgeVertices(eID);
       var pos1 = this.visualGraph.getVertexVisualInfo(vertices[0]);
       var pos2 = this.visualGraph.getVertexVisualInfo(vertices[1]);
-      var transformString = "";
-      if(!edgeVisualInfo["radius-ratio"]){
-         transformString += "T"+(pos2.x - pos1.x)+","+(pos2.y - pos1.y);
+      var transformString;
+      if(vertices[0] == vertices[1]){
+         var alpha = edgeVisualInfo.angle*Math.PI/180;
+         var r = this.circleAttr.r;
+         var angle = -360;
+         var d = r*1.5; // dist from loop center
+         var cx = pos1.x + d*Math.cos(-alpha);
+         var cy = pos1.y + d*Math.sin(-alpha);
+         transformString = ["R",angle,cx,cy];
       }else{
-         var radiusRatio = edgeVisualInfo["radius-ratio"];
-         var l = edgeVisualInfo["large-arc"] || 0;
-         var s = edgeVisualInfo["sweep"] || 0;
-         var D = Math.sqrt(Math.pow((pos2.x - pos1.x),2) + Math.pow((pos2.y - pos1.y),2));
-         var R = radiusRatio * D;
-         var cPos = this.visualGraph.graphDrawer.getCenterPosition(R,s,l,pos1,pos2);
-         var angle = (s) ? 2*Math.asin(D/(2*R))*180/Math.PI : -2*Math.asin(D/(2*R))*180/Math.PI;
-         if(l)
-            angle = (s) ? (360 - angle)%360 : -(360 + angle)%360; 
-         transformString += "R"+angle+","+cPos.x+","+cPos.y+"R"+(-angle);
+         if(!edgeVisualInfo["radius-ratio"]){
+            transformString = ["T",(pos2.x - pos1.x),(pos2.y - pos1.y)];
+         }else{
+            var radiusRatio = edgeVisualInfo["radius-ratio"];
+            var l = edgeVisualInfo["large-arc"] || 0;
+            var s = edgeVisualInfo["sweep"] || 0;
+            var D = Math.sqrt(Math.pow((pos2.x - pos1.x),2) + Math.pow((pos2.y - pos1.y),2));
+            var R = radiusRatio * D;
+            var cPos = this.visualGraph.graphDrawer.getCenterPosition(R,s,l,pos1,pos2);
+            var angle = (s) ? 2*Math.asin(D/(2*R))*180/Math.PI : -2*Math.asin(D/(2*R))*180/Math.PI;
+            if(l){
+               angle = (s) ? (360 - angle)%360 : -(360 + angle)%360; 
+            }
+            transformString = ["R",angle,cPos.x,cPos.y,"R",(-angle)];
+         }
       }
       return transformString;
    };
 
    this.resetAnimation = function() {
+      // console.log("reset")
       self.stopAnimation();
       if(self.cursor){
          self.sequencePaper.clear();
@@ -682,8 +746,9 @@ function Automata(settings) {
       if(self.beaver){
          self.beaver.remove();
       }
-      if(settings.resetCallback)
+      if(settings.resetCallback){
          settings.resetCallback();
+      }
    };
 
    this.isDFA = function(graph) {
@@ -705,11 +770,29 @@ function Automata(settings) {
             var edges = graph.getEdgesFrom(vertex,child);
             for(var edge of edges){
                var edgeInfo = graph.getEdgeInfo(edge);
+               if(!edgeInfo.label || edgeInfo.label.length != 1){
+                  return false
+               }
                if(edgeLabel.includes(edgeInfo.label)){
                   return false;
                }else{
                   edgeLabel.push(edgeInfo.label);
                }
+            }
+         }
+      }
+      return true;
+   };
+
+   this.hasSingleStartingState = function(graph) {
+      var vertices = graph.getAllVertices();
+      var nInitial = 0;
+      for(var vertex of vertices){
+         var info = graph.getVertexInfo(vertex);
+         if(info.initial){
+            nInitial++;
+            if(nInitial > 1){
+               return false;
             }
          }
       }
@@ -740,6 +823,12 @@ function Automata(settings) {
 
       switch(mode){
          case 1:
+            // if(this.singleStartingState && !this.hasSingleStartingState(this.graph)){
+            //    return { error: "This automaton has more than one starting state" };
+            // }
+            if(this.mustBeDFA && !this.isDFA(this.graph)){
+               return { error: "This automaton is nondeterministic" };
+            }
             break;
          case 2:
             var regex = data;
@@ -822,7 +911,6 @@ function Automata(settings) {
          }
          this.NFA = nfaFromGraph.nfa;
       }
-
       var comp = this.compareWithTarget();
 
       if(comp.equivalent){
@@ -831,12 +919,12 @@ function Automata(settings) {
          }
          return { error: null };
       }
-      if(comp["e_c"][0]){
+      if(comp["e_c"][0] != null){
          this.setSequence(comp["e_c"][0]);
-         var text = "The following string is "+comparisonMessages[mode - 1][0]+comp["e_c"][0];
+         var text = "The following string is "+comparisonMessages[mode - 1][0]+'<code>'+comp["e_c"][0]+'</code>';
       }else{
          this.setSequence(comp["e_c"][1]);
-         var text = "The following string is "+comparisonMessages[mode - 1][1]+comp["e_c"][1];
+         var text = "The following string is "+comparisonMessages[mode - 1][1]+'<code>'+comp["e_c"][1]+'</code>';
       }
       if(mode != 7){
          this.run();
@@ -850,10 +938,133 @@ function Automata(settings) {
    }
    if(this.visualGraphJSON){
       this.initGraph();
-      this.reset = new PaperMouseEvent(this.graphPaperElementID, this.graphPaper, "click", this.resetAnimation, false,"reset");
+      // this.reset = new PaperMouseEvent(self.graphPaperElementID, self.graphPaper, "click", self.resetAnimation, false,"reset");
    }
 
    if(settings.enabled){
       this.setEnabled(true);
    }
 };
+
+
+function AutomataTask(subTask, loadLevel, loadAnswer, saveAnswer, initPaper, getAutomataSettings) {
+   // Implements all common functions to automata tasks
+   var answer = null;
+   var containers = [];
+
+   subTask.loadLevel = function(curLevel) {
+      $('#displayHelper_graderMessage').appendTo('#feedback');
+      loadLevel(curLevel);
+      subTask.reset();
+   };
+
+   subTask.getStateObject = function() {
+      return {};
+   };
+
+   subTask.getDefaultAnswerObject = function() {
+      return null;
+   };
+
+   subTask.getAnswerObject = function() {
+      answer = saveAnswer();
+      return answer;
+   };
+
+   subTask.reloadAnswerObject = function(answerObj) {
+      answer = answerObj;
+      if(answer) {
+         loadAnswer(answer);
+         subTask.reset();
+      }
+   };
+
+   subTask.getGrade = function(callback) {
+      var res = subTask.automata.validate(answer);
+      if(res.error){
+         callback({successRate: 0, message: res.error});
+      } else {
+         callback({successRate: 1, message: taskStrings.success});
+      }
+   };
+
+   subTask.reset = function() {
+      if(subTask.automata) {
+         subTask.automata.stopAnimation();
+         subTask.automata.setEnabled(false);
+      }
+      subTask.raphaelFactory.destroyAll();
+      $('.automata-container' + getSuffix()).remove();
+      subTask.resetDisplay();
+
+      initPaper();
+      initAutomata();
+   };
+
+   if(!subTask.resetDisplay) {
+      subTask.resetDisplay = function() {
+      };
+   }
+
+   function resetCallback() {
+      $("#feedback").empty();
+   };
+
+   subTask.unloadLevel = function(callback) {
+      if(subTask.automata){
+         subTask.automata.stopAnimation();
+         subTask.automata.setEnabled(false);
+      }
+      resetCallback();
+      callback();
+   };
+
+   function getSuffix() {
+      return subTask.display ? '-inner' : '-nodisplay';
+   };
+
+   subTask.raphael = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var base = args[1];
+      var suffix = getSuffix();
+      args[0] += suffix;
+      args[1] += suffix;
+      if(!$('#' + args[1]).length) {
+         $('#' + base).append(
+            '<div id="' + args[1] + '"'
+            + ' class="automata-container' + suffix + '"'
+            + (subTask.display ? '' : ' style="display: none;"')
+            + '></div>');
+      }
+      return subTask.raphaelFactory.create.apply(subTask.raphaelFactory, args);
+   };
+
+   function initAutomata() {
+      var settings = getAutomataSettings();
+      settings.subTask = subTask;
+      var cb = settings.callback;
+      settings.callback = function() {
+         saveAnswer();
+         if(cb) cb();
+      }
+      settings.resetCallback = resetCallback;
+
+      settings.graphPaperElementID += getSuffix();
+
+      subTask.automata = new Automata(settings);
+      if(typeof settings.editEnabled != 'undefined') {
+         subTask.automata.setEditEnabled(settings.editEnabled);
+      }
+   };
+
+   displayHelper.customValidate = function() {
+      answer = saveAnswer();
+      subTask.getGrade(function(res) {
+         if(res.successRate < 1) {
+            $("#feedback").html(res.message);
+         } else {
+            displayHelper.validate("stay");
+         }
+      });
+   };
+}

@@ -63,7 +63,9 @@ function initBlocklyRunner(context, messageCallback) {
             if(value && value.type == 'boolean') {
                displayStr = value.data ? runner.strings.valueTrue : runner.strings.valueFalse;
             }
-            if(varName) {
+            if(varName == '@@LOOP_ITERATION@@') {
+               displayStr = runner.strings.loopIteration + ' ' + displayStr;
+            } else if(varName) {
                varName = varName.toString();
                // Get the original variable name
                for(var dbIdx in Blockly.JavaScript.variableDB_.db_) {
@@ -207,7 +209,9 @@ function initBlocklyRunner(context, messageCallback) {
             }
             // All nodes finished their program
             // TODO :: better message
-            throw "all nodes finished (blockly_runner)";
+            if(runner.nodesReady.length > 1) {
+               throw "all nodes finished (blockly_runner)";
+            }
          }
          if(newNode == curNode) {
             // No ready node
@@ -400,7 +404,7 @@ function initBlocklyRunner(context, messageCallback) {
             while(!context.programEnded[iInterpreter]) {
                if(!context.allowInfiniteLoop &&
                      (context.curSteps[iInterpreter].total >= runner.maxIter || context.curSteps[iInterpreter].withoutAction >= runner.maxIterWithoutAction)) {
-                  return;
+                  break;
                }
                if (!interpreter.step() || toStop[iInterpreter]) {
                   isRunning[iInterpreter] = false;
@@ -539,6 +543,7 @@ function initBlocklyRunner(context, messageCallback) {
       };
 
       runner.runCodes = function(codes) {
+         if(!codes || !codes.length) { return; }
          runner.initCodes(codes);
          runner.runSyncBlock();
       };

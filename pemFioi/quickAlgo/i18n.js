@@ -30,6 +30,11 @@ var quickAlgoLanguageStrings = {
          internet: "Internet",
          display: "Afficher",
       },
+      exerciseTypeAbout: {
+         default: "Sujet propulsé par <a href='http://www.france-ioi.org/'>France-IOI</a>",
+         "Quick-Pi": "<a href='https://quick-pi.org/'>Quick-Pi</a> " +
+             "est un projet de <a href='http://www.france-ioi.org/'>France-IOI</a>"
+      },
       invalidContent: "Contenu invalide",
       unknownFileType: "Type de fichier non reconnu",
       download: "télécharger",
@@ -62,6 +67,19 @@ var quickAlgoLanguageStrings = {
       loadExample: "Insérer l'exemple",
       saveOrLoadButton: "Charger / enregistrer",
       saveOrLoadProgram: "Enregistrer ou recharger votre programme :",
+      editButton: "Editer",
+      editWindowTitle: "Édition d'exercice",
+      titleEdition: "Titre :",
+      descriptionEdition: "Description :",
+      saveAndQuit: "Sauvegarder & Quitter",
+      quitWithoutSavingConfirmation: "Quitter sans sauvegarder vos modifications ?",
+      about: "À propos",
+      license: "License :",
+      licenseReserved: "Tous droits réservés.",
+      authors: "Auteurs :",
+      other: "Autre",
+      otherLicense: "Autre license",
+      pleaseSpecifyLicense: "Merci de spécifier une license",
       avoidReloadingOtherTask: "Attention : ne rechargez pas le programme d'un autre sujet !",
       files: "Fichiers",
       reloadProgram: "Recharger",
@@ -80,12 +98,14 @@ var quickAlgoLanguageStrings = {
       limitElementsOver: "{remainingBlocks} blocs en trop utilisés pour {maxBlocks} autorisés.",
       capacityWarning: "Attention : votre programme est invalide car il utilise trop de blocs. Faites attention à la limite de blocs affichée en haut à droite de l'éditeur.",
       clipboardDisallowedBlocks: "Vous ne pouvez pas coller ce programme, car il contient des blocs non autorisés dans cette version.",
+      waitBetweenExecutions: "Je me repose. Réfléchissez bien avant d'exécuter un programme différent !",
       previousTestcase: "Précédent",
       nextTestcase: "Suivant",
       allTests: "Tous les tests : ",
       errorEmptyProgram: "Le programme est vide ! Connectez des blocs.",
       tooManyBlocks: "Vous utilisez trop de blocs !",
       limitedBlock: "Vous utilisez trop souvent un bloc à utilisation limitée :",
+      limitedBlocks: "Vous utilisez trop souvent des blocs à utilisation limitée :",
       uninitializedVar: "Variable non initialisée :",
       undefinedMsg: "Cela peut venir d'un accès à un indice hors d'une liste, ou d'une variable non définie.",
       valueTrue: 'vrai',
@@ -104,6 +124,7 @@ var quickAlgoLanguageStrings = {
       scaleDrawing: "Zoom ×2",
       loopRepeat: "repeat",
       loopDo: "do",
+      loopIteration: "répétition",
       displayVideo: "Afficher la vidéo",
       showDetails: "Plus de détails",
       hideDetails: "Masquer les détails",
@@ -153,6 +174,11 @@ var quickAlgoLanguageStrings = {
          read: "Reading",
          print: "Writing",
       },
+      exerciseTypeAbout: {
+         default: "Task powered by <a href='http://www.france-ioi.org/'>France-IOI</a>",
+         "Quick-Pi": "<a href='https://quick-pi.org/'>Quick-Pi</a> is a project by " +
+             "<a href='http://www.france-ioi.org/'>France-IOI</a>"
+      },
       invalidContent: "Invalid content",
       unknownFileType: "Unrecognized file type",
       download: "download",
@@ -185,6 +211,19 @@ var quickAlgoLanguageStrings = {
       loadExample: "Insert example",
       saveOrLoadButton: "Load / save",
       saveOrLoadProgram: "Save or reload your code:",
+      editButton: "edit",
+      editWindowTitle: "Exercise edition",
+      titleEdition: "Title:",
+      descriptionEdition: "Description:",
+      saveAndQuit: "Save & Quit",
+      quitWithoutSavingConfirmation: "Quit without saving your modifications ?",
+      about: "About",
+      license: "License:",
+      licenseReserved: "All rights reserved.",
+      authors: "Authors:",
+      other: "Other",
+      otherLicense: "Other license",
+      pleaseSpecifyLicense: "Please specify a license",
       avoidReloadingOtherTask: "Warning: do not reload code for another task!",
       files: "Files",
       reloadProgram: "Reload",
@@ -203,12 +242,14 @@ var quickAlgoLanguageStrings = {
       limitElementsOver: "{remainingBlocks} elements over the limit of {maxBlocks} available.",
       capacityWarning: "Warning : your program is invalid as it uses too many blocks. Be careful of the block limit displayed on the top right side of the editor.",
       clipboardDisallowedBlocks: "You cannot paste this program, as it contains blocks which aren't allowed in this version.",
+      waitBetweenExecutions: "Think carefully before starting a different program!",
       previousTestcase: "Previous",
       nextTestcase: "Next",
       allTests: "All tests: ",
       errorEmptyProgram: "Le programme est vide ! Connectez des blocs.",
       tooManyBlocks: "You use too many blocks!",
       limitedBlock: "You use too many of a limited use block:",
+      limitedBlocks: "You use too many of limited use blocks:",
       uninitializedVar: "Uninitialized variable:",
       undefinedMsg: "This can be because of an access to an index out of a list, or an undefined variable.",
       valueTrue: 'true',
@@ -227,6 +268,7 @@ var quickAlgoLanguageStrings = {
       scaleDrawing: "Scale 2×",
       loopRepeat: "repeat",
       loopDo: "do",
+      loopIteration: "iteration",
       displayVideo: "Display video",
       showDetails: "Show details",
       hideDetails: "Hide details",
@@ -277,6 +319,11 @@ var quickAlgoLanguageStrings = {
          print: "Ausgeben",
          manipulate: "Umwandeln",
       },
+      exerciseTypeAbout: {
+         default: "Task powered by <a href='http://www.france-ioi.org/'>France-IOI</a>", // TODO: translate
+         "Quick-Pi": "<a href='https://quick-pi.org/'>Quick-Pi</a> is a project by " +
+             "<a href='http://www.france-ioi.org/'>France-IOI</a>" // TODO: translate
+      },
       invalidContent: "Ungültiger Inhalt",
       unknownFileType: "Ungültiger Datentyp",
       download: "Herunterladen",
@@ -308,7 +355,20 @@ var quickAlgoLanguageStrings = {
       importFromBlockly: "Generiere von Blockly-Blöcken",
       loadExample: "Beispiel einfügen",
       saveOrLoadButton: "Laden / Speichern",
-      saveOrLoadProgram: "Speicher oder lade deinen Quelltext:",
+      saveOrLoadProgram: "Speichere oder lade deinen Quelltext:",
+      editButton: "Bearbeiten",
+      editWindowTitle: "Übungsausgabe",
+      titleEdition: "Titel:",
+      descriptionEdition: "Beschreibung:",
+      saveAndQuit: "Speichern & Beenden",
+      quitWithoutSavingConfirmation: "Beenden, ohne deine Änderungen zu speichern?",
+      about: "Über",
+      license: "Lizenz:",
+      licenseReserved: "Alle Rechte vorbehalten.",
+      authors: "Autoren :",
+      other: "Andere",
+      otherLicense: "Andere Lizenz",
+      pleaseSpecifyLicense: "Bitte wählen Sie eine Lizenz aus",
       avoidReloadingOtherTask: "Warnung: Lade keinen Quelltext von einer anderen Aufgabe!",
       files: "Dateien",
       reloadProgram: "Laden",
@@ -317,22 +377,24 @@ var quickAlgoLanguageStrings = {
       saveProgram: "Speichern",
       copy: "Kopieren",
       paste: "Einfügen",
-      blocklyToPython: "Convert to Python",
-      blocklyToPythonTitle: "Python code",
+      blocklyToPython: "Konvertiere zu Python",
+      blocklyToPythonTitle: "Python-Code",
       blocklyToPythonIntro: "",
-      blocklyToPythonPassComment: '# Insert instructions here',
+      blocklyToPythonPassComment: '# Befehle hier eingeben',
       limitBlocks: "Noch {remainingBlocks} von {maxBlocks} Bausteinen verfügbar.",
-      limitBlocksOver: "{remainingBlocks} Bausteine zusätzlich zum Limit von {maxBlocks} verbraucht.", // TODO :: stimmt das?
-      limitElements: "Noch {remainingBlocks} von {maxBlocks} Elementen verfügbar.",
-      limitElementsOver: "{remainingBlocks} Elemente zusätzlich zum Limit von {maxBlocks} verbraucht.",
-      capacityWarning: "Warning : your program is invalid as it uses too many blocks. Be careful of the block limit displayed on the top right side of the editor.",
-      clipboardDisallowedBlocks: "You cannot paste this program, as it contains blocks which aren't allowed in this version.",
+      limitBlocksOver: "{remainingBlocks} Bausteine zusätzlich zum Limit von {maxBlocks} verbraucht.",
+      limitElements: "Noch {remainingBlocks} von {maxBlocks} Befehle verfügbar.",
+      limitElementsOver: "{remainingBlocks} Befehle zusätzlich zum Limit von {maxBlocks} verbraucht.",
+      capacityWarning: "Warnung: Dein Programm ist ungültig, weil es zu viele Bausteine verwendet. Beachte das Bausteinlimit oben rechts im Editor.",
+      clipboardDisallowedBlocks: "Du kannst dieses Programm nicht einfügen, weil es Bausteine enthält, die in dieser Aufgabe / Version nicht erlaubt sind.",
+      waitBetweenExecutions: "Überlege genau, bevor du ein neues Programm startest!",
       previousTestcase: " < ",
       nextTestcase: " > ",
       allTests: "Alle Testfälle: ",
       errorEmptyProgram: "Das Programm enthält keine Befehle. Verbinde die Blöcke um ein Programm zu schreiben.",
       tooManyBlocks: "Du benutzt zu viele Bausteine!",
       limitedBlock: "Du verwendest zu viele Bausteine einer eingeschränkten Sorte:",
+      limitedBlocks: "Du verwendest zu viele Bausteine einer eingeschränkten Sorte:",
       uninitializedVar: "Nicht initialisierte Variable:",
       undefinedMsg: "This can be because of an access to an index out of a list, or an undefined variable.",
       valueTrue: 'wahr',
@@ -344,16 +406,17 @@ var quickAlgoLanguageStrings = {
       resultsNoSuccess: "Du hast keinen Testfall richtig.",
       resultsPartialSuccess: "Du hast {nbSuccess} von {nbTests} Testfällen richtig.",
       gradingInProgress: "Das Ergebnis wird ausgewertet …",
-      introTitle: "Deine Mission",
-      introDetailsTitle: "Missionsdetails",
+      introTitle: "Deine Aufgabe",
+      introDetailsTitle: "Aufgabenhinweise",
       textVariable: "Text",
       listVariable: "Liste",
       scaleDrawing: "Vergrößere",
       loopRepeat: "wiederhole",
       loopDo: "mache",
+      loopIteration: "Wiederholung",
       displayVideo: "Zeige Video",
-      showDetails: "Zeige Details",
-      hideDetails: "Verstecke Details",
+      showDetails: "Weitere Hinweise",
+      hideDetails: "Verstecke Hinweise",
       editor: "Editor",
       instructions: "Anweisungen",
       testLabel: "Test",
@@ -365,7 +428,7 @@ var quickAlgoLanguageStrings = {
       availableFunctionsVerbose: "Die verfügbaren Funktionen zum Steuern des Roboters sind:",
       startingLine: "Dein Programm muss mit folgender Zeile beginnen:",
       startingLines: "Dein Programm muss mit folgenden Zeilen beginnen",
-      keyword: "Schlüsselwort", // TODO :: verify
+      keyword: "Schlüsselwort",
       keywordAllowed: "Erlaubtes Schlüsselwort:",
       keywordForbidden: "Nicht erlaubtes Schlüsselwort:",
       keywordsAllowed: "Erlaubte Schlüsselwörter:",
@@ -373,9 +436,9 @@ var quickAlgoLanguageStrings = {
       variablesAllowed: "Du darfst Variable verwenden.",
       variablesForbidden: "Du darfst keine Variablen verwenden",
       readDocumentation: "Du darfst die Python-Dokumentation lesen.",
-      autorizedKeyWords: "Mots-clés autorisés : ", // TODO :: translate,
-      constant: "constant", // TODO :: verify
-      variable: "variable" // TODO: verify
+      autorizedKeyWords: "Erlaubte Schlüsselwörter:",
+      constant: "Konstante",
+      variable: "Variable"
    },
    es: {
       categories: {
@@ -401,6 +464,11 @@ var quickAlgoLanguageStrings = {
          print: "Escritura",
          internet: "Internet",
          display: "Pantalla",
+      },
+      exerciseTypeAbout: {
+         default: "Task powered by <a href='http://www.france-ioi.org/'>France-IOI</a>", // TODO: translate
+         "Quick-Pi": "<a href='https://quick-pi.org/'>Quick-Pi</a> is a project by " +
+             "<a href='http://www.france-ioi.org/'>France-IOI</a>" // TODO: translate
       },
       invalidContent: "Contenido inválido",
       unknownFileType: "Tipo de archivo no reconocido",
@@ -434,6 +502,19 @@ var quickAlgoLanguageStrings = {
       loadExample: "Cargar el ejemplo",
       saveOrLoadButton: "Cargar / Guardar",
       saveOrLoadProgram: "Guardar o cargar su programa:",
+      editButton: "editar", // TODO: verify
+      editWindowTitle: "Edición de ejercicio", // TODO: verify
+      titleEdition: "Título:", // TODO: verify
+      descriptionEdition: "Descripción:", // TODO: verify
+      saveAndQuit: "Sauvegarder & Quitter", // TODO: translate
+      quitWithoutSavingConfirmation: "Quitter sans sauvegarder vos modifications ?", // TODO: translate
+      about: "À propos", // TODO: translate
+      license: "Licencia:", // TODO: verify
+      licenseReserved: "Todos los derechos reservados.",
+      authors: "Autores:", // TODO: verify
+      other: "Otro", // TODO: verify
+      otherLicense: "Other license", // TODO: translate
+      pleaseSpecifyLicense: "Merci de spécifier une license", // TODO: translate
       avoidReloadingOtherTask: "Atención: ¡no recargue el programa de otro problema!",
       files: "Archivos",
       reloadProgram: "Recargar",
@@ -452,12 +533,14 @@ var quickAlgoLanguageStrings = {
       limitElementsOver: "{remainingBlocks} elementos sobre el límite de {maxBlocks} autorizados.",
       capacityWarning: "Advertencia: tu programa está inválido porque ha utilizado demasiados bloques. Pon atención al límite de bloques permitidos mostrados en la parte superior derecha del editor.",
       clipboardDisallowedBlocks: "No puede pegar este programa, ya que contiene bloques que no están permitidos en esta versión.", 
+      waitBetweenExecutions: "Think carefully before starting a different program!",
       previousTestcase: "Anterior",
       nextTestcase: "Siguiente",
       allTests: "Todas las pruebas:",
       errorEmptyProgram: "¡El programa está vacio! Conecta algunos bloques",
       tooManyBlocks: "¡Utiliza demasiados bloques!",
       limitedBlock: "Utiliza demasiadas veces un tipo de bloque limitado:",
+      limitedBlocks: "Utiliza demasiadas veces un tipo de bloque limitado:",
       uninitializedVar: "Variable no inicializada:",
       undefinedMsg: "Esto puede ser causado por acceder a un índice fuera de la lista o por una variable no definida.",
       valueTrue: 'verdadero',
@@ -476,6 +559,7 @@ var quickAlgoLanguageStrings = {
       scaleDrawing: "Aumentar 2X",
       loopRepeat: "repetir",
       loopDo: "hacer",
+      loopIteration: "iteración",
       displayVideo: "Mostrar el video",
       showDetails: "Mostrar más información",
       hideDetails: "Ocultar información",
@@ -511,8 +595,8 @@ var quickAlgoLanguageStrings = {
          colour: "Barve",
          dicts: "Slovarji",
          input: "Vnos",
-         lists: "Seznami",
-         tables: "Tabele",
+         lists: "Tabele",
+         tables: "2D Tabele",
          logic: "Logika",
          loops: "Zanke",
          control: "Nadzor",
@@ -523,7 +607,12 @@ var quickAlgoLanguageStrings = {
          functions: "Funkcije",
          read: "Branje",
          print: "Pisanje",
-         turtle: "Želva"
+         turtle: "Grafika"
+      },
+      exerciseTypeAbout: {
+         default: "Task powered by <a href='http://www.france-ioi.org/'>France-IOI</a>", // TODO: translate
+         "Quick-Pi": "<a href='https://quick-pi.org/'>Quick-Pi</a> is a project by " +
+             "<a href='http://www.france-ioi.org/'>France-IOI</a>" // TODO: translate
       },
       invalidContent: "Neveljavna vsebina",
       unknownFileType: "Neznana vrsta datoteke",
@@ -557,6 +646,19 @@ var quickAlgoLanguageStrings = {
       loadExample: "Naloži primer",
       saveOrLoadButton: "Naloži / Shrani",
       saveOrLoadProgram: "Shrani ali znova naloži kodo:",
+      editButton: "Uredi", // TODO: verify
+      editWindowTitle: "Izdaja vaje", // TODO: verify
+      titleEdition: "Naslov:", // TODO: verify
+      descriptionEdition: "Opis:", // TODO: verify
+      saveAndQuit: "Sauvegarder & Quitter", // TODO: translate
+      quitWithoutSavingConfirmation: "Quitter sans sauvegarder vos modifications ?", // TODO: translate
+      about: "À propos", // TODO: Translate
+      license: "Licenca:", // TODO: tanslate
+      licenseReserved: "Vse pravice pridržane.",
+      authors: "Avtorji:", // TODO: translate
+      other: "drugo", // TODO: verify
+      otherLicense: "Other license", // TODO: translate
+      pleaseSpecifyLicense: "Merci de spécifier une license", // TODO: translate
       avoidReloadingOtherTask: "Opozorilo: Za drugo nalogo ne naloži kode znova!",
       files: "Datoteke",
       reloadProgram: "Znova naloži",
@@ -575,12 +677,14 @@ var quickAlgoLanguageStrings = {
       limitElementsOver: "{remainingBlocks} elementov preko meje {maxBlocks} elementov, ki so na voljo.",
       capacityWarning: "Opozorilo : program je rešen narobe, uporablja preveliko število delčkov. Bodi pozoren na število delčkov, ki jih lahko uporabiš, informacijo o tem imaš zgoraj.",
       clipboardDisallowedBlocks: "You cannot paste this program, as it contains blocks which aren't allowed in this version.", // TODO :: translate
+      waitBetweenExecutions: "Think carefully before starting a different program!",
       previousTestcase: "Nazaj",
       nextTestcase: "Naprej",
       allTests: "Vsi testi: ",
       errorEmptyProgram: "Program je prazen! Poveži delčke.",
       tooManyBlocks: "Uporabljaš preveč delčkov!",
       limitedBlock: "Uporabljaš preveliko število omejeneg števila blokov:",
+      limitedBlocks: "Uporabljaš preveliko število omejeneg števila blokov:",
       uninitializedVar: "Spremenljivka ni določena:",
       undefinedMsg: "Do napake lahko pride, ker je indeks prevelik, ali pa spremenljivka ni definirana.",
       valueTrue: 'resnično',
@@ -599,6 +703,7 @@ var quickAlgoLanguageStrings = {
       scaleDrawing: "Približaj ×2",
       loopRepeat: "repeat",
       loopDo: "do",
+      loopIteration: "ponovitev",
       displayVideo: "Prikaži video",
       showDetails: "Prikaži podrobnosti",
       hideDetails: "Skrij podrobnosti",
@@ -650,6 +755,11 @@ var quickAlgoLanguageStrings = {
          internet: "Internet",
          display: "Mostra",
       },
+      exerciseTypeAbout: {
+         default: "Task powered by <a href='http://www.france-ioi.org/'>France-IOI</a>", // TODO: translate
+         "Quick-Pi": "<a href='https://quick-pi.org/'>Quick-Pi</a> is a project by " +
+             "<a href='http://www.france-ioi.org/'>France-IOI</a>" // TODO: translate
+      },
       invalidContent: "Contenuto non valido",
       unknownFileType: "Tipo di file non riconosciuto",
       download: "scarica",
@@ -682,6 +792,19 @@ var quickAlgoLanguageStrings = {
       loadExample: "Inserisci l'esempio",
       saveOrLoadButton: "Carica / salva",
       saveOrLoadProgram: "Salva o ricarica il tuo programma:",
+      editButton: "modificare", // TODO: verify
+      editWindowTitle: "Edizione esercizio", // TODO: verify
+      titleEdition: "Titolo:", // TODO: verify
+      descriptionEdition: "Descrizione:", // TODO: verify
+      saveAndQuit: "Sauvegarder & Quitter", // TODO: translate
+      quitWithoutSavingConfirmation: "Quitter sans sauvegarder vos modifications ?", // TODO: translate
+      about: "À propos", // TODO: Translate
+      license: "Licenza:", // TODO: verify
+      licenseReserved: "Tutti i diritti riservati.",
+      authors: "Autori:", // TODO: verify
+      other: "Altro", // TODO: verify
+      otherLicense: "Other license", // TODO: translate
+      pleaseSpecifyLicense: "Merci de spécifier une license", // TODO: translate
       avoidReloadingOtherTask: "Attenzione: non ricaricare il programma di un altro argomento!",
       files: "File",
       reloadProgram: "Ricarica",
@@ -700,12 +823,14 @@ var quickAlgoLanguageStrings = {
       limitElementsOver: "{remainingBlocks} blocchi utilizzati in eccesso per  {maxBlocks} autorizzati.",
       capacityWarning: "Attenzione: il tuo programma non è valido perché utilizza troppi blocchi. Presta attenzione al limite di blocchi visualizzato nell'angolo in alto a destra dell'editor.",
       clipboardDisallowedBlocks: "Non è possibile incollare questo programma perché contiene blocchi che non sono ammessi in questa versione.",
+      waitBetweenExecutions: "Think carefully before starting a different program!",
       previousTestcase: "Precedente",
       nextTestcase: "Seguente",
       allTests: "Tutti i test: ",
       errorEmptyProgram: "Il programma è vuoto! Connetti dei blocchi.",
       tooManyBlocks: "Stai usando troppi blocchi!",
       limitedBlock: "Usi troppo spesso un blocco a uso limitato:",
+      limitedBlocks: "Usi troppo spesso un blocco a uso limitato:",
       uninitializedVar: "Variabile non inizializzata:",
       undefinedMsg: "Questo può provenire da un accesso ad un indice fuori da un elenco, o da una variabile non definita.",
       valueTrue: 'vero',
@@ -724,6 +849,7 @@ var quickAlgoLanguageStrings = {
       scaleDrawing: "Zoom ×2",
       loopRepeat: "repeat",
       loopDo: "do",
+      loopIteration: "iterazione",
       displayVideo: "Mostra il video",
       showDetails: "Più dettagli",
       hideDetails: "Nascondi i dettagli",

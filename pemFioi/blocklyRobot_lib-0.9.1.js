@@ -178,6 +178,12 @@ var getContext = function(display, infos, curLevel) {
             paintNorthEast: "peintureHautDroite() : la case au dessus à droite est-elle peinte ?",
             writeNumber: "ecrireNombre(nombre) : inscrit le nombre sur la case du robot"
          },
+         cardinals: {
+            north: "Nord",
+            south: "Sud",
+            west: "Ouest",
+            east: "Est"
+         },
          obstacle: "Le robot essaie de se déplacer sur un obstacle !",
          startingBlockName: "Programme du robot",
          exit_grid: "Le robot sort de la grille !",
@@ -293,7 +299,7 @@ var getContext = function(display, infos, curLevel) {
             transportableSquare: "quadrat",
             greenCell: "feldGruen",
             brownCell: "feldBraun",
-            markedCell: "feldMarikiert",
+            markedCell: "feldMarkiert",
             platformInFront: "vorPlattform",
             addPlatformAbove: "bauePlattformDarueber",
             addPlatformInFront: "bauePlattformDavor",
@@ -349,6 +355,12 @@ var getContext = function(display, infos, curLevel) {
             leavesGrid: "Der Roboter hat das Gitter verlassen!"
          },
          description: {
+         },
+         cardinals: {
+            north: "Norden",
+            south: "Süden",
+            west: "Westen",
+            east: "Osten"
          },
          obstacle: "Der Roboter ist gegen ein Hindernis gelaufen!",
          startingBlockName: "Roboter-Programm",
@@ -545,6 +557,12 @@ var getContext = function(display, infos, curLevel) {
             paintNorthEast: "peintureHautDroite() : la case au dessus à droite est-elle peinte ?",
             writeNumber: "ecrireNombre(nombre) : inscrit le nombre sur la case du robot"
          },
+         cardinals: {
+            north: "North",
+            south: "South",
+            west: "West",
+            east: "East"
+         },
          obstacle: "Le robot essaie de se déplacer sur un obstacle !",
          startingBlockName: "Program",
          exit_grid: "Le robot sort de la grille !",
@@ -738,6 +756,12 @@ var getContext = function(display, infos, curLevel) {
             paintNorthWest: "pobarvanaZgorajLevo(): Ali je pobarvano polje levo nad poljem, na katerem je robot?",
             paintNorthEast: "pobarvanaZgorajDesno(): Ali je pobarvano polje desno nad poljem, na katerem je robot?",
             writeNumber: "zapišiŠtevilko(številka): Zapiše številko v polje, na katerem je robot."
+         },
+         cardinals: {
+            north: "Sever",
+            south: "Juh",
+            west: "Západ",
+            east: "Východ"
          },
          obstacle: "Robot poskuša premakniti oviro!",
          startingBlockName: "Program",
@@ -982,6 +1006,7 @@ var getContext = function(display, infos, curLevel) {
    var cells = [];
    var colsLabels = [];
    var rowsLabels = [];
+   var cardLabels = [];
    var scale = 1;
    var paper;
 
@@ -995,9 +1020,17 @@ var getContext = function(display, infos, curLevel) {
          infos.topMargin = infos.cellSide / 2;
       }
    }
+   infos.rightMargin = 0;
+   infos.bottomMargin = 0;
    if (infos.showLabels) {
       infos.leftMargin += infos.cellSide;
       infos.topMargin += infos.cellSide;
+   }
+   if (infos.showCardinals) {
+      infos.leftMargin += infos.cellSide * 1.8;
+      infos.topMargin += infos.cellSide;
+      infos.rightMargin += infos.cellSide;
+      infos.bottomMargin += infos.cellSide;
    }
 
    context.robot = {};
@@ -1038,14 +1071,19 @@ var getContext = function(display, infos, curLevel) {
       }
       var item = context.getRobotItem(context.curRobot);
       var coords = getCoordsInFront(0);
-      if (!checkTileAllowed(coords.row, coords.col)) {
+      var cta = checkTileAllowed(coords.row, coords.col);
+      if(cta === true) {
+         if (infos.hasGravity) {
+            context.fall(item, coords, callback);
+         } else {
+            context.nbMoves++;
+            moveRobot(coords.row, coords.col, item.dir, callback);
+         }
+      } else if(cta === false) {
          context.waitDelay(callback);
-      }
-      if (infos.hasGravity) {
-         context.fall(item, coords, callback);
       } else {
-         context.nbMoves++;
-         moveRobot(coords.row, coords.col, item.dir, callback);
+         moveRobot(item.row + (coords.row - item.row) / 4, item.col + (coords.col - item.col) / 4, item.dir);
+         throw cta;
       }
    };
 
@@ -1318,11 +1356,15 @@ var getContext = function(display, infos, curLevel) {
          return;
       }
       var item = context.getRobotItem(context.curRobot);
-      if (!checkTileAllowed(item.row, item.col + 1)) {
-         context.waitDelay(callback);
-      } else {
+      var cta = checkTileAllowed(item.row, item.col + 1);
+      if(cta === true) {
          context.nbMoves++;
          moveRobot(item.row, item.col + 1, 0, callback);
+      } else if(cta === false) {
+         context.waitDelay(callback);
+      } else {
+         moveRobot(item.row, item.col + 1/4, 0);
+         throw cta;
       }
    };
 
@@ -1331,11 +1373,15 @@ var getContext = function(display, infos, curLevel) {
          return;
       }
       var item = context.getRobotItem(context.curRobot);
-      if (!checkTileAllowed(item.row, item.col - 1)) {
-         context.waitDelay(callback);
-      } else {
+      var cta = checkTileAllowed(item.row, item.col - 1);
+      if(cta === true) {
          context.nbMoves++;
          moveRobot(item.row, item.col - 1, 2, callback);
+      } else if(cta === false) {
+         context.waitDelay(callback);
+      } else {
+         moveRobot(item.row, item.col - 1/4, 2);
+         throw cta;
       }
    };
 
@@ -1344,11 +1390,15 @@ var getContext = function(display, infos, curLevel) {
          return;
       }
       var item = context.getRobotItem(context.curRobot);
-      if (!checkTileAllowed(item.row - 1, item.col)) {
-         context.waitDelay(callback);
-      } else {
+      var cta = checkTileAllowed(item.row - 1, item.col);
+      if(cta === true) {
          context.nbMoves++;
          moveRobot(item.row - 1, item.col, 3, callback);
+      } else if(cta === false) {
+         context.waitDelay(callback);
+      } else {
+         moveRobot(item.row - 1/4, item.col, 3);
+         throw cta;
       }
    };
 
@@ -1357,11 +1407,15 @@ var getContext = function(display, infos, curLevel) {
          return;
       }
       var item = context.getRobotItem(context.curRobot);
-      if (!checkTileAllowed(item.row + 1, item.col)) {
-         context.waitDelay(callback);
-      } else {
+      var cta = checkTileAllowed(item.row + 1, item.col);
+      if(cta === true) {
          context.nbMoves++;
          moveRobot(item.row + 1, item.col, 1, callback);
+      } else if(cta === false) {
+         context.waitDelay(callback);
+      } else {
+         moveRobot(item.row + 0.25, item.col, 1);
+         throw cta;
       }
    };
 
@@ -1904,6 +1958,14 @@ var getContext = function(display, infos, curLevel) {
             colsLabels[iCol] = paper.text(0, 0, (iCol + 1));
          }
       }
+      if (infos.showCardinals) {
+         cardLabels = [
+            paper.text(0, 0, strings.cardinals.north),
+            paper.text(0, 0, strings.cardinals.south),
+            paper.text(0, 0, strings.cardinals.west),
+            paper.text(0, 0, strings.cardinals.east)
+            ];
+      }
    };
 
    var resetItem = function(initItem) {
@@ -2059,7 +2121,9 @@ var getContext = function(display, infos, curLevel) {
          }
          $("#nbMoves").html(context.nbMoves);
       }
-      context.waitDelay(callback);
+      if(callback) {
+         context.waitDelay(callback);
+      }
    };
 
    context.getItems = function(row, col, filters) {
@@ -2094,14 +2158,14 @@ var getContext = function(display, infos, curLevel) {
          if (infos.ignoreInvalidMoves) {
             return false;
          }
-         throw(context.strings.messages.leavesGrid);
+         return context.strings.messages.leavesGrid;
       }
       var itemsInFront = context.getItems(row, col, {isObstacle: true});
       if (itemsInFront.length > 0) {
          if (infos.ignoreInvalidMoves) {
             return false;
          }
-         throw(strings.obstacle);
+         return strings.obstacle;
       }
       return true;
    };
@@ -2140,12 +2204,14 @@ var getContext = function(display, infos, curLevel) {
          var areaHeight = 600;
       }
       if (context.nbCols && context.nbRows) {
-         var marginAsCols = infos.leftMargin / infos.cellSide;
-         var marginAsRows = infos.topMargin / infos.cellSide;
+         var marginAsCols = (infos.leftMargin + infos.rightMargin) / infos.cellSide;
+         var marginAsRows = (infos.topMargin + infos.rightMargin) / infos.cellSide;
          newCellSide = Math.min(infos.cellSide, Math.min(areaWidth / (context.nbCols + marginAsCols), areaHeight / (context.nbRows + marginAsRows)));
       }
       scale = newCellSide / infos.cellSide;
-      paper.setSize((infos.cellSide * context.nbCols + infos.leftMargin) * scale, (infos.cellSide * context.nbRows + infos.topMargin) * scale);
+      var paperWidth = (infos.cellSide * context.nbCols + infos.leftMargin + infos.rightMargin) * scale;
+      var paperHeight = (infos.cellSide * context.nbRows + infos.topMargin + infos.bottomMargin) * scale;
+      paper.setSize(paperWidth, paperHeight);
       for (var iRow = 0; iRow < context.nbRows; iRow++) {
          for (var iCol = 0; iCol < context.nbCols; iCol++) {
             if (cells[iRow][iCol] != undefined) {
@@ -2155,17 +2221,26 @@ var getContext = function(display, infos, curLevel) {
             }
          }
       }
+      var textFontSize = {"font-size": infos.cellSide * scale / 2};
       if (infos.showLabels) {
          for (var iRow = 0; iRow < context.nbRows; iRow++) {
             var x = (infos.leftMargin - infos.cellSide / 2) * scale;
             var y = (infos.cellSide * (iRow + 0.5) + infos.topMargin) * scale;
-            rowsLabels[iRow].attr({x: x, y: y}).attr({"font-size": infos.cellSide * scale / 2});
+            rowsLabels[iRow].attr({x: x, y: y}).attr(textFontSize);
          }
          for (var iCol = 0; iCol < context.nbCols; iCol++) {
             var x = (infos.cellSide * iCol + infos.leftMargin + infos.cellSide / 2) * scale;
             var y = (infos.topMargin - infos.cellSide / 2) * scale;
-            colsLabels[iCol].attr({x: x, y: y}).attr({"font-size": infos.cellSide * scale / 2});
+            colsLabels[iCol].attr({x: x, y: y}).attr(textFontSize);
          }
+      }
+      if (infos.showCardinals) {
+         var middleX = (infos.leftMargin + infos.cellSide * context.nbCols / 2) * scale;
+         var middleY = (infos.topMargin + infos.cellSide * context.nbRows / 2) * scale;
+         cardLabels[0].attr({x: middleX, y: (infos.topMargin - (infos.showLabels ? infos.cellSide : 0) - infos.cellSide / 2) * scale}).attr(textFontSize);
+         cardLabels[1].attr({x: middleX, y: paperHeight + (infos.cellSide / 2 - infos.bottomMargin) * scale}).attr(textFontSize);
+         cardLabels[2].attr({x: (infos.leftMargin - (infos.showLabels ? infos.cellSide : 0) - infos.cellSide * 1.8 / 2) * scale, y: middleY}).attr(textFontSize);
+         cardLabels[3].attr({x: paperWidth + (infos.cellSide / 2 - infos.rightMargin) * scale, y: middleY}).attr(textFontSize);
       }
       for (var iItem = 0; iItem < context.items.length; iItem++) {
          var item = context.items[iItem];

@@ -123,6 +123,10 @@ function Task(iframe, callback) {
          platform.openUrl(url, trans.complete, trans.error);
          trans.delayReturn(true);
       });
+      this.chan.bind('platform.log', function (trans, data) {
+         platform.log(data, trans.complete, trans.error);
+         trans.delayReturn(true);
+      });
    };
 }
 
@@ -306,10 +310,11 @@ Platform.prototype.askHint = function(platformToken, success, error) {error('pla
 Platform.prototype.updateHeight = function(height, success, error) { this.updateDisplay({height: height}); };
 Platform.prototype.updateDisplay = function(data, success, error) {
    if(data.height) {
-      this.task.iframe.height(parseInt(height)+40);success();
+      this.task.iframe.height(parseInt(data.height)+40);success();
    }
 };
-Platform.prototype.openUrl = function(url) {error('platform.openUrl is not defined!');};
+Platform.prototype.openUrl = function(url, success, error) {error('platform.openUrl is not defined!');};
+Platform.prototype.log = function(data, success, error) { if(success) { success(); }};
 Platform.prototype.getTaskParams = function(key, defaultValue, success, error) {
    var res = {minScore: -3, maxScore: 10, randomSeed: 0, noScore: 0, readOnly: false, options: {}};
    if (key) {

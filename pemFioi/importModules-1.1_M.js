@@ -25,17 +25,24 @@ var importableModules = function () {
       'visual-graph-1.1': {src: modulesPath+"/pemFioi/visual-graph-1.1.js", id: "http://www.france-ioi.org/modules/pemFioi/visual-graph-1.1.js"},
       'graph-mouse-1.0': {src: modulesPath+"/pemFioi/graph-mouse-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/graph-mouse-1.0.js"},
       'graph-mouse-1.1': {src: modulesPath+"/pemFioi/graph-mouse-1.1.js", id: "http://www.france-ioi.org/modules/pemFioi/graph-mouse-1.1.js"},
+      'graph-mouse-1.2': {src: modulesPath+"/pemFioi/graph-mouse-1.2.js", id: "http://www.france-ioi.org/modules/pemFioi/graph-mouse-1.2.js"},
+      'graph-mouse-1.3': {src: modulesPath+"/pemFioi/graph-mouse-1.3.js", id: "http://www.france-ioi.org/modules/pemFioi/graph-mouse-1.3.js"},
       'crane-1.0': {src: modulesPath+"/pemFioi/crane-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/crane-1.0.js"},
       'grid-1.0': {src: modulesPath+"/pemFioi/grid-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/grid-1.0.js"},
       'grid-1.1': {src: modulesPath+"/pemFioi/grid-1.1.js", id: "http://www.france-ioi.org/modules/pemFioi/grid-1.1.js"},
       'drag_lib-2.0': {src: modulesPath+"/pemFioi/drag_lib-2.0.js", id: "http://www.france-ioi.org/modules/pemFioi/drag_lib-2.0.js"},
+      'drag_lib-2.1': {src: modulesPath+"/pemFioi/drag_lib-2.1.js", id: "http://www.france-ioi.org/modules/pemFioi/drag_lib-2.1.js"},
       'randomGenerator-1.0': {src: modulesPath+"/pemFioi/randomGenerator-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/randomGenerator-1.0.js"},
       'simpleKeyboard-1.0': {src: modulesPath+"/pemFioi/simpleKeyboard-1.0.js", id: "http://www.france-ioi.org/modules/pemFioi/simpleKeyboard-1.0.js"},
       'save-svg-as-png': {src: modulesPath+"/ext/save-svg-as-png/saveSvgAsPng.js", id: "save-svg-as-png"},
       'shape-paths': {src: modulesPath+"/pemFioi/shape-paths.js", id: "shape-paths"},
+      'shape-paths-1.1': {src: modulesPath+"/pemFioi/shape-paths-1.1.js", id: "shape-paths-1.1"},
+      'gauge-1.0': {src: modulesPath+"/pemFioi/gauge-1.0.js", id: "gauge-1.0"},
+      'button-1.0': {src: modulesPath+"/pemFioi/button-1.0.js", id: "button-1.0"},
 
       'platform-pr': {classStr: "proxy module", src: modulesPath+"/integrationAPI.01/official/platform-pr.js", id: "http://www.france-ioi.org/modules/integrationAPI.01/official/platform-pr.js"},
       'buttonsAndMessages': {classStr: "stdButtonsAndMessages module", src: modulesPath+"/integrationAPI.01/installationAPI.01/pemFioi/buttonsAndMessages.js",  id: "http://www.france-ioi.org/modules/integrationAPI.01/installationAPI.01/pemFioi/buttonsAndMessages.js"},
+      'buttonsAndMessages_resp': {classStr: "stdButtonsAndMessages module", src: modulesPath+"/integrationAPI.01/installationAPI.01/pemFioi/buttonsAndMessages_resp.js",  id: "http://www.france-ioi.org/modules/integrationAPI.01/installationAPI.01/pemFioi/buttonsAndMessages.js"},
       'installationAPI.01': {classStr: "remove", src: modulesPath+"/integrationAPI.01/installationAPI.01/pemFioi/installation.js"},
       'miniPlatform': {classStr: "remove", src: modulesPath+"/integrationAPI.01/official/miniPlatform_M.js"},
       'static-task': {src: modulesPath+"/pemFioi/static-task.js"},
@@ -51,6 +58,9 @@ var importableModules = function () {
 
       'taskStyles-0.1': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-0.1_M.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-0.1_M.css"},
       'taskStyles-0.2': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-0.2_M.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-0.2_M.css"},
+      'taskStyles-0.3': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-0.3.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-0.3.css"},
+      'taskStyles-0.3_M': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-0.3_M.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-0.3_M.css"},
+      'taskStyles-mobileFirst': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-mobileFirst.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-mobileFirst.css"},
 
       'conceptDisplay-1.0': {src: modulesPath+"/pemFioi/conceptDisplay-1.0.js", id: "concept_display"},
       'conceptViewer-1.0': {src: modulesPath+"/pemFioi/conceptViewer-1.0.js", id: "concept_viewer"},
@@ -140,9 +150,10 @@ var importableModules = function () {
       'csv_editor_styles': {type: "stylesheet", src: modulesPath+"/pemFioi/components/csv-text-editor/styles.css", id: "csv_editor_styles"},
       'csv_editor_task': {src: modulesPath+"/pemFioi/components/csv-text-editor/task.js", id: "csv_editor_task"},      
 
-      // LR_parser
+      // Language theory
+      'automata-1.0': {src: modulesPath+"/pemFioi/automata-1.0.js", id: "automata-1.0"},
       'lr_parser-1.0': {src: modulesPath+"/pemFioi/LR_parser-1.0.js", id: "lr_parser-1.0"},
-      'lr_parser-1.0-css': {type: "stylesheet", src: modulesPath+"/pemFioi/LR_parser-1.0.css", id: "lr_parser-1.0-css"},
+      // 'lr_parser-1.0-css': {type: "stylesheet", src: modulesPath+"/pemFioi/LR_parser-1.0.css", id: "lr_parser-1.0-css"},
       'machines-grammar': {src: modulesPath+"/ext/machines/js/grammar.js", id: "machines-grammar"},
       'machines-lrclosuretable': {src: modulesPath+"/ext/machines/js/lrclosuretable.js", id: "machines-lrclosuretable"},
       'machines-lrtable': {src: modulesPath+"/ext/machines/js/lrtable.js", id: "machines-lrtable"},

@@ -30,6 +30,7 @@
          'ace': {src: modulesPath+"/ext/ace/ace.js", id: "ace"},
          'ace_python': {src: modulesPath+"/ext/ace/mode-python.js", id: "ace_python"},
          'ace_json': {src: modulesPath+"/ext/ace/mode-json.js", id: "ace_json"},
+         'ace_plain_text': {src: modulesPath+"/ext/ace/mode-plain_text.js", id: "ace_plain_text"},
          'ace_language_tools': {src: modulesPath+"/ext/ace/ext-language_tools.js", id: "ace_language_tools"},
          'processing-1.4.8': {src: modulesPath+"/ext/processing/1.4.8/processing.min.js", id: "https://raw.github.com/processing-js/processing-js/v1.4.8/processing.min.js"},
          'save-svg-as-png': {src: modulesPath+"/ext/save-svg-as-png/saveSvgAsPng.js", id: "save-svg-as-png"},
@@ -57,12 +58,17 @@
          'mathjax': {src: modulesPath+"/ext/mathjax/MathJax.js?config=TeX-MML-AM_CHTML", id: "mathjax"},
          'post_processor': {src: modulesPath+"/pemFioi/post_processor.js", id: "post_processor"},
 
+         'prismjs': {src: modulesPath+"/ext/prismjs/prism.js", id: "prismjs"},
+         'prismjs-css': {type: "stylesheet", src: modulesPath+"/ext/prismjs/prism.css", id: "prismjs-css"},
+
          'taskStyles-0.1': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-0.1.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-0.1.css"},
          'taskStyles-mobileFirst': {type: "stylesheet", src: modulesPath+"/pemFioi/taskStyles-mobileFirst.css", id: "http://www.france-ioi.org/modules/pemFioi/taskStyles-mobileFirst.css"},
 
          'conceptDisplay-1.0': {src: modulesPath+"/pemFioi/conceptDisplay-1.0.js", id: "concept_display"},
          'conceptViewer-1.0': {src: modulesPath+"/pemFioi/conceptViewer-1.0-mobileFirst.js", id: "concept_viewer"},
          'conceptViewer_css-1.0': {type: "stylesheet", src: modulesPath+"/pemFioi/conceptViewer-1.0-mobileFirst.css", id: "concept_viewer_css"},
+         'conceptViewer-2.0': {src: modulesPath+"/pemFioi/conceptViewer-2.0.js", id: "concept_viewer_2"},
+         'conceptViewer_css-2.0': {type: "stylesheet", src: modulesPath+"/pemFioi/conceptViewer-2.0.css", id: "concept_viewer_2_css"},
 
          'blockly': {src: modulesPath+"/ext/blockly/blockly_compressed.js", id: "blockly"},
          'blockly_blocks': {src: modulesPath+"/ext/blockly/blocks_compressed.js", id: "blockly_blocks"},
@@ -80,6 +86,7 @@
          'blockly-robot-1.0': {src: modulesPath+"/pemFioi/blocklyRobot_lib-1.0.0.js", id: "blocklyRobot_lib"},
          'blockly-robot-dev': {src: modulesPath+"/pemFioi/blocklyRobot_lib-1.0.1-dev.js", id: "blocklyRobot_lib"},
          'blockly-printer': {src: modulesPath+"/pemFioi/blocklyPrinter_lib.js", id: "blocklyPrinter_lib"},
+         'blockly-printer-2.1': {src: modulesPath+"/pemFioi/blocklyPrinter_lib-2.1.js", id: "blocklyPrinter_lib"},
          'blockly-turtle': {src: modulesPath+"/pemFioi/blocklyTurtle_lib.js", id: "blocklyTurtle_lib"},
          'blockly-processing': {src: modulesPath+"/pemFioi/blocklyProcessing_lib.js", id: "blocklyProcessing_lib"},
          'jwinf_css': {type: "stylesheet", src: modulesPath+"/pemFioi/jwinf.css", id: "jwinf_css"}, // for BWINF
@@ -132,6 +139,9 @@
          'quiz2_questions_choice': {src: modulesPath+"/pemFioi/quiz2/questions/choice.js", id: "quiz_questions_choice"},
          'quiz2_questions_fill_gaps': {src: modulesPath+"/pemFioi/quiz2/questions/fill_gaps.js", id: "quiz_questions_fill_gaps"},
          'quiz2_questions_input': {src: modulesPath+"/pemFioi/quiz2/questions/input.js", id: "quiz_questions_input"},
+         'quiz2_questions_sort_list': {src: modulesPath+"/pemFioi/quiz2/questions/sort_list.js", id: "quiz_questions_sort_list"},
+         'quiz2_questions_sort_items': {src: modulesPath+"/pemFioi/quiz2/questions/sort_items.js", id: "quiz_questions_sort_items"},
+         'sortable': {src: modulesPath+"/ext/Sortable-master/Sortable.js", id: "sortable"},
 
          // Video task
          'taskVideo': {src: modulesPath+"/pemFioi/taskVideo/taskVideo.js", id: "taskVideo"},
@@ -168,6 +178,7 @@
 
          // json text editor
          'json-text-editor': {src: modulesPath+"/pemFioi/components/json-text-editor/editor.js", id: "json-text-editor"},
+         'json-text-editor-jsonlint': {src: modulesPath+"/pemFioi/components/json-text-editor/jsonlint.js", id: "json-text-editor-jsonlint"},
 
          // Bundles
          'bebras-base': {src: modulesPath+"bundles/bebras-base.js", id: "bundle-bebras-base"},
@@ -184,6 +195,9 @@
          'quickpi-screen': { src: modulesPath + "/pemFioi/quickpi/blocklyQuickPi_screen.js", id: "quickpi-screen" },
          'quickpi-store': { src: modulesPath + "/pemFioi/quickpi/blocklyQuickPi_store.js", id: "quickpi-store" },
          'blockly-distributed': { src: modulesPath + "/pemFioi/quickpi/blocklyQuickPiDistributed_lib.js", id: "blockly-distributed" },
+
+         'traceroute-context': { src: modulesPath + "/pemFioi/network/traceroute/context.js", id: "traceroute-context" },
+         'scanip-context': { src: modulesPath + "/pemFioi/network/scanip/context.js", id: "scanip-context" },
       }
    }
 

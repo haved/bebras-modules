@@ -20,11 +20,19 @@ var quickAlgoInterface = {
     editorReadOnly: false,
     options: {},
     capacityPopupDisplayed: {},
+    userTaskData: null, // contain the subject and title, and also the about
     keypadData: {
         value: '',
         callbackModify: null,
         callbackFinished: null
         },
+    // Contain all the licenses supported with their link
+    // There is also the "copyright" license or other license that the user can write himself
+    licenses: {
+        "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/deed.fr",
+        "CC BY-NC-SA 4.0": "https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=ccsearch&atype=rich",
+        "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/deed.fr"
+    },
 
     enterFullscreen: function() {
         var el = document.documentElement;
@@ -110,6 +118,15 @@ var quickAlgoInterface = {
         this.fullscreenEvents = true;
     },
 
+    loadUserTaskData: function(taskData) {
+        this.userTaskData = taskData;
+    },
+
+    loadSubjectFromUserTaskData : function() {
+        document.title = this.userTaskData.title;
+        $(".exerciseText").text(this.userTaskData.subject);
+    },
+
     loadInterface: function(context, level) {
         ////TODO: function is called twice
         // Load quickAlgo interface into the DOM
@@ -117,6 +134,21 @@ var quickAlgoInterface = {
         quickAlgoImportLanguage();
         this.strings = window.languageStrings;
         this.level = level;
+
+        // if we don't have userTaskData loaded, then we load it from the subject
+        if (!this.userTaskData) {
+            // default userTaskData
+            this.userTaskData = {
+                title: document.title,
+                subject: $(".exerciseText").first().text(),
+                about: {
+                    authors: "France-Ioi",
+                    license: ""
+                }
+            };
+        } else {
+            this.loadSubjectFromUserTaskData();
+        }
 
         var gridHtml = "";
         gridHtml += "<div id='gridButtonsBefore'></div>";
@@ -134,6 +166,7 @@ var quickAlgoInterface = {
             "</div>" +
             "<div id='languageInterface'></div>"
         );
+
 
         // Buttons from buttonsAndMessages
         var addTaskHTML = '<div id="displayHelperAnswering" class="contentCentered" style="padding: 1px;">';
@@ -216,8 +249,10 @@ var quickAlgoInterface = {
                         "<span class='fas fa-upload'></span> " +
                         this.strings.reloadProgram +
                     "</div>" +
+                    "<div rel='edit' class='item' onclick='quickAlgoInterface.editorBtn(\"edit\");'><span class='fas fa-pencil-alt'></span>" + this.strings.editButton + "</div>" +
                     "<div rel='best-answer' class='item' onclick='quickAlgoInterface.editorBtn(\"best-answer\");'><span class='fas fa-trophy'></span> " + this.strings.loadBestAnswer + "</div>" +
                     "<div rel='blockly-python' class='item' onclick='quickAlgoInterface.editorBtn(\"blockly-python\");'><span class='fas fa-file-code'></span> " + this.strings.blocklyToPython + "</div>" +
+                    "<div rel='about' class='item' onclick='quickAlgoInterface.editorBtn(\"about\");'><span class='fas fa-question-circle'></span>" + this.strings.about + "</div>" +
                 "</div>" +
                 "<span id='saveUrl'></span>" +
             "</div>"
@@ -249,27 +284,315 @@ var quickAlgoInterface = {
     editorBtn: function(btn) {
         // Handle an editor button press
         this.closeEditorMenu();
-        if(btn == 'example') {
+        if (btn == 'example') {
             task.displayedSubTask.loadExample()
-        } else if(btn == 'copy') {
+        } else if (btn == 'copy') {
             task.displayedSubTask.blocklyHelper.copyProgram();
-        } else if(btn == 'paste') {
+        } else if (btn == 'paste') {
             task.displayedSubTask.blocklyHelper.pasteProgram();
-        } else if(btn == 'save') {
+        } else if (btn == 'save') {
             task.displayedSubTask.blocklyHelper.saveProgram();
-        } else if(btn == 'restart') {
+        } else if (btn == 'restart') {
             displayHelper.restartAll();
-        } else if(btn == 'best-answer') {
+        } else if (btn == 'edit') {
+            this.openEditExercise();
+        } else if (btn == 'best-answer') {
             displayHelper.retrieveAnswer();
-        } else if(btn == 'blockly-python') {
+        } else if (btn == 'blockly-python') {
             this.displayBlocklyPython();
+        } else if (btn == 'about') {
+            this.openAbout();
         }
+    },
+
+    /**
+     * This function is to handle exit buttons and check if we must ask for confirmation or not.
+     * To check for confirmation it works this way:
+     * if for i in len(toCompare) step 2
+     *    toCompare[i] === toCompare[i + 1]
+     * then we don't need confirmation because everything is the same
+     * The variable toCompare is variadic because we can confirm on more than two values later.
+     * Otherwise we show confirmation to ask the user if he is sure to quit the menu without saving
+     * @param toCompare An array containing at toCompare[i] the new value and at toCompare[i + 1] the old value (it
+     * compares both one to each other). Be careful, every compared value must be <b>exactly</b> the same object.
+     * @private This function is private because it is not usefull outside of interface-mobileFirst.js
+     * @return true if we can exit without problem, false otherwise
+     * @throws An error, if two compare.size() is not a multiple of 2
+     */
+    _handleConfirmationExitWindow: function(toCompare) {
+        if (toCompare.length % 2 != 0) {
+            // this should never happen in prod, if an error is thrown the error come from the programmer.
+            throw "interface-mobileFirst.js: _handleConfirmationExitWindow: toCompare must be a multiple of 2, you did"
+                + "something wrong!";
+        }
+        // if this variable remain true, then we don't need to show the confirm window
+        var same = true;
+        for (var i = 0; i < toCompare.length && same; i += 2) {
+            // here we must use the '===' operator, because the values must be the same in object, we can have boolean
+            // on one side
+            same = toCompare[i] === toCompare[i + 1];
+        }
+        // window.confirm will return true, if the user confirmed quitting without saving
+        return same || window.confirm(this.strings.quitWithoutSavingConfirmation);
+    },
+
+    /**
+     * This method close the popup without confirmation
+     */
+    closePopup: function() {
+        $('#popupMessage').hide();
+        window.displayHelper.popupMessageShown = false;
+    },
+
+    /**
+     * This method call the function {@link #_handleConfirmationExitWindow} to check if we can close the window. If we
+     * can, then it close the popup window created with {@link #window.displayHelper.showPopupDialog}.
+     * @param toCompare The arguments to compare, you need to setup it this way: toCompare[i] is the newValue and
+     * toCompare[i + 1] is the old value (i step of 2).
+     * @public Because we must use it inside of button "onClick" functions, so we can't make it "private" because the
+     * strict private convention is not respected here (we must use that.closePopupWithConfirmation inside of a button).
+     */
+    closePopupWithConfirmation: function(toCompare) {
+        if (this._handleConfirmationExitWindow(toCompare)) {
+            this.closePopup();
+        }
+    },
+
+    /**
+     * This function return the button hidden or not depending on the boolean in argument.
+     * This function can also be called without arguments and the button will not be hidden.
+     *
+     * The button is hidden in case we have not a license that we know about.
+     * @param hidden If the button should be hidden or not (or no argument in this case the button is shown)
+     * @return {string}  The html for the button
+     */
+    _getAboutLicenseButton: function(hidden, license) {
+        if (!hidden)
+            hidden = "";
+        else
+            hidden = "style='display: none;'";
+        return "<span id='aboutLicenseIcon' class='icon fas fa-question-circle' onclick='window.open(\""
+            + this.licenses[license] + "\", \"_blank\");' " + hidden + "></span>";
+    },
+
+    openEditExercise: function() {
+        // in python, there are two "exerciseText", we need to selected only the first one
+        // there are two "exerciseText" in python, because we also have a "long" version of the
+        // subject
+        var title = this.userTaskData.title;
+        var subject = this.userTaskData.subject;
+        var authors = this.userTaskData.about.authors;
+        var license = this.userTaskData.about.license;
+
+        var aboutAuthorsLicenseSection = "<div id='aboutAuthorsLicense'>";
+
+        var authorsTxt = "<label for='author'>" + this.strings.authors + "</label>";
+        authorsTxt += "<input id='aboutAuthorsInput' type='text' name='author' value='" + authors + "'>";
+
+        var licenseOther = "";
+
+        if (!(license in this.licenses))
+            licenseOther = "selected";
+
+        var licenseDropdown = "<p>" + this.strings.license + "</p>" +
+            "<select name='chooseLicense' id='aboutLicenseDropdown'>";
+        for (var licenseName in this.licenses) {
+            var selected = "";
+            if (license === licenseName)
+                selected = "selected";
+            licenseDropdown += "<option value='" + licenseName + "'" + selected + ">" + licenseName + "</option>";
+        }
+        licenseDropdown += "<option value='" + this.strings.other + "' " + licenseOther + ">" + this.strings.other
+            + "</option>";
+        licenseDropdown += "</select>";
+
+
+        var licenseInput = null;
+        if (!(license in this.licenses)) {
+            licenseDropdown += " " + this._getAboutLicenseButton(true, license);
+            licenseInput = " <input id='aboutLicenseInput' type='text' name='chooseLicenseTxt' value='"
+                + license + "' placeholder='" + this.strings.otherLicense + "'>";
+        } else {
+            licenseDropdown += " " + this._getAboutLicenseButton(false, license);
+            licenseInput = " <input id='aboutLicenseInput' type='text' name='chooseLicenseTxt' value='' " +
+                "style='display: none;' placeholder='" + this.strings.otherLicense + "'>"
+        }
+
+        aboutAuthorsLicenseSection += authorsTxt;
+
+        aboutAuthorsLicenseSection += licenseDropdown + licenseInput + "</div>";
+
+
+        var editExerciseHtml = "<div class=\"content connectPi qpi\">" +
+            "    <div class=\"panel-heading\">" +
+            "        <h2 class=\"sectionTitle\">" +
+            "            <span class=\"iconTag\"><i class=\"icon fas fa-pencil-alt\"></i></span>" +
+                         this.strings.editWindowTitle +
+            "        </h2>" +
+            "    <div class=\"exit\" id=\"editclose\"><i class=\"icon fas fa-times\"></i></div>" +
+            "    </div>" +
+            "    <div class=\"panel-body\">" +
+            "        <div id=\"editExerciseTitle\">" +
+            "            <label>" + this.strings.titleEdition + "</label><input id=\"editExerciseTitleInput\" type=\"text\" value=\"" + title + "\"/>" +
+            "        </div>" +
+            "        <div id=\"editExerciseDescription\">" +
+            "            <label>" + this.strings.descriptionEdition + "</label>" +
+            "            <textarea rows=\"10\" id=\"editExerciseDescriptionTextarea\">" + subject + "</textarea>" +
+            "        </div>" +
+                    aboutAuthorsLicenseSection +
+            "        <div id='panel-body-bottom'>" +
+            "            <button id='saveExerciseChanges'>" + this.strings.saveAndQuit + "</button>" +
+            "        </div>" +
+            "    </div>" +
+            "</div>";
+
+        window.displayHelper.showPopupDialog(editExerciseHtml);
+
+        var that = this;
+
+        /**
+         * This method allow us to get the new license from the dropdown or the input box according to this predicate:
+         * if the dropdown has this.strings.other as selection, then we select the value of the input box.
+         * @return The new license
+         */
+        function getLicenseChanges() {
+            var selectedDropdown = $('#aboutLicenseDropdown option:selected').text();
+            if (selectedDropdown === that.strings.other) {
+                return $('#aboutLicenseInput').val();
+            } else {
+                return selectedDropdown;
+            }
+        }
+
+        $("#editclose").click(function() {
+            var newTitle = $("#editExerciseTitleInput").val();
+            var newDesc = $("#editExerciseDescriptionTextarea").val();
+            var oldTitle = that.userTaskData.title;
+            var oldDescription = that.userTaskData.subject;
+            var newAuthors = $('#aboutAuthorsInput').val();
+            var newLicense = getLicenseChanges();
+            var oldAuthors = that.userTaskData.about.authors;
+            var oldLicense = that.userTaskData.about.license;
+            that.closePopupWithConfirmation([newTitle, oldTitle, newDesc, oldDescription, newAuthors,
+                oldAuthors, newLicense, oldLicense]);
+        });
+
+        $('#aboutLicenseDropdown').change(function() {
+            var val = $('#aboutLicenseDropdown option:selected').text();
+            if (val === that.strings.other) {
+                $("#aboutLicenseIcon").hide();
+                $("#aboutLicenseInput").show();
+            } else {
+                $("#aboutLicenseInput").hide();
+                $("#aboutLicenseIcon").attr("onclick", "window.open(\"" + that.licenses[val] + "\", \"_blank\");");
+                $("#aboutLicenseIcon").show();
+            }
+        });
+
+        $("#saveExerciseChanges").click(function() {
+            $('#popupMessage').hide();
+            window.displayHelper.popupMessageShown = false;
+
+            var newTitle = $("#editExerciseTitleInput").val();
+            var newSubject = $("#editExerciseDescriptionTextarea").val();
+            var newAuthors = $('#aboutAuthorsInput').val();
+            var newLicense = getLicenseChanges();
+            that.userTaskData.title = newTitle;
+            that.userTaskData.subject = newSubject;
+            that.userTaskData.about.authors = newAuthors;
+            that.userTaskData.about.license = newLicense;
+            that.loadSubjectFromUserTaskData();
+        });
+    },
+
+    openAbout: function() {
+        var that = this;
+
+        var authors = this.userTaskData.about.authors;
+        var aboutAuthorsLicenseSection = "<p>" + this.strings.authors + " " + authors +"</p>";
+
+        var license = this.userTaskData.about.license;
+
+        if(license) {
+            var licenseTxt = this.strings.license;
+            // if the license is not inside of our predefined licenses then we write it without "more details" button
+            if (!this.licenses[license])
+                licenseTxt += license;
+            else
+                licenseTxt += license + " " + this._getAboutLicenseButton(false, license);
+        } else {
+            var licenseTxt = this.strings.licenseReserved;
+        }
+        aboutAuthorsLicenseSection += "<p>" + licenseTxt + "</p>";
+
+        var typeTxt = this.strings.exerciseTypeAbout["default"];
+
+        if (this.context.title)
+            typeTxt = this.strings.exerciseTypeAbout[this.context.title];
+
+
+
+        var aboutHtml = "<div class=\"content connectPi qpi\">" +
+            "    <div class=\"panel-heading\">" +
+            "        <h2 class=\"sectionTitle\">" +
+            "            <span class=\"iconTag\"><i class=\"icon fas fa-question-circle\"></i></span>" +
+                        this.strings.about +
+            "        </h2>" +
+            "    <div class=\"exit\" id=\"aboutclose\"><i class=\"icon fas fa-times\"></i></div>" +
+            "    </div>" +
+            "    <div class=\"panel-body\" id='aboutPanel'>"+
+            "       <div id='aboutAuthorsLicense'>" +
+                        aboutAuthorsLicenseSection +
+            "       </div>" +
+            "       <div id='aboutFranceIOI'>" +
+            "           <br/>" +
+            "           <p>" + typeTxt + "</p>" +
+            "       </div>" +
+            "    </div>" +
+            "</div>";
+
+        window.displayHelper.showPopupDialog(aboutHtml);
+
+        $("#aboutclose").click(function() {
+            that.closePopup();
+        });
     },
 
     loadPrograms: function(formElement) {
         this.blocklyHelper.handleFiles(formElement.files);
         resetFormElement($(formElement));
         this.closeEditorMenu();
+    },
+
+    /**
+     * This function allow us to save the subject into the additional data saved inside of the interface
+     * This also save the element from the context
+     * @param additional The additional data where we should save subject
+     */
+    saveAdditional: function(additional) {
+        if (this.options.canEditSubject) {
+            additional.userTaskData = this.userTaskData;
+        }
+        // save additional from context too
+        if (this.context.saveAdditional) {
+            this.context.saveAdditional(additional);
+        }
+    },
+
+    /**
+     * This function allow us to load the additional things for the exercise like subject/sensors for quickpi
+     * @param additional The additional object containing additional things to load
+     */
+    loadAdditional: function(additional) {
+        // load subject if edition is enabled
+        if (additional.userTaskData && this.options.canEditSubject) {
+            this.userTaskData = additional.userTaskData;
+            this.loadSubjectFromUserTaskData();
+        }
+        // Load additional from context (sensors for quickpi for example)
+        if (this.context.loadAdditional) {
+            this.context.loadAdditional(additional);
+        }
     },
 
     setOptions: function(opt) {
@@ -301,6 +624,7 @@ var quickAlgoInterface = {
         $('#editorMenu div[rel=load]').toggleClass('interfaceToggled', !!hideControls.saveOrLoad);
         $('#editorMenu div[rel=best-answer]').toggleClass('interfaceToggled', !!hideControls.loadBestAnswer);
         $('#editorMenu div[rel=blockly-python]').toggleClass('interfaceToggled', hideControls.blocklyToPython !== false || !this.blocklyHelper || !this.blocklyHelper.isBlockly);
+        $('#editorMenu div[rel=edit]').toggleClass('interfaceToggled', !this.options.canEditSubject);
 
         var menuHidden = !this.options.hasExample && hideControls.restart && hideControls.saveOrLoad && hideControls.loadBestAnswer;
         $('#openEditorMenu').toggleClass('interfaceToggled', !!menuHidden);
@@ -388,6 +712,11 @@ var quickAlgoInterface = {
             this.blinkRemaining(0);
             this.displayError(null, true);
         }
+
+        // TODO :: better return of info once SRL allows more
+        try {
+           SrlLogger.modification(this.blocklyHelper.programs[0].blockly.length, info.invalid || info.warning ? 'code' : '');
+        } catch(e) {}
     },
 
 
@@ -648,7 +977,10 @@ var quickAlgoInterface = {
         }
         var levelIntroContent = $('#taskIntro').html();
         var hasLong = $('#taskIntro').find('.long').length;
-        if (hasLong) {
+        var needLongButton = true;
+        if(window.conceptViewer && conceptViewer.version == 2) {
+            conceptViewer.setIntroHtml(levelIntroContent);
+        } else if (hasLong) {
             $('#taskIntro').addClass('hasLongIntro');
             // if long version of introduction exists, append its content to #blocklyLibContent
             // with proper title and close button
@@ -658,49 +990,73 @@ var quickAlgoInterface = {
                 '<div id="taskIntroLong" style="display:none;" class="panel">' +
                     '<div class="panel-heading">'+
                         '<h2 class="sectionTitle"><i class="fas fa-search-plus icon"></i>' + this.strings.introDetailsTitle + '</h2>' +
-                        '<button type="button" class="closeLongIntro exit" onclick="quickAlgoInterface.toggleLongIntro(false);"><i class="fas fa-times"></i></button>' +
+                        '<button type="button" class="closeLongIntro exit" onclick="quickAlgoInterface.toggleMoreDetails(false);"><i class="fas fa-times"></i></button>' +
                     '</div><div class="panel-body">' +
                         levelIntroContent +
                     '</div>' +
                 '<div>';
             $('#blocklyLibContent').append(introLong);
-            var renderTaskIntro = '' +
-                '<div class="introContent">' +
-                '<h2 class="introTitleIcon"><span class="fas fa-book icon"></span></h2>' +
-                    levelIntroContent +
-                '</div>' +
-                '<div id="introControls">' +
-                    '<button type="button" class="showLongIntro" onclick="quickAlgoInterface.toggleLongIntro();"></button>' +
-                '</div>';
-            $('#taskIntro').html(renderTaskIntro);
-            quickAlgoInterface.toggleLongIntro(false);
         } else {
             $('#taskIntro').html(
                 '<div class="introContent">' +
                 '<h2 class="introTitleIcon"><span class="fas fa-book icon"></span></h2>' +
                     levelIntroContent +
                 '</div>');
+            var needLongButton = false;
+        }
+
+        if(needLongButton) {
+            var renderTaskIntro = '' +
+                '<div class="introContent">' +
+                '<h2 class="introTitleIcon"><span class="fas fa-book icon"></span></h2>' +
+                    levelIntroContent +
+                '</div>' +
+                '<div id="introControls">' +
+                    '<button type="button" class="showLongIntro" onclick="quickAlgoInterface.toggleMoreDetails();"></button>' +
+                '</div>';
+            $('#taskIntro').html(renderTaskIntro);
+            quickAlgoInterface.toggleMoreDetails(false);
         }
         this.bindVideoBtns();
     },
 
-    appendTaskIntro: function(html) {
+    appendPythonIntro: function(html, callback) {
+        if(window.conceptViewer && conceptViewer.version == 2) {
+            conceptViewer.setPythonIntro(html, callback);
+            return;
+        }
+
         if(this.taskIntroContent === null) {
             this.taskIntroContent = $('#taskIntro').html();
         }
+        this.taskIntroContent += '<hr class="pythonIntroElement long" />';
         this.taskIntroContent += html;
         $('#taskIntro').html(this.taskIntroContent);
         this.setupTaskIntro();
     },
 
+    toggleMoreDetails: function(forceNewState) {
+        if(window.conceptViewer && conceptViewer.version == 2) {
+            // Use new version of conceptViewer
+            var newState = conceptViewer.toggle(forceNewState);
+        } else {
+            this.toggleLongIntro(forceNewState);
+            var newState = this.longIntroShown;
+        }
+
+        if(newState) {
+            $('.showLongIntro').html('<span class="fas fa-minus-circle icon"></span>' + this.strings.hideDetails + '</button>');
+        } else {
+            $('.showLongIntro').html('<span class="fas fa-plus-circle icon"></span>' + this.strings.showDetails + '</button>');
+        }
+    },
+
     toggleLongIntro: function(forceNewState) {
         if(forceNewState === false || this.longIntroShown) {
             $('#taskIntroLong').removeClass('displayIntroLong');
-            $('.showLongIntro').html('<span class="fas fa-plus-circle icon"></span>' + this.strings.showDetails + '</button>');
             this.longIntroShown = false;
         } else {
             $('#taskIntroLong').addClass('displayIntroLong');
-            $('.showLongIntro').html('<span class="fas fa-minus-circle icon"></span>' + this.strings.hideDetails + '</button>');
             this.longIntroShown = true;
         }
     },
@@ -781,17 +1137,20 @@ var quickAlgoInterface = {
 
     displayNotification: function(type, message, lock, yesFunc, noFunc) {
         if(lock) {
-            $('.notificationMessageLock').remove();
+            $('.notificationMessageLock.notificationMessageLock-'+type).remove();
         } else {
             $('.notificationMessage').not('.notificationMessageLock').remove();
         }
         if(!message) return;
-        var divClass = lock ? 'notificationMessageLock' : '';
+        var divClass = lock ? 'notificationMessageLock notificationMessageLock-'+type : '';
         if(type == 'error') {
-            divClass += 'errorMessage';
+            divClass += ' errorMessage';
             var icon = 'fa-bell';
+        } else if(type == 'wait') {
+            divClass += ' waitMessage';
+            var icon = 'fa-clock';
         } else {
-            divClass += 'successMessage';
+            divClass += ' successMessage';
             var icon = 'fa-check';
         }
         var id = Math.random();
@@ -847,6 +1206,10 @@ var quickAlgoInterface = {
 
     displayError: function(message, lock) {
         this.displayNotification('error', message, lock);
+    },
+
+    setValidating: function(mode) {
+        $('.speedControls').toggleClass('speedControlsDisabled', mode);
     },
 
     makeTestResult: function(results, link) {
@@ -948,7 +1311,7 @@ var quickAlgoInterface = {
 
         var html = '' +
             '<div id="quickAlgo-keypad"><div class="keypad">' +
-            '   <div class="keypad-exit" data-btn="C"><span class="fas fa-times"></span></div>' +
+//            '   <div class="keypad-exit" data-btn="C"><span class="fas fa-times"></span></div>' +
             '   <div class="keypad-row">' +
             '       <'+screenType+' class="keypad-value"></'+screenType+'>' +
             '   </div>' +

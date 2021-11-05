@@ -42,6 +42,7 @@ window.displayHelper = {
    hasLevels: false,
    pointsAsStars: true, // TODO: false as default
    unlockedLevels: 4,
+   forceNextTaskAfter: -1,
    neverHadHard: false,
    showMultiversionNotice: false,
    taskLevel: '',
@@ -75,7 +76,7 @@ window.displayHelper = {
          no: "Non",
          tryHardLevel: "Nous vous proposons d'essayer la version 4 étoiles.",
          tryMediumLevel: "Nous vous proposons d'essayer la version 3 étoiles.",
-         tryNextTask: "Nous vous proposons de passer au sujet suivant. S'il vous reste du temps, vous reviendrez plus tard essayer la version suivante.",
+         tryNextTask: "Nous vous proposons de passer à un autre sujet. S'il vous reste du temps, vous reviendrez plus tard essayer la version suivante.",
          yourScoreIsNow: "Votre score est maintenant :",
          worseScoreStays: "C'est moins bien qu'avant ; votre score reste :",
          scoreStays: "Votre score reste le même :",
@@ -99,6 +100,7 @@ window.displayHelper = {
          illKeepThatInMind: "J'y prendrai garde",
          harderLevelAvailable: "Notez que pour cette question, vous pouvez résoudre directement une version plus difficile que celle-ci.",
          lockedLevel: "Cette version est verrouillée. Résolvez la précédente pour l'afficher !",
+         lockedLevelDev: "Cette version est normalement verrouillée, et la précédente doit être résolue avant de pouvoir afficher cette version. Comme vous avez chargé ce sujet en local, vous pouvez néanmoins la voir.",
          gradeThisAnswer: "Évaluer cette réponse",
 
          // The following messages are used for tasks with no feedback
@@ -169,6 +171,7 @@ window.displayHelper = {
          illKeepThatInMind: "I'll consider it.",
          harderLevelAvailable: "Note that for this task, you may try to directly work on a harder version than this one.",
          lockedLevel: "This version is locked. Solve the previous version to display it!",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Grade this answer",
 
          // The following messages are used for tasks with no feedback
@@ -239,6 +242,7 @@ window.displayHelper = {
          illKeepThatInMind: "Jag ska tänka på det.",
          harderLevelAvailable: "Notera att på den här uppgiften kan du direkt försöka med en svårare version än denna.",
          lockedLevel: "Den här versionen är låst. Lös den föregående nivån för att visa den!",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Bedöm svaret",
 
          // The following messages are used for tasks with no feedback
@@ -309,6 +313,7 @@ window.displayHelper = {
          illKeepThatInMind: "Ymmärrän tämän.",
          harderLevelAvailable: "Huomaa, että voit myös suoraan koittaa ratkaista vaikeampaa versiota tästä tehtävästä.",
          lockedLevel: "Tämä versio on vielä lukittu: ratkaise ensin helpompi versio!",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Tarkista vastaus",
 
          // The following messages are used for tasks with no feedback
@@ -379,6 +384,7 @@ window.displayHelper = {
          illKeepThatInMind: "Ich hab das verstanden",
          harderLevelAvailable: "Beachte, dass du bei dieser Frage direkt zu einer schwereren Version gehen kannst.",
          lockedLevel: "Diese Version ist noch gesperrt. Löse die vorherige um diese freizuschalten.",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Diese Antwort auswerten",
 
          // The following messages are used for tasks with no feedback
@@ -449,6 +455,7 @@ window.displayHelper = {
          illKeepThatInMind: "I'll consider it.",
          harderLevelAvailable: "تنبيه: يمكنك حل المستوى الأصعب في هذه المسألة مباشرة",
          lockedLevel: "هذا المستوى مغلق. يجب عليك حل المستوى السابق أولا",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "قيم هذه الإجابة",
 
          // The following messages are used for tasks with no feedback
@@ -519,6 +526,7 @@ window.displayHelper = {
          illKeepThatInMind: "Lo tendré en mente",
          harderLevelAvailable: "Nota que para esta pregunta, puedes resolver directamente una versión más difícil que esta.",
          lockedLevel: "Esta versión está bloqueada. Resuelve la version anterior para verla.",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Evaluar esta respuesta",
 
          // The following messages are used for tasks with no feedback
@@ -589,6 +597,7 @@ window.displayHelper = {
          illKeepThatInMind: "Me lo ricorderò",
          harderLevelAvailable: "Si noti che per questa domanda è possibile risolvere direttamente una versione più difficile di questa.",
          lockedLevel: "Questa versione è bloccata. Risolvi la precedente per visualizzarla !",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Valuta questa risposta",
 
          // The following messages are used for tasks with no feedback
@@ -659,6 +668,7 @@ window.displayHelper = {
          illKeepThatInMind: "Razmislil(-a) bom.",
          harderLevelAvailable: "Ne pozabi, da lahko to nalogo rešuješ na težji stopnji kot je ta.",
          lockedLevel: "Ta stopnja je zaklenjena! Za pikaz moraš najprej rešiti prejšnjo stopnjo!",
+         lockedLevelDev: "This version is normally locked, and the previous version must be solved before displaying this. As you opened this task locally, you can however display this version for testing purposes.",
          gradeThisAnswer: "Oceni ta odgovor",
 
          // The following messages are used for tasks with no feedback
@@ -755,12 +765,37 @@ window.displayHelper = {
          enemyWarning: "<strong>Advarsel:</strong> in this challenge, the computer will make sure you don't find the solution by chance."
       },
    },
+
+   // themeStrings is like languageStrings, when setTheme is called, it will
+   // overwrite some languageStrings
+   themeStrings: {
+      coursera: {
+         solvedMoveOn: "Votre score a été transmis à Coursera. Vous devez rafraîchir la page dans Coursera pour voir votre note.",
+         moveOn: "Fermer cet exercice",
+         no: "Rester"
+      },
+   },
+
    initLanguage: function() {
       if (window.stringsLanguage == undefined) {
          window.stringsLanguage = 'fr';
       }
       this.strings = this.languageStrings[window.stringsLanguage];
+      if(this.theme) { this.setTheme(this.theme); }
    },
+   setTheme: function(theme) {
+      // Set a "theme", which is just some different strings
+
+      var newStrings = this.themeStrings[theme];
+      if(!newStrings) { return; }
+      this.theme = theme;
+
+      if(!this.strings) { return; }
+      for(var key in newStrings) {
+         this.strings[key] = newStrings[key];
+      }
+   },
+
    /***********************************************
     * Initialization functions called by the task *
     ***********************************************/
@@ -840,6 +875,7 @@ window.displayHelper = {
 
    initLevelVars: function() {
       var defaultLevelsRanks = { basic: 1, easy: 2, medium: 3, hard: 4 };
+      this.taskLevel = '';
       this.levelsRanks = {};
       this.levelsScores = {};
       this.prevLevelsScores = {};
@@ -1039,8 +1075,12 @@ window.displayHelper = {
       return this.levelsMaxScores;
    },
 
-   displayLevel: function(newLevel) {
+   displayLevel: function(newLevel, calledFromSet) {
       // Only displays a level, without requesting a level change to the task
+      if(!calledFromSet) {
+         this.taskLevel = newLevel;
+      }
+
       if (this.popupMessageShown) {
          $('#popupMessage').hide();
          $('#displayHelperAnswering, #taskContent').show();
@@ -1067,17 +1107,18 @@ window.displayHelper = {
       $('#tabsMenu .li.current').next().addClass('next');
    },
 
-   setLevel: function(newLevel) {
-      if (this.taskLevel == newLevel) {
+   setLevel: function(newLevel, force) {
+      // Always make sure we're displaying the level
+      this.displayLevel(newLevel, true);
+
+      // Skip actually changing the level if we're already on this level
+      if (this.taskLevel == newLevel && !force) {
          return;
       }
-
-      this.displayLevel(newLevel);
 
       var answer = task.getAnswerObject();
       var state = task.getStateObject();
       state.level = newLevel;
-      this.taskLevel = newLevel;
       var self = this;
 
       var afterReload = function() {
@@ -1086,10 +1127,14 @@ window.displayHelper = {
          self.checkAnswerChanged();
          self.stopShowingResult();
          if ($('#tab_' + newLevel).hasClass('lockedLevel')) {
-            self.showPopupMessage(self.strings.lockedLevel, 'lock');
+            if(window.location.protocol == 'file:') {
+               self.showPopupMessage(self.strings.lockedLevelDev, 'tab', self.strings.alright, reload);
+            } else {
+               self.showPopupMessage(self.strings.lockedLevel, 'lock');
+            }
          } else if (!self.hasSolution) {
             if ($('#tab_' + newLevel).hasClass('uselessLevel') && self.levelsScores[newLevel] < self.levelsMaxScores[newLevel]) {
-               self.showPopupMessage(self.strings.harderLevelSolved, 'tab', self.strings.showLevelAnyway, null, null, "warning");
+               self.showPopupMessage(self.strings.harderLevelSolved, 'tab', self.strings.showLevelAnyway, reload, null, "warning");
             } else if (newLevel == 'hard' && self.neverHadHard) {
                var hardVersionKey = "levelVersionName_hard";
                var easyVersionKey = "levelVersionName_easy";
@@ -1101,22 +1146,27 @@ window.displayHelper = {
                'tab',
                   self.strings.illKeepThatInMind, function() {
                      self.neverHadHard = false;
+                     reload();
                   }
                );
             }
          }
       };
 
-      if(self.reloadWithCallbacks) {
-         task.reloadStateObject(state, function() {
-            task.reloadAnswerObject(answer, afterReload);
-         });
-      }
-      else {
-         task.reloadStateObject(state, true);
-         task.reloadAnswerObject(answer);
-         afterReload();
-      }
+      var reload = function(callback) {
+         if(self.reloadWithCallbacks) {
+            task.reloadStateObject(state, function() {
+               task.reloadAnswerObject(answer, callback);
+            });
+         }
+         else {
+            task.reloadStateObject(state, true);
+            task.reloadAnswerObject(answer);
+            if(callback) { callback(); }
+         }
+      };
+
+      reload(afterReload);
    },
 
    getImgPath: function() {
@@ -1496,6 +1546,10 @@ window.displayHelper = {
             $('#tab_' + curLevel).removeClass('lockedLevel');
             this.unlockedLevels++;
             this.updateStarsAtLevel(curLevel);
+            // Currently displayed level has been unlocked, display it
+            if(curLevel == this.taskLevel) {
+               this.setLevel(this.taskLevel, true);
+            }
          }
       }
       if (scores[gradedLevel] == this.graderScore) {
@@ -1539,7 +1593,11 @@ window.displayHelper = {
                 if(gradedLevel == "medium") { threshold = this.thresholdMedium; }
                 else if(gradedLevel == "easy") { threshold = this.thresholdEasy; }
             }
-            if(!threshold || (threshold && secondsSinceLoaded < threshold)) {
+            if(levelIdx == this.forceNextTaskAfter) {
+               // Move onto next task after a specified difficulty
+               actionNext = "top";
+               fullMessage += this.strings.tryNextTask;
+            } else if(!threshold || (threshold && secondsSinceLoaded < threshold)) {
                actionNext = nextLevel;
                if(gradedLevel == "easy") { fullMessage += this.strings.tryMediumLevel; }
                if(gradedLevel == "medium") { fullMessage += this.strings.tryHardLevel; }
@@ -1565,6 +1623,8 @@ window.displayHelper = {
             }
             if (actionNext == "nextTask") {
                platform.validate("nextImmediate");
+            } else if (actionNext == "top") {
+               platform.validate("top");
             } else if(self.levelsIdx[actionNext] !== undefined) {
                self.setLevel(actionNext);
             }
@@ -1772,7 +1832,7 @@ window.displayHelper = {
                   return '<input type="button" value="' + this.strings.gradeThisAnswer + '" onclick="displayHelper.validate(\'test\');" ' +
                      disabledStr + '/>';
                } else {
-                  // was: “Valider votre nouvelle réponse”
+                  // was: Valider votre nouvelle réponse
                   return '<input type="button" value="' + strValidate + '" onclick="displayHelper.callValidate();" ' +
                      disabledStr + '/>';
                }

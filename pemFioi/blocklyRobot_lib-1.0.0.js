@@ -4,6 +4,14 @@
 /*TODO : traduire le context wiring*/
 var robotCommands = [];
 
+var initArray = function(n, elem) {
+   var res = [];
+   for(var i = 0;i < n;i++) {
+      res.push(elem);
+   }
+   return res;
+}
+
 var getContext = function(display, infos, curLevel) {
    var localLanguageStrings = {
       fr: {
@@ -45,10 +53,10 @@ var getContext = function(display, infos, curLevel) {
                row: "ligne du robot",
                col: "colonne du robot",
                wait: "attendre",
-               north: "avancer vers le haut",
-               south: "avancer vers le bas",
-               east: "avancer vers la droite",
-               west: "avancer vers la gauche",
+               north: "avancer vers le nord",
+               south: "avancer vers le sud",
+               east: "avancer vers l'est",
+               west: "avancer vers l'ouest",
                left: "tourner à gauche",
                right: "tourner à droite",
                turnAround: "faire demi-tour",
@@ -56,16 +64,16 @@ var getContext = function(display, infos, curLevel) {
                backwards: "reculer",
                jump: "sauter",
                obstacleInFront: "obstacle devant",
-               obstacleEast: "obstacle à droite",
-               obstacleWest: "obstacle à gauche",
-               obstacleNorth: "obstacle en haut",
-               obstacleSouth: "obstacle en bas",
+               obstacleEast: "obstacle à l'est",
+               obstacleWest: "obstacle à l'ouest",
+               obstacleNorth: "obstacle au nord",
+               obstacleSouth: "obstacle au sud",
                obstacleRight: "obstacle à droite",
                obstacleLeft: "obstacle à gauche",
-               gridEdgeEast: "bord de la grille à droite",
-               gridEdgeWest: "bord de la grille à gauche",
-               gridEdgeNorth: "bord de la grille en haut",
-               gridEdgeSouth: "bord de la grille en bas",
+               gridEdgeEast: "bord de la grille à l'est",
+               gridEdgeWest: "bord de la grille à l'ouest",
+               gridEdgeNorth: "bord de la grille au nord",
+               gridEdgeSouth: "bord de la grille au sud",
                platformInFront: "plateforme devant",
                platformAbove: "plateforme au-dessus",
                withdrawObject: "ramasser l'objet",
@@ -79,22 +87,32 @@ var getContext = function(display, infos, curLevel) {
                readNumber: "nombre de la case",
                pushObject: "pousser l'objet",
                pushableInFront: "poussable devant",
+               dropNum: "déposer %1 objets",
+               dropNum_noShadow: "déposer %1 objets",
+               nbWithdrawables: "nombre d'objets sur la case",
+               nbInBag: "nombre d'objets dans le sac",
+               containerSize: "nombre d'objets à déposer sur la case",
+               withdrawNum: "ramasser %1 objets",
+               withdrawNum_noShadow: "ramasser %1 objets",
                shoot: "tirer au laser dans la direction %1",
                shoot_noShadow: "tirer au laser dans la direction %1",
                shootCondition: "retour départ tir direction %1",
                shootCondition_noShadow: "retour départ tir direction %1",
                connect: "brancher un câble",
                onMale: "sur une prise mâle",
-               onFemale: "sur une prise femelle"
+               onFemale: "sur une prise femelle",
+               dropPlatformInFront: "construire une plateforme devant",
+               dropPlatformAbove: "construire une plateforme au-dessus"
+               
             },
             code: {
                row: "ligneRobot",
                col: "colonneRobot",
                wait: "attendre",
-               north: "haut",
-               south: "bas",
-               east: "droite",
-               west: "gauche",
+               north: "nord",
+               south: "sud",
+               east: "est",
+               west: "ouest",
                left: "tournerGauche",
                right: "tournerDroite",
                turnAround: "demiTour",
@@ -102,16 +120,16 @@ var getContext = function(display, infos, curLevel) {
                backwards: "reculer",
                jump: "sauter",
                obstacleInFront: "obstacleDevant",
-               obstacleEast: "obstacleDroite",
-               obstacleWest: "obstacleGauche",
-               obstacleNorth: "obstacleHaut",
-               obstacleSouth: "obstacleBas",
-               obstacleRight: "obstacleDroiteRel",
-               obstacleLeft: "obstacleGaucheRel",
-               gridEdgeEast: "bordGrilleDroite",
-               gridEdgeWest: "bordGrilleGauche",
-               gridEdgeNorth: "bordGrilleHaut",
-               gridEdgeSouth: "bordGrilleBas",
+               obstacleEast: "obstacleEst",
+               obstacleWest: "obstacleOuest",
+               obstacleNorth: "obstacleNord",
+               obstacleSouth: "obstacleSud",
+               obstacleRight: "obstacleDroite",
+               obstacleLeft: "obstacleGauche",
+               gridEdgeEast: "bordGrilleEst",
+               gridEdgeWest: "bordGrilleOuest",
+               gridEdgeNorth: "bordGrilleNord",
+               gridEdgeSouth: "bordGrilleSud",
                platformInFront: "plateformeDevant",
                platformAbove: "plateformeDessus",
                withdrawObject: "ramasserObjet",
@@ -125,13 +143,35 @@ var getContext = function(display, infos, curLevel) {
                readNumber: "nombreSurCase",
                pushObject: "pousserObjet",
                pushableInFront: "poussableDevant",
+               dropNum: "deposer",
+               dropNum_noShadow: "deposer",
+               containerSize: "nbObjetsADeposer",
+               nbInBag: "nbObjetsDansSac",
+               nbWithdrawables: "nbObjetsSur",
+               withdrawNum: "ramasser",
+               withdrawNum_noShadow: "ramasser",
                shoot: "tirerLaser",
                shoot_noShadow: "tirerLaser",
                shootCondition: "tirerCondition",
                shootCondition_noShadow: "tirerCondition",
                connect: "brancherCable",
                onMale: "surMale",
-               onFemale: "surFemelle"
+               onFemale: "surFemelle",
+               dropPlatformInFront: "construirePlateformeDevant",
+               dropPlatformAbove: "construirePlateformeAuDessus"
+            },
+            description: {
+               forward: "avancer() fait avancer le robot d'une case",
+               backwards: "reculer() fait reculer le robot d'une case",
+               left: "tournerGauche() fait se tourner le robot d'un quart de tour à gauche",
+               right: "tournerDroite() fait se tourner le robot d'un quart de tour à droite",
+               row: "ligneRobot() retourne le numéro de la ligne du robot",
+               col: "colonneRobot() retourne le numéro de la colonne du robot",
+               turnAround: "demiTour() fait faire demi-tour au robot",
+               east: "est() déplace le robot d'une case vers l'est",
+               west: "ouest() déplace le robot d'une case vers l'oest",
+               north: "nord() déplace le robot d'une case vers le nord",
+               south: "sud() déplace le robot d'une case vers le sud",
             },
             messages: {
                leavesGrid: "Le robot sort de la grille !",
@@ -162,6 +202,7 @@ var getContext = function(display, infos, curLevel) {
                failureNothingToPush: "Il n'y a pas d'objet à pousser !",
                failureWhilePushing: "Le robot ne peut pas pousser cet objet !",
                failureDropObject: "On ne peut pas poser d'objet ici",
+               failureDropPlatform: "Il y a déjà une plateforme ici",
                failureDropOutside: "Votre robot essaie de poser un objet hors de la grille",
                failureNotEnoughPlatform: "Pas assez de plateformes",
                failureLights: "Il reste des spots à allumer.",
@@ -176,7 +217,14 @@ var getContext = function(display, infos, curLevel) {
                failureWireTooLong: "Impossible de relier ces deux prises car elles sont trop éloignées !",
                failureTotalLengthExceeded: "Vous n'avez pas assez de longueur de câble pour relier ces deux prises !",
                failureProjectile: "Le robot s'est pris un projectile !",
-               failureRewrite: "Le robot a essayé de repeindre une case."
+               failureRewrite: "Le robot a essayé de repeindre une case.",
+               noContainer: "Il n'y a pas de conteneur ici !"
+            },
+            cardinals: {
+               north: "Nord",
+               south: "Sud",
+               west: "Ouest",
+               east: "Est"
             },
             startingBlockName: "Programme du robot"
          },
@@ -225,7 +273,10 @@ var getContext = function(display, infos, curLevel) {
                shootCondition_noShadow: "laser shot returning to starting point in direction %1",
                connect: "plug a wire",
                onMale: "to a male plug",
-               onFemale: "to a female plug"
+               onFemale: "to a female plug",
+               dropPlatformInFront: "drop platform in front",
+               dropPlatformAbove: "drop platform above"
+               
             },
             code: {
                row: "robotRow",
@@ -271,7 +322,9 @@ var getContext = function(display, infos, curLevel) {
                shootCondition_noShadow: "shootOnCondition",
                connect: "plugCable",
                onMale: "onMalePlug",
-               onFemale: "onFemalePlug"
+               onFemale: "onFemalePlug",
+               dropPlatformInFront: "dropPlatformInFront",
+               dropPlatformAbove: "dropPlatformAbove"
             },
             messages: {
                leavesGrid: "The robot exits the grid!",
@@ -301,7 +354,8 @@ var getContext = function(display, infos, curLevel) {
                failureNumbersWritten: "Your robot didn't write the correct numbers!",
                failureNothingToPush: "There is no object to push!",
                failureWhilePushing: "The robot can't push this object!",
-               failureDropObject: "You can't drop an object here",
+               failureDropObject: "You can't drop an platform here",
+               failureDropPlatform: "You can't drop an object here",
                failureDropOutside: "Your robot tries to drop an object outside of the grid",
                failureNotEnoughPlatform: "Not enough platforms",
                failureLights: "There are still lights to turn on.",
@@ -316,6 +370,12 @@ var getContext = function(display, infos, curLevel) {
                failureWireTooLong: "Impossible to connect these two plugs: they are too far from eachother!",
                failureTotalLengthExceeded: "You don't have enough length of cable to connect these two plugs!",
                failureProjectile: "The robot got hit by a projectile!"
+            },
+            cardinals: {
+               north: "North",
+               south: "South",
+               west: "West",
+               east: "East"
             },
             startingBlockName: "Program of the robot"
          },
@@ -361,7 +421,9 @@ var getContext = function(display, infos, curLevel) {
                shoot: "disparar el láser en la dirección %1",
                shoot_noShadow: "disparar el laser en la dirección %1",
                shootCondition: "dirección del tiro de retorno %1",
-               shootCondition_noShadow: "dirección del tiro de retorno %1"
+               shootCondition_noShadow: "dirección del tiro de retorno %1",
+               dropPlatformInFront: "construir una plataforma adelante",
+               dropPlatformAbove: "construir una plataforma arriba"
             },
             code: {
                row: "filaRobot",
@@ -403,7 +465,9 @@ var getContext = function(display, infos, curLevel) {
                shoot: "dispararLaser",
                shoot_noShadow: "dispararLaser",
                shootCondition: "condicionDisparo",
-               shootCondition_noShadow: "condicionDisparo"
+               shootCondition_noShadow: "condicionDisparo",
+               dropPlatformInFront: "construirPlataformaAdelante",
+               dropPlatformAbove: "construirPlataformaArriba"
             },
             messages: {
                leavesGrid: "¡El robot salió de la cuadrícula!",
@@ -434,11 +498,18 @@ var getContext = function(display, infos, curLevel) {
                failureNothingToPush: "¡No hay un objeto que empujar!",
                failureWhilePushing: "¡El robot no puede empujar este objeto!",
                failureDropObject: "No es posible poner el objeto aquí",
+               failureDropPlatform: "No es posible poner el objeto aquí",
                failureDropOutside: "Su robot intenta poner un objeto fuera de la cuadrícula",
                failureNotEnoughPlatform: "No hay suficiente plataforma",
                failureLights: "Aún faltan lugares que iluminar.",
                successLights: "Bravo, ¡su robot ha iluminado todos los lugares!",
                failureLaser: "¡El robot debe encontrarse sobre una terminal láser para poder disparar!"
+            },
+            cardinals: {
+               north: "Norte",
+               south: "Sur",
+               west: "Oeste",
+               east: "Este"
             },
             startingBlockName: "Programa del robot"
          },
@@ -556,11 +627,18 @@ var getContext = function(display, infos, curLevel) {
                failureNothingToPush: "An dieser Stelle gibt es nichts zum Schieben!",
                failureWhilePushing: "Der Roboter hat es nicht geschafft, das Objekt zu schieben!",
                failureDropObject: "An dieser Stelle kann kein Objekt abgelegt werden!",
+               failureDropPlatform: "An dieser Stelle kann kein Objekt abgelegt werden!",
                failureDropOutside: "Der Roboter hat versucht ein Objekt vom Gitterrand zu schieben!",
                failureNotEnoughPlatform: "Nicht genügend Plattformen!",
                failureLights: "Der Roboter hat nicht alles beleuchtet!",
                successLights: "Bravo! Der Roboter hat alles beleuchtet.",
                failureLaser: "Der Roboter muss auf einem Laser stehen, um schießen zu können!",
+            },
+            cardinals: {
+               north: "Norden",
+               south: "Süden",
+               west: "Westen",
+               east: "Osten"
             },
             startingBlockName: "Roboter-Programm"
          },
@@ -686,6 +764,7 @@ var getContext = function(display, infos, curLevel) {
                failureNothingToPush: "Il n'y a pas d'objet à pousser !",
                failureWhilePushing: "Le robot ne peut pas pousser cet objet !",
                failureDropObject: "On ne peut pas poser d'objet ici",
+               failureDropPlatform: "On ne peut pas construire de plateforme ici",
                failureDropOutside: "Votre robot essaie de poser un objet hors de la grille",
                failureNotEnoughPlatform: "Pas assez de plateformes",
                failureLights: "Il reste des spots à allumer.",
@@ -701,6 +780,12 @@ var getContext = function(display, infos, curLevel) {
                failureTotalLengthExceeded: "Vous n'avez pas assez de longueur de câble pour relier ces deux prises !",
                failureProjectile: "Le robot s'est pris un projectile !",
                failureRewrite: "Le robot a essayé de repeindre une case."
+            },
+            cardinals: {
+               north: "Nord",
+               south: "Sud",
+               west: "Ovest",
+               east: "Est"
             },
             startingBlockName: "Programme du robot"
          },
@@ -898,6 +983,11 @@ var getContext = function(display, infos, curLevel) {
                onContainer: "terreSurCase",
                obstacleInFront: "fleurDevant"
             },
+            description: {
+               dropObject: "semerGraine() sème une graine sur la case du robot",
+               onContainer: "terreSurCase() indique s'il y a de la terre sur la case du robot",
+               obstacleInFront: "fleurDevant() indique s'il y a une fleur sur la case devant le robot"
+            },
             messages: {
                successContainersFilled: "Bravo, votre robot est un bon jardinier !",
                failureContainersFilled: "Votre robot a semé hors des zones de terre.",
@@ -1007,6 +1097,75 @@ var getContext = function(display, infos, curLevel) {
             }
          }
       },
+      fishing: {
+         fr: {
+            label: {
+               withdrawObject: "prendre les poissons",
+               dropObject: "déposer les poissons",
+               withdrawNum_noShadow: "prendre %1 poissons",
+               dropNum_noShadow: "déposer %1 poissons",
+               nbWithdrawables: "nombre de poissons sur la case",
+               containerSize: "nombre de poissons commandés",
+               onObject: "poissons sur la case",
+               onContainer: "sur une île",
+            },
+            code: {
+               withdrawObject: "prendrePoissons",
+               dropObject: "deposerPoissons",
+               onObject: "surPoissons",
+               onContainer: "surIle",
+               nbWithdrawables: "nbPoissonsSur",
+               containerSize: "nbPoissonsCommandes",
+               withdrawNum: "prendre",
+            },
+            description: {
+               withdrawObject: "prendrePoissons() prend les poissons qui se trouvent sur la case",
+               dropObject: "deposerPoissons() dépose sur la case les poissons transportés",
+               onObject: "surPoissons() indique s'il y a un ou des poissons sur la case",
+               onContainer: "surIle() indique s'il y a une île sur la case",
+               nbWithdrawables: "nbPoissonsSur() indique combien de poissons sont sur la case",
+               containerSize: "nbPoissonsCommandes() indique il faut livrer de poissons sur l'île",
+               dropNum: "deposer(nbPoissons) dépose nbPoissons poissons sur la case",
+               withdrawNum: "prendre(nbPoissons) prend nbPoissons poissons sur la case",
+            },
+            messages: {
+               emptyBag: "Le robot ne porte pas de poisson !",
+
+               tooManyObjects: "Le robot porte déjà un poisson !",
+               successContainersFilled: "Bravo, votre robot a apporté du poisson sur toutes les îles !",
+               failureContainersFilled: "Votre robot a remis du poisson à l'eau !",
+               failureContainersFilledLess: "Il reste encore au moins un poisson à apporter sur une île.",
+               failureContainersFilledBag: "Il faut apporter les poissons sur une île !",
+               failureDropObject: "Cette île a déjà reçu assez de poissons.",
+               nothingToPickUp: "Pas de poisson ici !",
+               failureContainersFilledBag: "Votre robot a pris trop de poissons.",
+               failureDropObject: "Votre robot essaie de déposer trop de poissons sur cette île."
+            }
+         },
+
+         es: {
+            label: {
+               withdrawObject: "recoger la bola",
+               dropObject: "soltar la bola",
+               onObject: "sobre una bola",
+               onContainer: "sobre un agujero",
+            },
+            code: {
+               withdrawObject: "recogerBola",
+               dropObject: "soltarBola",
+               onObject: "sobreBola",
+               onContainer: "sobreAgujero",
+            },   
+            messages: {
+               emptyBag: "¡El robot no carga ninguna bola!",
+               tooManyObjects: "¡El robot ya está cargando una bola!",
+               successContainersFilled: "Bravo, ¡el robot ordenó las bolas!",
+               failureContainersFilled: "Hay bolas en lugares incorrectos.",
+               failureContainersFilledLess: "Aún falta colocar una bola.",
+               failureContainersFilledBag: "¡Debe colocar la bola en un agujero!",
+            }
+         }
+      },
       gears: {
          fr: {
             label: {
@@ -1027,7 +1186,8 @@ var getContext = function(display, infos, curLevel) {
                failureContainersFilledLess: "Votre robot n'a pas replacé toutes les roues dentées au bon endroit.",
                failureContainersFilledBag: "Votre robot doit déposer la roue dentée sur la machine.",
                failureDropOutside: "Votre robot essaie de construire une plateforme hors de la grille.",
-               failureDropObject: "Il y a déjà une plateforme ici !",
+               failureDropObject: "Il y a déjà une roue ici !",
+               failureDropPlatform: "Il y a déjà une plateforme ici !",
                emptyBag: "Le robot essaie d'accrocher une roue dentée alors qu'il n'en transporte pas !"
             }
          },
@@ -1052,6 +1212,7 @@ var getContext = function(display, infos, curLevel) {
                failureContainersFilledBag: "Votre robot doit déposer la roue dentée sur la machine.",
                failureDropOutside: "Votre robot essaie de construire une plateforme hors de la grille.",
                failureDropObject: "Il y a déjà une plateforme ici !",
+               failureDropPlatform: "Il y a déjà une plateforme ici !",
                emptyBag: "Le robot essaie d'accrocher une roue dentée alors qu'il n'en transporte pas !"
             }
          },
@@ -1091,6 +1252,12 @@ var getContext = function(display, infos, curLevel) {
                dropObject: "deposerBille",
                onObject: "surBille",
                onContainer: "surTrou",
+            },   
+            description: {
+               withdrawObject: "ramasserBille() ramasse la bille de la case du robot",
+               dropObject: "deposerBille() dépose la bille transportée sur la case du robot",
+               onObject: "surBille() indique une bille est sur la case du robot",
+               onContainer: "surTrou() indique s'il y a un trou sur la case du robot",
             },   
             messages: {
                emptyBag: "Le robot ne porte pas de bille !",
@@ -1147,6 +1314,70 @@ var getContext = function(display, infos, curLevel) {
             },
             messages: {
                obstacle: "¡Cuidado con el asteroide!"
+            }
+         }
+      },
+      packages: {
+         fr: {
+            label: {
+               withdrawObject: "ramasser le livre",
+               dropObject: "déposer le livre",
+               withdrawNum_noShadow: "ramasser %1 livres",
+               dropNum_noShadow: "déposer %1 livres",
+               nbWithdrawables: "nombre de livres sur la case",
+               containerSize: "nombre de livres commandés",
+               onObject: "livres sur la case",
+               onContainer: "sur un carton",
+            },
+            code: {
+               withdrawObject: "ramasserLivre",
+               dropObject: "deposerLivre",
+               onObject: "surLivres",
+               onContainer: "surCarton",
+               nbWithdrawables: "nbLivresSur",
+               containerSize: "nbLivresCommandes",
+            },
+            description: {
+               withdrawObject: "ramasserLivre() ramasse le livre qui se trouve sur la case",
+               dropObject: "deposerLivre() dépose sur la case le livre transporté",
+               onObject: "surLivres() indique s'il y a un ou des livres sur la case",
+               onContainer: "surCarton() indique s'il y a un carton sur la case",
+               nbWithdrawables: "nbLivresSur() indique combien de livres sont sur la case",
+               containerSize: "nbLivresCommandes() indique combien de livres sont commandés pour ce carton",
+               dropNum: "deposer(nbLivres) dépose nLivres livres sur la case",
+               withdrawNum: "ramasser(nbLivres) ramasse nbLivres livres sur la case",
+            },
+            messages: {
+               emptyBag: "Le robot ne porte pas de livre !",
+               tooManyObjects: "Le robot porte déjà un livre !",
+               successContainersFilled: "Bravo, tous les cartons sont pleins. Les colis vont pouvoir être livrés !",
+               failureContainersFilled: "Tous les livres n'ont pas été mis en carton.",
+               failureContainersFilledLess: "Il reste au moins un livre à ranger dans un carton.",
+               failureContainersFilledBag: "Il faut ranger les livres dans un carton !",
+               failureDropObject: "Ce carton est déjà plein.",
+            }
+         },
+
+         es: {
+            label: {
+               withdrawObject: "recoger la bola",
+               dropObject: "soltar la bola",
+               onObject: "sobre una bola",
+               onContainer: "sobre un agujero",
+            },
+            code: {
+               withdrawObject: "recogerBola",
+               dropObject: "soltarBola",
+               onObject: "sobreBola",
+               onContainer: "sobreAgujero",
+            },   
+            messages: {
+               emptyBag: "¡El robot no carga ninguna bola!",
+               tooManyObjects: "¡El robot ya está cargando una bola!",
+               successContainersFilled: "Bravo, ¡el robot ordenó las bolas!",
+               failureContainersFilled: "Hay bolas en lugares incorrectos.",
+               failureContainersFilledLess: "Aún falta colocar una bola.",
+               failureContainersFilledBag: "¡Debe colocar la bola en un agujero!",
             }
          }
       },
@@ -1239,7 +1470,12 @@ var getContext = function(display, infos, curLevel) {
                pushableInFront: "caisseDevant",
                obstacleInFront: "obstacleDevant",
                readNumber: "nombreSurCase"
-            },   
+            },
+            description: {
+               onContainer: "surCaseMarquee() indique si le robot se trouve sur une case marquée",
+               pushableInFront: "caisseDevant() indique si le robot est juste devant une caisse",
+               pushObject: "pousserCaisse() avance le robot en poussant la caisse qui est devant",               
+            },
             messages: {
                successContainersFilled: "Bravo, les caisses sont bien rangées !",
                failureContainersFilled: "Il y a encore des caisses qui ne sont pas à leur place.",
@@ -1302,6 +1538,10 @@ var getContext = function(display, infos, curLevel) {
             label: {
                withdrawObject: "ramasser le bois",
                dropObject: "donner le bois au castor",
+               withdrawNum_noShadow: "ramasser %1 bûches",
+               dropNum_noShadow: "donner %1 bûches",
+               nbWithdrawables: "nombre de bûches sur la case",
+               containerSize: "nombre de bûches demandé",
                onObject: "sur du bois",
                onContainer: "chez un castor",
             },
@@ -1310,7 +1550,19 @@ var getContext = function(display, infos, curLevel) {
                dropObject: "donnerBois",
                onObject: "surBois",
                onContainer: "chezCastor",
-            },   
+               nbWithdrawables: "nbBuchesSur",
+               containerSize: "nbBuchesADeposer",
+            },
+            description: {
+               withdrawObject: "ramasserBois() ramasse le bois qui se trouve sur la case",
+               dropObject: "donnerBois() dépose sur la case le bois transporté",
+               onObject: "surBois() indique s'il y a du bois sur la case",
+               onContainer: "chezCastor() indique s'il y a un castor sur la case",
+               nbWithdrawables: "nbBuchesSur() indique combien de bûches sont sur la case",
+               containerSize: "nbBuchesADeposer() indique combien de bûches sont demandées sur la case",
+               dropNum: "deposer(nbBuches) dépose nbBuches bûches sur la case",
+               withdrawNum: "ramasser(nbBuches) ramasse nbBuches bûches sur la case",
+            },
             messages: {
                emptyBag: "Le robot ne porte pas de bois !",
                tooManyObjects: "Le robot porte déjà du bois !",
@@ -1689,21 +1941,6 @@ var getContext = function(display, infos, curLevel) {
          },
          checkEndCondition: robotEndConditions.checkContainersFilled
       },
-      flowers: {
-         bagInit: {
-           count: 200,
-           type: "flower"
-         },
-         backgroundColor: "#f9f9c1",
-         itemTypes: {
-            green_robot: { img: "green_robot.png", side: 80, nbStates: 9, isRobot: true, offsetX: -11, zOrder: 2 },
-            marker: { num: 2, img: "marker.png", side: 60, isContainer: true, zOrder: 0 },
-            flower: { num: 3, img: "flower.png", side: 60, isWithdrawable: true, isObstacle: true, zOrder: 1 },
-            fixed_flower: { num: 5, img: "fixed_flower.png", side: 60, isObstacle: true, zOrder: 1 },
-            number: { num: 6, side: 60, zOrder: 1 }
-         },
-         checkEndCondition: robotEndConditions.checkContainersFilled
-      },
       course: {
          itemTypes: {
             red_robot: { img: "red_robot.png", side: 70, nbStates: 1, offsetX: -5, offsetY: 5, isRobot: true, zOrder: 2 },
@@ -1811,67 +2048,55 @@ var getContext = function(display, infos, curLevel) {
             obstacle: { num: 14, img: "obstacle.png", side: 60, isObstacle: true, zOrder: 0 }
          }
       },
+      fishing: {
+         backgroundColor: "#57b8bf",
+         borderColor: "#489a9c",
+         bagSize: 1,
+         containerSize: 1,
+         itemTypes: {
+            red_robot: { img: "red_robot.png", side: 60, nbStates: 1, isRobot: true, zOrder: 4, customDisplay: function(obj) {
+            	if(context.bag.length != 0)
+            		obj.img = "red_robot_fishes.png";
+            	else
+            		obj.img = "red_robot.png";
+            } },
+            island: { num: 2, img: "island.png", side: 75, isContainer: true, offsetX: -7, offsetY: 0, zOrder: 0, containerFilter: function(obj) { return obj.isWithdrawable === true; } },
+            fishes: { num: 3, img: "fishes.png", side: 60, isWithdrawable: true, offsetY: 2, zOrder: 1 },
+            fishes: { num: 4, img: "fishes.png", side: 60, isWithdrawable: true, offsetY: 8, offsetX: 2, zOrder: 1, canBeOutside: true, customDisplay: function(obj) {
+            	if(context.hasOn(obj.row, obj.col, function(item) { return item.num == 2; }))
+            		obj.offsetX = 0;
+            } },
+            count_fishes: { num: 5, value: function(obj) {
+               return context.getItemsOn(obj.row, obj.col, function(item) {
+                  return item.isWithdrawable === true;
+               }).length;
+            }, side: 60, isWritable: true, fontColor: "#ffffff", fontBold: true, zOrder: 3, offsetX: -14, offsetY: -14},
+            count_needs: { num: 6, value: function(obj) {
+               return context.getItemsOn(obj.row, obj.col, function(item) {
+                  return item.isContainer === true;
+               })[0].containerSize;
+            }, side: 60, isWritable: true, fontColor: "#ffffff", fontBold: true, zOrder: 3, offsetX: -15, offsetY: -14},
+            obstacle: { num: 7, img: "obstacle.png", side: 60, isObstacle: true, zOrder: 0 },
+            net: { num: 8, img: "net.png", side: 60, zOrder: 2 },
+         },
+         checkEndCondition: robotEndConditions.checkContainersFilled
+      },
+      flowers: {
+         bagInit: {
+           count: 200,
+           type: "flower"
+         },
+         backgroundColor: "#f9f9c1",
+         itemTypes: {
+            green_robot: { img: "green_robot.png", side: 80, nbStates: 9, isRobot: true, offsetX: -11, zOrder: 2 },
+            marker: { num: 2, img: "marker.png", side: 60, isContainer: true, zOrder: 0 },
+            flower: { num: 3, img: "flower.png", side: 60, isWithdrawable: true, isObstacle: true, zOrder: 1 },
+            fixed_flower: { num: 5, img: "fixed_flower.png", side: 60, isObstacle: true, zOrder: 1 },
+            number: { num: 6, side: 60, zOrder: 1 }
+         },
+         checkEndCondition: robotEndConditions.checkContainersFilled
+      },
       gears: {
-         newBlocks: [
-           {
-             name: "dropPlatformInFront",
-             strings: {
-               fr: {
-                 label: "construire une plateforme devant",
-                 code: "construirePlateformeDevant"
-               },
-               es: {
-                  label: "construir una plataforma adelante",
-                  code: "construirPlataformaAdelante"
-               }
-             },
-             category: "robot",
-             type: "actions",
-             block: {
-               name: "dropPlatformInFront"
-             },
-             func: function(callback) {
-               if(this.nbPlatforms == 0)
-                  throw(window.languageStrings.messages.failureNotEnoughPlatform);
-               var coords = {row: this.coordsInFront().row + 1, col: this.coordsInFront().col};
-               if(this.getItemsOn(coords.row, coords.col, function(item) { return item.isObstacle === true; }).length != 0) {
-                  throw(window.languageStrings.messages.failureDropObject);
-               }
-               this.nbPlatforms -= 1;
-               this.dropObject({type: "platform"}, coords);
-               this.callCallback(callback);
-             }
-           },
-            {
-             name: "dropPlatformAbove",
-             strings: {
-               fr: {
-                 label: "construire une plateforme au-dessus",
-                 code: "construirePlateformeAuDessus"
-               },
-               es: {
-                  label: "construir una plataforma arriba",
-                  code: "construirPlataformaArriba"
-               }
-             },
-             category: "robot",
-             type: "actions",
-             block: {
-               name: "dropPlatformAbove"
-             },
-             func: function(callback) {
-               if(this.nbPlatforms == 0)
-                  throw(window.languageStrings.messages.failureNotEnoughPlatform);
-               var coords = {row: this.getRobot().row - 1, col: this.getRobot().col};
-               if(this.getItemsOn(coords.row, coords.col, function(item) { return item.isObstacle === true; }).length != 0) {
-                  throw(window.languageStrings.messages.failureDropObject);
-               }
-               this.nbPlatforms -= 1;
-               this.dropObject({type: "platform"}, coords);
-               this.callCallback(callback);
-             }
-           }
-         ],
          backgroundColor: "#f2f1e3",
          hasGravity: true,
          bagSize: 1,
@@ -1968,7 +2193,7 @@ var getContext = function(display, infos, curLevel) {
             marble: { num: 4, img: "marble.png", side: 60, isWithdrawable: true, zOrder: 1 },
             number: { num: 5, side: 60, zOrder: 1 },
             board: { num: 6, side: 60, isWritable: true, zOrder: 1 },
-            white: { num: 7, color: "#ffffff", side: 60, zOrder: 0 } 
+            white: { num: 7, color: "shadow.png", side: 60, zOrder: 0 }
          },
          checkEndCondition: robotEndConditions.checkContainersFilled
       },
@@ -1982,6 +2207,40 @@ var getContext = function(display, infos, curLevel) {
             obstacle: { num: 6, img: "asteroide.png", side: 60, isObstacle: true, zOrder: 0 }
          },
          checkEndCondition: robotEndConditions.checkPickedAllWithdrawables
+      },
+      packages: {
+         bagSize: 1,
+         containerSize: 1,
+         hasGravity: true,
+         backgroundColor: "#a0cc97",
+         borderColor: "#81a279",
+         itemTypes: {
+            green_robot: { img: "green_robot.png", side: 90, nbStates: 9, isRobot: true,  offsetX: -11, zOrder: 4, customDisplay: function(obj) {
+            	if(context.bag.length != 0)
+            		obj.img = "green_robot_book.png";
+            	else
+            		obj.img = "green_robot.png";
+            } },
+            box: { num: 2, img: "box.png", side: 60, isContainer: true, zOrder: 2, containerFilter: function(obj) { return obj.isWithdrawable === true; } },
+            books: { num: 3, img: "books.png", side: 60, isWithdrawable: true, offsetY: 12, zOrder: 1 },
+            books_outside: { num: 4, img: "books.png", side: 60, isWithdrawable: true, offsetY: 12, zOrder: 1, canBeOutside: true, customDisplay: function(obj) {
+            	if(context.hasOn(obj.row, obj.col, function(item) { return item.num == 2; }))
+            		obj.offsetY = -5;
+            } },         
+            count_books: { num: 5, value: function(obj) {
+               return context.getItemsOn(obj.row, obj.col, function(item) {
+                  return item.isWithdrawable === true;
+               }).length;
+            }, side: 60, isWritable: true, fontColor: "#752a43", fontBold: true, zOrder: 2, offsetX: -20, offsetY: -12},
+            count_needs: { num: 6, value: function(obj) {
+               return context.getItemsOn(obj.row, obj.col, function(item) {
+                  return item.isContainer === true;
+               })[0].containerSize;
+            }, side: 60, isWritable: true, fontColor: "#666666", fontBold: true, zOrder: 3, offsetX: 0, offsetY: 13},
+            platform: { num: 7, img: "shelf.png", side: 60, isObstacle: true, zOrder: 0 },
+            square_platform: { num: 8, img: "square_shelf.png", side: 60, isObstacle: true, zOrder: 0 }
+         },
+         checkEndCondition: robotEndConditions.checkContainersFilled
       },
       paint: {
          newBlocks: [
@@ -2127,9 +2386,20 @@ var getContext = function(display, infos, curLevel) {
          borderColor: "#a67d40",
          itemTypes: {
             green_robot: { img: "veterinary_robot.png", side: 90, nbStates: 9, isRobot: true,  offsetX: -11, zOrder: 2 },
-            bebras: { num: 2, img: "bebras.png", side: 70, isContainer: true, zOrder: 0 },
+            bebras: { num: 2, img: "bebras.png", side: 70, isContainer: true, zOrder: 0, containerFilter: function(obj) { return obj.isWithdrawable === true; } },
             wood: { num: 3, img: "wood.png", side: 60, isWithdrawable: true,  offsetY: 10, zOrder: 1 },
+            wood_outside: { num: 5, img: "wood.png", side: 60, isWithdrawable: true,  offsetY: 10, zOrder: 1, canBeOutside: true },
             tree: { num: 4, img: "tree.png", side: 70, isObstacle: true, offsetY: 5, zOrder: 0 }, 
+            count_wood: { num: 6, value: function(obj) {
+               return context.getItemsOn(obj.row, obj.col, function(item) {
+                  return item.isWithdrawable === true;
+               }).length;
+            }, side: 60, isWritable: true, fontColor: "#01a665", fontBold: true, zOrder: 1, offsetX: 20, offsetY: 17},
+            count_needs: { num: 7, value: function(obj) {
+               return context.getItemsOn(obj.row, obj.col, function(item) {
+                  return item.isContainer === true;
+               })[0].containerSize;
+            }, side: 60, isWritable: true, fontColor: "#4a90e2", fontBold: true, zOrder: 1, offsetX: -20, offsetY: -17},
          },
          checkEndCondition: robotEndConditions.checkContainersFilled
       },
@@ -2522,6 +2792,43 @@ var getContext = function(display, infos, curLevel) {
    });
    
    infos.newBlocks.push({
+      name: "nbWithdrawables",
+      type: "sensors",
+      block: { name: "nbWithdrawables", yieldsValue: 'int' },
+      func: function(callback) {
+         var robot = this.getRobot();
+         this.callCallback(callback, this.getItemsOn(robot.row, robot.col, function(obj) { return obj.isWithdrawable === true; }).length);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "nbInBag",
+      type: "sensors",
+      block: { name: "nbInBag", yieldsValue: 'int' },
+      func: function(callback) {
+         var robot = this.getRobot();
+         this.callCallback(callback, context.bag.length);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "containerSize",
+      type: "sensors",
+      block: { name: "containerSize", yieldsValue: 'int' },
+      func: function(callback) {
+         var robot = this.getRobot();
+         var containers = this.getItemsOn(robot.row, robot.col, function(obj) { return obj.isContainer === true; });
+         
+         if(containers.length == 0) {
+            this.callCallback(callback, 0);
+            return;
+         }
+         
+         this.callCallback(callback, containers[0].containerSize);
+      }
+   });
+   
+   infos.newBlocks.push({
       name: "pushObject",
       type: "actions",
       block: { name: "pushObject" },
@@ -2556,6 +2863,84 @@ var getContext = function(display, infos, curLevel) {
       func: function(callback) {
          this.drop(1, {row: this.getRobot().row - 1, col: this.getRobot().col});
          this.callCallback(callback);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "withdrawNum_noShadow",
+      type: "actions",
+      block: { 
+         name: "withdrawNum_noShadow", 
+         params: [null]
+      },
+      func: function(value, callback) {
+         if((typeof value) == "function") {
+            this.callCallback(value);
+            return;
+         }
+         for(var i = 0;i < value;i++) {
+            this.withdraw();
+         }
+         this.waitDelay(callback);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "withdrawNum",
+      type: "actions",
+      block: { name: "withdrawNum", params: [null], blocklyXml: "<block type='withdrawNum_noShadow'>" +
+                              "  <value name='PARAM_0'>" +
+                              "    <shadow type='math_number'>" +
+                              "      <field name='NUM'>0</field>" +
+                              "    </shadow>" +
+                              "  </value>" +
+                              "</block>"},
+      func: function(value, callback) {
+         if((typeof value) == "function") {
+            this.callCallback(value);
+            return;
+         }
+         for(var i = 0;i < value;i++) {
+            this.withdraw();
+         }
+         this.waitDelay(callback);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "dropNum_noShadow",
+      type: "actions",
+      block: { 
+         name: "dropNum_noShadow", 
+         params: [null]
+      },
+      func: function(value, callback) {
+         if((typeof value) == "function") {
+            this.callCallback(value);
+            return;
+         }
+         this.drop(value);
+         this.waitDelay(callback);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "dropNum",
+      type: "actions",
+      block: { name: "dropNum", params: [null], blocklyXml: "<block type='dropNum_noShadow'>" +
+                              "  <value name='PARAM_0'>" +
+                              "    <shadow type='math_number'>" +
+                              "      <field name='NUM'>0</field>" +
+                              "    </shadow>" +
+                              "  </value>" +
+                              "</block>"},
+      func: function(value, callback) {
+         if((typeof value) == "function") {
+            this.callCallback(value);
+            return;
+         }
+         this.drop(value);
+         this.waitDelay(callback);
       }
    });
    
@@ -2734,6 +3119,42 @@ var getContext = function(display, infos, curLevel) {
       }
    });
    
+   infos.newBlocks.push({
+      name: "dropPlatformInFront",
+      type: "actions",
+      block: { name: "dropPlatformInFront" },
+      func: function(callback) {
+         if(this.nbPlatforms == 0)
+            throw(window.languageStrings.messages.failureNotEnoughPlatform);
+            
+         var coords = {row: this.coordsInFront().row + 1, col: this.coordsInFront().col};
+         if(this.getItemsOn(coords.row, coords.col, function(item) { return item.isObstacle === true; }).length != 0) {
+            throw(window.languageStrings.messages.failureDropPlatform);
+         }
+         this.nbPlatforms -= 1;
+         this.dropObject({type: "platform"}, coords);
+         this.callCallback(callback);
+      }
+   });
+   
+   infos.newBlocks.push({
+      name: "dropPlatformAbove",
+      type: "actions",
+      block: { name: "dropPlatformAbove" },
+      func: function(callback) {
+         if(this.nbPlatforms == 0)
+            throw(window.languageStrings.messages.failureNotEnoughPlatform);
+            
+         var coords = {row: this.getRobot().row - 1, col: this.getRobot().col};
+         if(this.getItemsOn(coords.row, coords.col, function(item) { return item.isObstacle === true; }).length != 0) {
+            throw(window.languageStrings.messages.failureDropPlatform);
+         }
+         this.nbPlatforms -= 1;
+         this.dropObject({type: "platform"}, coords);
+         this.callCallback(callback);
+      }
+   });
+   
    var context = quickAlgoContext(display, infos);
    context.robot = {};
    context.customBlocks = {
@@ -2760,30 +3181,14 @@ var getContext = function(display, infos, curLevel) {
    
    var strings = context.setLocalLanguageStrings(localLanguageStrings);
    
-   function replaceStringsRec(source, dest) {
-   
-      if((typeof source != "object") || (typeof dest != "object")) {
-         return;
-      }
-      for(var key1 in source) {
-         if(dest[key1] != undefined) {
-            if(typeof dest[key1] == "object") {
-               replaceStringsRec(source[key1], dest[key1]);
-            }
-            else {
-               dest[key1] = source[key1];
-            }
-         }
-      }
-   }
-   
    if(infos.languageStrings != undefined) {
-      replaceStringsRec(infos.languageStrings.blocklyRobot_lib, strings);
+      context.importLanguageStrings(infos.languageStrings.blocklyRobot_lib, strings);
    }
    
    var cells = [];
    var colsLabels = [];
    var rowsLabels = [];
+   var cardLabels = [];
    var scale = 1;
    var paper;
    
@@ -2804,10 +3209,17 @@ var getContext = function(display, infos, curLevel) {
          infos.topMargin = infos.cellSide / 2;
       }
    }
-   if(infos.showLabels) {
+   if (infos.showLabels) {
       infos.leftMargin += infos.cellSide;
       infos.topMargin += infos.cellSide;
    }
+   if (infos.showCardinals) {
+      infos.leftMargin += infos.cellSide * 1.8;
+      infos.topMargin += infos.cellSide;
+      infos.rightMargin += infos.cellSide;
+      infos.bottomMargin += infos.cellSide;
+   }
+
    
    switch(infos.blocklyColourTheme) {
       case "bwinf":
@@ -2889,7 +3301,42 @@ var getContext = function(display, infos, curLevel) {
          resetItems();
       }
    };
-   
+
+   context.redrawDisplay = function() {
+      if(context.display) {
+         this.raphaelFactory.destroyAll();
+         if(paper !== undefined)
+            paper.remove();
+         paper = this.raphaelFactory.create("paperMain", "grid", infos.cellSide * context.nbCols * scale, infos.cellSide * context.nbRows * scale);
+         resetBoard();
+         redisplayAllItems();
+         context.updateScale();
+         $("#nbMoves").html(context.nbMoves);
+      }
+   }
+
+   context.getInnerState = function() {
+      return {
+         items: context.items,
+         multicell_items: context.multicell_items,
+         last_connect: context.last_connext,
+         wires: context.wires,
+         nbMoves: context.nbMoves,
+         time: context.time,
+         bag: context.bag,
+      };
+   };
+
+   context.reloadInnerState = function(data) {
+      context.items = data.items;
+      context.multicell_items = data.multicell_items;
+      context.last_connect = data.last_connect;
+      context.wires = data.wires;
+      context.nbMoves = data.nbMoves;
+      context.time = data.time;
+      context.bag = data.bag;
+   };
+
    context.unload = function() {
       if(context.display && paper != null) {
          paper.remove();
@@ -2943,6 +3390,14 @@ var getContext = function(display, infos, curLevel) {
          for(var iCol = 0;iCol < context.nbCols;iCol++) {
             colsLabels[iCol] = paper.text(0, 0, (iCol + 1));
          }
+      }
+      if (infos.showCardinals) {
+         cardLabels = [
+            paper.text(0, 0, strings.cardinals.north),
+            paper.text(0, 0, strings.cardinals.south),
+            paper.text(0, 0, strings.cardinals.west),
+            paper.text(0, 0, strings.cardinals.east)
+            ];
       }
    };
    
@@ -3033,11 +3488,34 @@ var getContext = function(display, infos, curLevel) {
       var x = (infos.cellSide * item.col + infos.leftMargin) * scale;
       var y = (infos.cellSide * item.row + infos.topMargin) * scale;
       var itemType = infos.itemTypes[item.type];
+      
+      if(item.customDisplay !== undefined) {
+      	item.customDisplay(item);
+      }
+      
       if(item.img) {
          item.element = paper.image(imgUrlWithPrefix(item.img), x, y, item.side * item.nbStates * scale, item.side * scale);
       }
       else if(item.value !== undefined) {
-         item.element = paper.text(x + item.side * scale / 2, y + item.side * scale / 2, item.value).attr({"font-size": item.side * scale / 2});
+         var fontColor = item.fontColor;
+         if(fontColor === undefined) { fontColor = "black"; }
+         
+         var value;
+         if(typeof(item.value) == "function")
+            value = item.value(item);
+         else
+            value = item.value;
+         
+         item.element = paper.text(x + item.side * scale / 2, y + item.side * scale / 2, value).attr({
+            "font-size": item.side * scale / 2,
+            "fill": fontColor,
+         });
+         
+         if(item.fontBold === true) {
+            item.element.attr({
+               "font-weight": "bold"
+            });
+         }
       }
       else if(item.color !== undefined) {
          item.element = paper.rect(0, 0, item.side, item.side).attr({"fill": item.color});
@@ -3065,12 +3543,14 @@ var getContext = function(display, infos, curLevel) {
       }
       var newCellSide = 0;
       if(context.nbCols && context.nbRows) {
-         var marginAsCols = infos.leftMargin / infos.cellSide;
-         var marginAsRows = infos.topMargin / infos.cellSide;
+         var marginAsCols = (infos.leftMargin + infos.rightMargin) / infos.cellSide;
+         var marginAsRows = (infos.topMargin + infos.bottomMargin) / infos.cellSide;
          newCellSide = Math.min(infos.cellSide, Math.min(areaWidth / (context.nbCols + marginAsCols), areaHeight / (context.nbRows + marginAsRows)));
       }
       scale = newCellSide / infos.cellSide;
-      paper.setSize((infos.cellSide * context.nbCols + infos.leftMargin + infos.rightMargin) * scale, (infos.cellSide * context.nbRows + infos.topMargin + infos.bottomMargin) * scale);
+      var paperWidth = (infos.cellSide * context.nbCols + infos.leftMargin + infos.rightMargin) * scale;
+      var paperHeight = (infos.cellSide * context.nbRows + infos.topMargin + infos.bottomMargin) * scale;
+      paper.setSize(paperWidth, paperHeight);
       
       for(var iRow = 0;iRow < context.nbRows;iRow++) {
          for(var iCol = 0;iCol < context.nbCols;iCol++) {
@@ -3081,17 +3561,26 @@ var getContext = function(display, infos, curLevel) {
             cells[iRow][iCol].attr({x: x, y: y, width: infos.cellSide * scale, height: infos.cellSide * scale});
          }
       }
+      var textFontSize = {"font-size": infos.cellSide * scale / 2};
       if(infos.showLabels) {
          for(var iRow = 0;iRow < context.nbRows;iRow++) {
             var x = (infos.leftMargin - infos.cellSide / 2) * scale;
             var y = (infos.cellSide * (iRow + 0.5) + infos.topMargin) * scale;
-            rowsLabels[iRow].attr({x: x, y: y}).attr({"font-size": infos.cellSide * scale / 2});
+            rowsLabels[iRow].attr({x: x, y: y}).attr(textFontSize);
          }
          for(var iCol = 0;iCol < context.nbCols;iCol++) {
             var x = (infos.cellSide * iCol + infos.leftMargin + infos.cellSide / 2) * scale;
             var y = (infos.topMargin - infos.cellSide / 2) * scale;
-            colsLabels[iCol].attr({x: x, y: y}).attr({"font-size": infos.cellSide * scale / 2});
+            colsLabels[iCol].attr({x: x, y: y}).attr(textFontSize);
          }
+      }
+      if (infos.showCardinals) {
+         var middleX = (infos.leftMargin + infos.cellSide * context.nbCols / 2) * scale;
+         var middleY = (infos.topMargin + infos.cellSide * context.nbRows / 2) * scale;
+         cardLabels[0].attr({x: middleX, y: (infos.topMargin - (infos.showLabels ? infos.cellSide : 0) - infos.cellSide / 2) * scale}).attr(textFontSize);
+         cardLabels[1].attr({x: middleX, y: paperHeight + (infos.cellSide / 2 - infos.bottomMargin) * scale}).attr(textFontSize);
+         cardLabels[2].attr({x: (infos.leftMargin - (infos.showLabels ? infos.cellSide : 0) - infos.cellSide * 1.8 / 2) * scale, y: middleY}).attr(textFontSize);
+         cardLabels[3].attr({x: paperWidth + (infos.cellSide / 2 - infos.rightMargin) * scale, y: middleY}).attr(textFontSize);
       }
       
       redisplayAllItems();      
@@ -3103,8 +3592,6 @@ var getContext = function(display, infos, curLevel) {
       for(var iItem = 0;iItem < context.items.length;iItem++) {
          var item = context.items[iItem];
          redisplayItem(item, false);
-         if(item.element !== undefined)
-            item.element.attr(itemAttributes(item));
       }
       
       for(var iItem = 0;iItem < context.multicell_items.length;iItem++) {
@@ -3233,22 +3720,24 @@ var getContext = function(display, infos, curLevel) {
    };
    
    context.tryToBeOn = function(row, col) {
+      // Returns whether the robot can move to row, col
+      // true : yes, false : no but move ignored, string : no and throw error
       if(!context.isInGrid(row, col)) {
          if(infos.ignoreInvalidMoves)
             return false;
-         throw(strings.messages.leavesGrid);
+         return strings.messages.leavesGrid;
       }
       
       if(context.hasOn(row, col, function(item) { return item.isObstacle === true; })) {
          if(infos.ignoreInvalidMoves)
             return false;
-         throw(strings.messages.obstacle);
+         return strings.messages.obstacle;
       }
       
       if(context.hasOn(row, col, function(item) { return item.isProjectile === true; })) {
          if(infos.ignoreInvalidMoves)
             return false;
-         throw(strings.messages.failureProjectile);
+         return strings.messages.failureProjectile;
       }
       return true;
    };
@@ -3311,25 +3800,25 @@ var getContext = function(display, infos, curLevel) {
       context.withdraw(function(obj) { return obj.autoWithdraw === true; }, false);
       
       if(context.display) {
-         if(animate) {
-            attr = itemAttributes(item);
-            context.raphaelFactory.animate("animRobot" + iRobot + "_" + Math.random(), item.element, attr, infos.actionDelay);
-         }
-         else {
-            attr = itemAttributes(item);
-            if(infos.actionDelay > 0) {
+         attr = itemAttributes(item);
+         if(infos.actionDelay > 0) {
+            if(animate) {
+               context.raphaelFactory.animate("animRobot" + iRobot + "_" + Math.random(), item.element, attr, infos.actionDelay);
+            } else {
                context.delayFactory.createTimeout("moveRobot" + iRobot + "_" + Math.random(), function() {
                   item.element.attr(attr);
                }, infos.actionDelay / 2);
-            } else {
-               item.element.attr(attr);
             }
+         } else {
+            item.element.attr(attr);
          }
          $("#nbMoves").html(context.nbMoves);
       }
       
       context.advanceTime(1);
-      context.waitDelay(callback);
+      if(callback) {
+         context.waitDelay(callback);
+      }
    };
    
    context.moveItem = function(item, newRow, newCol) {
@@ -3457,12 +3946,18 @@ var getContext = function(display, infos, curLevel) {
       context.bag.push(withdrawable);
       
       if(context.display) {
-         if (infos.actionDelay > 0) {
-            context.delayFactory.createTimeout("takeItem_" + Math.random(), function() {
-               withdrawable.element.remove();
-            }, infos.actionDelay);
-         } else {
+         function removeWithdrawable() {
             withdrawable.element.remove();
+            var items = context.getItemsOn(item.row, item.col);
+            for(var i = 0; i < items.length ; i++) {
+               redisplayItem(items[i]);
+            }
+         }
+
+         if (infos.actionDelay > 0) {
+            context.delayFactory.createTimeout("takeItem_" + Math.random(), removeWithdrawable, infos.actionDelay);
+         } else {
+            removeWithdrawable();
          }
       }
    };
@@ -3524,11 +4019,16 @@ var getContext = function(display, infos, curLevel) {
             if(itemsOn[item].isWithdrawable === true && itemsOn[item].zOrder > maxi) {
                maxi = itemsOn[item].zOrder;
             }
+            redisplayItem(item);
          }
+         
          object.zOrder = maxi + 0.000001;
-         resetItem(object);
+         resetItem(object, true);
+         
          context.checkContainer(coords);
       }
+      
+      redisplayItem(this.getRobot());
    };
    
    context.dropObject = function(object, coords) {
@@ -3544,6 +4044,7 @@ var getContext = function(display, infos, curLevel) {
       
       object.row = coords.row;
       object.col = coords.col;
+      
       var itemsOn = context.getItemsOn(coords.row, coords.col);
       var maxi = object.zOrder;
       if(maxi === undefined) {
@@ -3553,9 +4054,11 @@ var getContext = function(display, infos, curLevel) {
          if(itemsOn[item].isWithdrawable === true && itemsOn[item].zOrder > maxi) {
             maxi = itemsOn[item].zOrder;
          }
+         redisplayItem(item);
       }
-      resetItem(object);
+      resetItem(object, true);
       context.checkContainer(coords);
+      redisplayItem(this.getRobot());
    };
    
    context.turnLeft = function(callback) {
@@ -3576,70 +4079,94 @@ var getContext = function(display, infos, curLevel) {
    context.forward = function(callback) {
       var robot = context.getRobot();
       var coords = context.coordsInFront();
-      if(!context.tryToBeOn(coords.row, coords.col)) {
+      var ttbo = context.tryToBeOn(coords.row, coords.col);
+      if(ttbo === true) {
+         if(infos.hasGravity) {
+            context.fall(robot, coords.row, coords.col, callback);
+         } else {
+            context.nbMoves++;
+            context.moveRobot(coords.row, coords.col, robot.dir, callback);
+         }
+      } else if(ttbo === false) {
          context.waitDelay(callback);
-      }
-      if(infos.hasGravity) {
-         context.fall(robot, coords.row, coords.col, callback);
-      }
-      else {
-         context.nbMoves++;
-         context.moveRobot(coords.row, coords.col, robot.dir, callback);
+      } else {
+         context.moveRobot(robot.row + (coords.row - robot.row) / 4, robot.col + (coords.col - robot.col) / 4, robot.dir);
+         throw ttbo;
       }
    };
    
    context.backwards = function(callback) {
       var robot = context.getRobot();
       var coords = context.coordsInFront(2);
-      if(!context.tryToBeOn(coords.row, coords.col)) {
+      var ttbo = context.tryToBeOn(coords.row, coords.col);
+      if(ttbo === true) {
+         if(infos.hasGravity) {
+            context.fall(robot, coords.row, coords.col, callback);
+         } else {
+            context.nbMoves++;
+            context.moveRobot(coords.row, coords.col, robot.dir, callback);
+         }
+      } else if(ttbo === false) {
          context.waitDelay(callback);
-      }
-      if(infos.hasGravity) {
-         context.fall(robot, coords.row, coords.col, callback);
-      }
-      else {
-         context.nbMoves++;
-         context.moveRobot(coords.row, coords.col, robot.dir, callback);
+      } else {
+         context.moveRobot(robot.row + (coords.row - robot.row) / 4, robot.col + (coords.col - robot.col) / 4, robot.dir);
+         throw ttbo;
       }
    };
    
    context.north = function(callback) {
       var item = context.getRobot();
-      if(!context.tryToBeOn(item.row - 1, item.col)) {
-         context.waitDelay(callback);
-      } else {
+      var ttbo = context.tryToBeOn(item.row - 1, item.col);
+      if(ttbo === true) {
          context.nbMoves++;
          context.moveRobot(item.row - 1, item.col, 3, callback);
+      } else if(ttbo === false) {
+         context.waitDelay(callback);
+      } else {
+         context.moveRobot(item.row - 1/4, item.col, 3);
+         throw ttbo;
       }
    };
    
    context.south = function(callback) {
       var item = context.getRobot();
-      if(!context.tryToBeOn(item.row + 1, item.col)) {
-         context.waitDelay(callback);
-      } else {
+      var ttbo = context.tryToBeOn(item.row + 1, item.col);
+      if(ttbo === true) {
          context.nbMoves++;
          context.moveRobot(item.row + 1, item.col, 1, callback);
+      } else if(ttbo === false) {
+         context.waitDelay(callback);
+      } else {
+         context.moveRobot(item.row + 1/4, item.col, 1);
+         throw ttbo;
       }
    };
    
    context.east = function(callback) {
       var item = context.getRobot();
-      if(!context.tryToBeOn(item.row, item.col + 1)) {
-         context.waitDelay(callback);
-      } else {
+      var ttbo = context.tryToBeOn(item.row, item.col + 1);
+      if(ttbo === true) {
          context.nbMoves++;
          context.moveRobot(item.row, item.col + 1, 0, callback);
+      } else if(ttbo === false) {
+         context.waitDelay(callback);
+      } else {
+         context.moveRobot(item.row, item.col + 1/4, 0);
+         throw ttbo;
       }
    };
    
    context.west = function(callback) {
       var item = context.getRobot();
-      if(!context.tryToBeOn(item.row, item.col - 1)) {
-         context.waitDelay(callback);
-      } else {
+      var ttbo = context.tryToBeOn(item.row, item.col - 1);
+      if(ttbo === true) {
          context.nbMoves++;
          context.moveRobot(item.row, item.col - 1, 2, callback);
+      } else if(ttbo === false) {
+         context.waitDelay(callback);
+      } else {
+         context.moveRobot(item.row, item.col - 1/4, 2);
+         throw ttbo;
       }
    };
    

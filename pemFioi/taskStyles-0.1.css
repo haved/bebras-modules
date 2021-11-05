@@ -1,9 +1,18 @@
-* {
+*:not(.allow-select) {
    -moz-user-select: -moz-none;
    -webkit-user-select: none;
    -o-user-select: none;
    user-select: none;
    -khtml-user-select: none;
+}
+
+.allow-select,
+.allow-select * {
+   -moz-user-select: -moz-text;
+   -webkit-user-select: text;
+   -o-user-select: text;
+   user-select: text;
+   -khtml-user-select: text;
 }
 
 .touch {
@@ -356,6 +365,9 @@ h1 .stars {
 }
 #displayHelper_saved {
    margin: .6em;
+}
+#displayHelper_graderMessage {
+   margin: 16px 0px;
 }
 #choose-view {
    margin-bottom: 1em;

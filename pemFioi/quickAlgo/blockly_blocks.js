@@ -51,6 +51,9 @@ var blocklyToScratch = {
 
 // Allowed blocks that make another block allowed as well
 var blocklyAllowedSiblings = {
+   'controls_repeat_ext_noShadow': ['controls_repeat_ext'],
+   'controls_whileUntil': ['controls_untilWhile'],
+   'controls_untilWhile': ['controls_whileUntil'],
    'controls_if_else': ['controls_if'],
    'lists_create_with_empty': ['lists_create_with']
 }
@@ -77,16 +80,39 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
          return this.scratchMode ? this.blocksToScratch(this.allBlocksAllowed) : this.allBlocksAllowed;
       },
 
-      getBlockLabel: function(type) {
+      getBlockLabel: function(type, addQuotes) {
          // Fetch user-friendly name for the block
-         var msg = this.mainContext.strings.label[type];
          // TODO :: Names for Blockly/Scratch blocks
-         return msg ? msg : type;
+
+         if(typeof type != 'string' && type.length > 1) {
+            var res = [];
+            for(var i = 0; i < type.length; i++) {
+               res.push(this.getBlockLabel(type[i], addQuotes));
+            }
+            return res.join(', ');
+         }
+
+         var msg = this.mainContext.strings.label[type];
+         msg = msg ? msg : type;
+         msg = msg.replace(/%\d/g, '_');
+         if(addQuotes) {
+            msg = '"' + msg + '"';
+         }
+         return msg;
       },
 
       checkConstraints: function(workspace) {
          // Check we satisfy constraints
          return this.getRemainingCapacity(workspace) >= 0 && !this.findLimited(workspace);
+      },
+
+      normalizeType: function(type) {
+         // Clean up type
+         var res = type;
+         if(res.substr(res.length - 9) == '_noShadow') {
+            res = res.substr(0, res.length - 9);
+         }
+         return res;
       },
 
       makeLimitedUsesPointers: function() {
@@ -107,10 +133,10 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                     var convBlockList = blocklyToScratch.singleBlocks[curBlock];
                     if(convBlockList) {
                         for(var k=0; k < convBlockList.length; k++) {
-                            addInSet(blocks, convBlockList[k]);
+                            addInSet(blocks, this.normalizeType(convBlockList[k]));
                         }
                     } else {
-                        addInSet(blocks, curBlock);
+                        addInSet(blocks, this.normalizeType(curBlock));
                     }
                 }
             } else {
@@ -139,6 +165,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
 
          for(var i = 0; i < workspaceBlocks.length; i++) {
             var blockType = workspaceBlocks[i].type;
+            blockType = this.normalizeType(blockType);
             if(!this.limitedPointers[blockType]) { continue; }
             for(var j = 0; j < this.limitedPointers[blockType].length; j++) {
                 // Each pointer is a position in the limitedUses array that
@@ -148,8 +175,9 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                 usesCount[pointer]++;
 
                 // Exceeded the number of uses
-                if(usesCount[pointer] > this.mainContext.infos.limitedUses[pointer].nbUses) {
-                    return blockType;
+                var limits = this.mainContext.infos.limitedUses[pointer];
+                if(usesCount[pointer] > limits.nbUses) {
+                    return limits.blocks;
                 }
             }
          }
@@ -717,6 +745,9 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
          return colours;
       },
 
+      getPlaceholderBlock: function(name) {
+         return this.placeholderBlocks ? "<statement name='" + name + "'><shadow type='placeholder_statement'></shadow></statement>" : '';
+      },
 
       getStdBlocks: function() {
          return this.scratchMode ? this.getStdScratchBlocks() : this.getStdBlocklyBlocks();
@@ -753,11 +784,16 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
             logic: [
                {
                   name: "controls_if",
-                  blocklyXml: "<block type='controls_if'></block>"
+                  blocklyXml: "<block type='controls_if'>" +
+                              this.getPlaceholderBlock('DO0') +
+                              "</block>"
                },
                {
                   name: "controls_if_else",
-                  blocklyXml: "<block type='controls_if'><mutation else='1'></mutation></block>",
+                  blocklyXml: "<block type='controls_if'><mutation else='1'></mutation>" +
+                              this.getPlaceholderBlock('DO0') +
+                              this.getPlaceholderBlock('ELSE') +
+                              "</block>",
                   excludedByDefault: this.mainContext ? this.mainContext.showIfMutator : false
                },
                {
@@ -795,7 +831,9 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                },
                {
                   name: "controls_repeat",
-                  blocklyXml: "<block type='controls_repeat'></block>",
+                  blocklyXml: "<block type='controls_repeat'>" +
+                              this.getPlaceholderBlock('DO') +
+                              "</block>",
                   excludedByDefault: true
                },
                {
@@ -806,6 +844,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                               "      <field name='NUM'>10</field>" +
                               "    </shadow>" +
                               "  </value>" +
+                              this.getPlaceholderBlock('DO') +
                               "</block>"
                },
                {
@@ -1187,7 +1226,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                               "</block>"
                },
                {
-                  name: "text_charAt_noShado",
+                  name: "text_charAt_noShadow",
                   blocklyXml: "<block type='text_charAt'></block>",
                   excludedByDefault: true
 
@@ -1330,7 +1369,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                },
                {
                   name: "lists_sort_place",
-                  blocklyXml: "<block type='lists_sort_place'></block>"
+                  blocklyXml: "<block type='lists_sort_place'><field name='VAR'>{listVariable}</field></block>"
                },
                {
                   name: "lists_sort",
@@ -1348,7 +1387,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                },
                {
                   name: "lists_append",
-                  blocklyXml: "<block type='lists_append'></block>"
+                  blocklyXml: "<block type='lists_append'><field name='VAR'>{listVariable}</field></block>"
                }
             ],
             tables: [
@@ -1568,11 +1607,16 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
             control: [
                   {
                      name: "control_if",
-                     blocklyXml: "<block type='control_if'></block>"
+                     blocklyXml: "<block type='control_if'>" +
+                                 this.getPlaceholderBlock('SUBSTACK') +
+                                 "</block>"
                   },
                   {
                      name: "control_if_else",
-                     blocklyXml: "<block type='control_if_else'></block>"
+                     blocklyXml: "<block type='control_if_else'>" +
+                                 this.getPlaceholderBlock('SUBSTACK') +
+                                 this.getPlaceholderBlock('SUBSTACK2') +
+                                 "</block>"
                   },
                   {
                      name: "control_repeat",
@@ -1582,11 +1626,14 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                                  "      <field name='NUM'>10</field>" +
                                  "    </shadow>" +
                                  "  </value>" +
+                                 this.getPlaceholderBlock('SUBSTACK') +
                                  "</block>"
                   },
                   {
                      name: "control_repeat_until",
-                     blocklyXml: "<block type='control_repeat_until'></block>"
+                     blocklyXml: "<block type='control_repeat_until'>" +
+                                 this.getPlaceholderBlock('SUBSTACK') +
+                                 "</block>"
                   },
                   {
                      name: "control_forever",
@@ -1666,7 +1713,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                   },
                   {
                      name: "lists_sort_place",
-                     blocklyXml: "<block type='lists_sort_place'></block>"
+                     blocklyXml: "<block type='lists_sort_place'><field name='VAR'>{listVariable}</field></block>"
                   }
                ],
             math: [
@@ -1977,21 +2024,12 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
          var colours = this.getDefaultColours();
 
          // Reset the flyoutOptions for the variables and the procedures
-         Blockly.Variables.flyoutOptions = {
-            any: false,
-            anyButton: !!this.includeBlocks.groupByCategory,
-            fixed: [],
-            includedBlocks: {get: true, set: true, incr: true},
-            shortList: true
-         };
-
-         Blockly.Procedures.flyoutOptions = {
-            includedBlocks: {noret: false, ret: false, ifret: false}
-         };
+         Blockly.Variables.resetFlyoutOptions();
+         Blockly.Procedures.resetFlyoutOptions();
 
          // Initialize allBlocksAllowed
          this.allBlocksAllowed = [];
-         this.addBlocksAllowed(['robot_start']);
+         this.addBlocksAllowed(['robot_start', 'placeholder_statement']);
          if(this.scratchMode) {
             this.addBlocksAllowed(['math_number', 'text']);
          }
@@ -2129,6 +2167,14 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
             }
          }
 
+         if(typeof this.includeBlocks.procedures !== 'undefined') {
+            var proceduresOptions = this.includeBlocks.procedures;
+            if(proceduresOptions.noret) { Blockly.Procedures.flyoutOptions.includedBlocks['noret'] = true; }
+            if(proceduresOptions.ret) { Blockly.Procedures.flyoutOptions.includedBlocks['ret'] = true; }
+            if(proceduresOptions.ifret) { Blockly.Procedures.flyoutOptions.includedBlocks['ifret'] = true; }
+            Blockly.Procedures.flyoutOptions.disableArgs = !!proceduresOptions.disableArgs;
+         }
+
          var singleBlocks = stdInclude.singleBlocks;
          for(var iBlock = 0; iBlock < singleBlocks.length; iBlock++) {
             var blockName = singleBlocks[iBlock];
@@ -2151,9 +2197,11 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                || Blockly.Procedures.flyoutOptions.includedBlocks['ifret']) {
             if(Blockly.Procedures.flyoutOptions.includedBlocks['noret']) {
                this.addBlocksAllowed(['procedures_defnoreturn', 'procedures_callnoreturn']);
-            } else if(Blockly.Procedures.flyoutOptions.includedBlocks['ret']) {
-               this.addBlocksAllowed(['procedures_defreturn', 'procedures_callnoreturn']);
-            } else if(Blockly.Procedures.flyoutOptions.includedBlocks['ifret']) {
+            }
+            if(Blockly.Procedures.flyoutOptions.includedBlocks['ret']) {
+               this.addBlocksAllowed(['procedures_defreturn', 'procedures_callreturn']);
+            }
+            if(Blockly.Procedures.flyoutOptions.includedBlocks['ifret']) {
                this.addBlocksAllowed(['procedures_ifreturn']);
             }
             categoriesInfos['functions'] = {
@@ -2170,6 +2218,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
 
          // Handle variable blocks, which are normally automatically added with
          // the VARIABLES category but can be customized here
+         Blockly.Variables.flyoutOptions.anyButton = !!this.includeBlocks.groupByCategory;
          if (typeof this.includeBlocks.variables !== 'undefined') {
             Blockly.Variables.flyoutOptions.fixed = (this.includeBlocks.variables.length > 0) ? this.includeBlocks.variables : [];
             if (typeof this.includeBlocks.variablesOnlyBlocks !== 'undefined') {
@@ -2412,7 +2461,9 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
               init: function() {
                 this.jsonInit({
                   "id": "event_whenflagclicked",
-                  "message0": that.strings.flagClicked,
+                  "message0": that.strings.startingBlockName,
+                  // former Scratch-like display
+                  /*"message0": that.strings.flagClicked,
                   "args0": [
                     {
                       "type": "field_image",
@@ -2422,7 +2473,7 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                       "alt": "flag",
                       "flip_rtl": true
                     }
-                  ],
+                  ],*/
                   "inputsInline": true,
                   "nextStatement": null,
                   "category": Blockly.Categories.event,
@@ -2430,6 +2481,23 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
                   "colourSecondary": Blockly.Colours.event.secondary,
                   "colourTertiary": Blockly.Colours.event.tertiary
                 });
+              }
+            };
+
+            Blockly.Blocks['placeholder_statement'] = {
+              init: function() {
+                this.jsonInit({
+                  "id": "placeholder_statement",
+                  "message0": "",
+                  "inputsInline": true,
+                  "previousStatement": null,
+                  "nextStatement": null,
+                  "category": Blockly.Categories.event,
+                  "colour": "#BDCCDB",
+                  "colourSecondary": "#BDCCDB",
+                  "colourTertiary": "#BDCCDB"
+                });
+                this.appendDummyInput().appendField("                    ");
               }
             };
 
@@ -2469,6 +2537,18 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
             //    this.setHelpUrl('http://www.example.com/');
               }
             };
+
+            Blockly.Blocks['placeholder_statement'] = {
+              init: function() {
+                this.appendDummyInput()
+                    .appendField("                    ");
+                this.setPreviousStatement(true);
+                this.setNextStatement(true);
+                this.setColour(210);
+                this.setTooltip('');
+            //    this.setHelpUrl('http://www.example.com/');
+              }
+            };
          }
 
          Blockly.JavaScript['robot_start'] = function(block) {
@@ -2478,6 +2558,14 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
          Blockly.Python['robot_start'] = function(block) {
            return "";
          };
+
+         Blockly.JavaScript['placeholder_statement'] = function(block) {
+           return "";
+         };
+
+         Blockly.Python['placeholder_statement'] = function(block) {
+           return "pass";
+         }
       },
 
       blocksToScratch: function(blockList) {
@@ -2530,8 +2618,10 @@ function getBlocklyBlockFunctions(maxBlocks, nbTestCases) {
          var allowed = this.getBlocksAllowed();
          var blockList = xml.getElementsByTagName('block');
          var notAllowed = [];
+         var that = this;
          function checkBlock(block) {
             var blockName = block.getAttribute('type');
+            blockName = that.normalizeType(blockName);
             if(!arrayContains(allowed, blockName)) {
                notAllowed.push(blockName);
             }

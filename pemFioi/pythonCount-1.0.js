@@ -16,15 +16,16 @@ var pythonCountPatterns = [
    {pattern: /^from\s+\w+\s+import\s+[^\n\r]/, block: false}, // from robot import *
    {pattern: /^import\s+[^\n\r]+/, block: false}, // import x, y, z
    {pattern: /^for\s+\w+\s+in\s+range/, block: false}, // for i in range(5): is only one block; it's a bit tricky
+   {pattern: /^def\s[^:]+:/, block: true}, // for i in range(5): is only one block; it's a bit tricky
 
    {pattern: /^\d+\.\d*/, block: true},
    {pattern: /^\w+/, block: true},
 
    // Strings
-   {pattern: /^'''(?:[^\\']|\\.|'[^']|'[^'])+'''/, block: true},
-   {pattern: /^'(?:[^\\']|\\.)+'/, block: true},
-   {pattern: /^"""(?:[^\\"]|\\.|"[^"]|""[^"])+"""/, block: true},
-   {pattern: /^"(?:[^\\"]|\\.)+"/, block: true},
+   {pattern: /^'''(?:[^\\']|\\.|'[^']|'[^'])*'''/, block: true},
+   {pattern: /^'(?:[^\\']|\\.)*'/, block: true},
+   {pattern: /^"""(?:[^\\"]|\\.|"[^"]|""[^"])*"""/, block: true},
+   {pattern: /^"(?:[^\\"]|\\.)*"/, block: true},
 
    // Operators
    {pattern: /^[+*\/%=!<>&|^~]+/, block: true},
@@ -130,6 +131,14 @@ function pythonForbiddenLists(includeBlocks) {
       }
    };
 
+   var pfa = includeBlocks.pythonForceAllowed ? includeBlocks.pythonForceAllowed : [];
+   removeForbidden(pfa);
+   for(var k=0; k<pfa.length; k++) {
+      if(!arrayContains(allowed, pfa[k])) {
+         allowed.push(pfa[k]);
+      }
+   }
+
    if(includeBlocks && includeBlocks.standardBlocks) {
       if(includeBlocks.standardBlocks.includeAll || includeBlocks.standardBlocks.includeAllPython) {
          // Everything is allowed
@@ -162,6 +171,10 @@ function pythonForbiddenLists(includeBlocks) {
       removeForbidden(['var_assign']);
    }
 
+   if(includeBlocks && includeBlocks.procedures && (includeBlocks.procedures.ret || includeBlocks.procedures.noret)) {
+      removeForbidden(['def']);
+   }
+
    return {forbidden: forbidden, allowed: allowed};
 }
 
@@ -178,6 +191,10 @@ function removeFromPatterns(code, patterns) {
 function pythonForbidden(code, includeBlocks) {
    var forbidden = pythonForbiddenLists(includeBlocks).forbidden;
 
+   if(includeBlocks && includeBlocks.procedures && includeBlocks.procedures.disableArgs) {
+      forbidden.push('def_args');
+   }
+
    // Remove comments and strings before scanning
    var removePatterns = [
       /#[^\n\r]+/
@@ -186,10 +203,10 @@ function pythonForbidden(code, includeBlocks) {
    code = removeFromPatterns(code, removePatterns);
 
    var stringPatterns = [
-      /'''(?:[^\\']|\\.|'[^']|'[^'])+'''/,
-      /'(?:[^\\']|\\.)+'/,
-      /"""(?:[^\\"]|\\.|"[^"]|""[^"])+"""/,
-      /"(?:[^\\"]|\\.)+"/
+      /'''(?:[^\\']|\\.|'[^']|'[^'])*'''/,
+      /'(?:[^\\']|\\.)*'/,
+      /"""(?:[^\\"]|\\.|"[^"]|""[^"])*"""/,
+      /"(?:[^\\"]|\\.)*"/
       ];
 
    code2 = removeFromPatterns(code, stringPatterns);
@@ -231,6 +248,12 @@ function pythonForbidden(code, includeBlocks) {
          if(re.exec(code)) {
             // Forbidden keyword found
             return '= (assignation de variable)'; // TODO :: i18n ?
+         }
+      } else if(forbidden[i] == 'def_args') {
+         var re = /def\s*\w+\([^\s]+\)/;
+         if(re.exec(code)) {
+            // Forbidden keyword found
+            return 'fonction avec arguments'; // TODO :: i18n ?
          }
       } else if(forbidden[i] != 'strings') {
          var re = new RegExp('(^|\\W)'+forbidden[i]+'(\\W|$)');

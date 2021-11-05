@@ -3,17 +3,19 @@
         Python mode interface and running logic.
 */
 
-function LogicController(nbTestCases, maxInstructions) {
+function LogicController(maxInstructions, subTask) {
   /**
    * Class properties
    */
-  this._nbTestCases = nbTestCases;
+  this.subTask = subTask;
   this._maxInstructions = maxInstructions || null;
   this.language = 'python';
   this._textFile = null;
   this._extended = false;
+  // for quickpi additional will contain the string containing all sensors in xml
   this.programs = [{
     blockly: null,
+    additional: null,
     blocklyJS: null,
     javascript: null
   }];
@@ -34,9 +36,15 @@ function LogicController(nbTestCases, maxInstructions) {
     this._mainContext = mainContext;
   };
 
-  this.savePrograms = function () {
+  this.savePrograms = function (full) {
     if(this._aceEditor) {
       this.programs[0].blockly = this._aceEditor.getValue();
+      if (full) {
+        var additional = {};
+        if (window.quickAlgoInterface && window.quickAlgoInterface.saveAdditional)
+          window.quickAlgoInterface.saveAdditional(additional);
+        this.programs[0].additional = additional;
+      }
     }
   };
 
@@ -44,6 +52,10 @@ function LogicController(nbTestCases, maxInstructions) {
     if(this._aceEditor && this.programs[0].blockly) {
       this._aceEditor.setValue(''+this.programs[0].blockly);
       this._aceEditor.selection.clearSelection();
+    }
+    if (this._aceEditor && this.programs[0].additional) {
+      if (window.quickAlgoInterface && window.quickAlgoInterface.loadAdditional)
+        window.quickAlgoInterface.loadAdditional(this.programs[0].additional);
     }
   };
 
@@ -63,7 +75,6 @@ function LogicController(nbTestCases, maxInstructions) {
       console.log('Module "python-analysis" is loaded but not used.');
     }
 
-    this._nbTestCases = nbTestCases;
     this._options = options;
     this._loadBasicEditor();
 
@@ -226,6 +237,7 @@ function LogicController(nbTestCases, maxInstructions) {
       } else {
         $('#errors').html(err);
       }
+      SrlLogger.validation(0, 'code');
     })) {
        return false;
     }
@@ -307,7 +319,28 @@ function LogicController(nbTestCases, maxInstructions) {
             }
           }
         } else {
-          that.programs[0].blockly = code;
+          // The 5 come from this string: '# {"' It must be higher in order to not fail
+          if (that._mainContext.loadAdditional && code[0] === '#' && code.length > 5) {
+            // This var correspond on how it is saved with JSON.stringify, these are the first characters
+            // in order to be allowed to load codes which are from this version (our current corrections) it is
+            // better to test if the first characters corresponds to our valid json instead of being regular comments.
+            // This can fail only in the case when you start your comment with: '# {"'
+            var firstChars = "{\"";
+            var toVerify = code.substring(2, 2 + firstChars.length);
+            if (toVerify === firstChars) {
+              var additionalStr = code.substring(2, code.indexOf('\n'));
+              var newCode = code.substring(code.indexOf('\n') + 1);
+              that.programs[0].additional = JSON.parse(additionalStr);
+              that.programs[0].blockly = newCode;
+            } else {
+              that.programs[0].blockly = code;
+              that.programs[0].additional = {};
+            }
+          } else {
+            that.programs[0].blockly = code;
+            that.programs[0].additional = {};
+          }
+
         }
         that.loadPrograms();
       };
@@ -322,9 +355,12 @@ function LogicController(nbTestCases, maxInstructions) {
       }
     }
   };
+  this.getCodeWithAdditional = function() {
+    return "# " + JSON.stringify(this.programs[0].additional) + "\n" + this.programs[0].blockly;
+  };
   this.saveProgram = function () {
-    this.savePrograms();
-    var code = this.programs[0].blockly;
+    this.savePrograms(true);
+    var code = this.getCodeWithAdditional();
     var data = new Blob([code], { type: 'text/plain' });
 
     // If we are replacing a previously generated file we need to
@@ -439,7 +475,7 @@ function LogicController(nbTestCases, maxInstructions) {
    * @return {boolean}
    */
   this.skulptAnalysisEnabled = function() {
-    return (this.language === 'python' && typeof analyseSkulptState === 'function');
+    return (this.language === 'python' && typeof window.analyseSkulptState === 'function');
   };
 
   /**
@@ -522,34 +558,49 @@ function LogicController(nbTestCases, maxInstructions) {
     var completions = [];
 
     // we add completion on functions
-    if (this.includeBlocks && this.includeBlocks.generatedBlocks) {
-      for (var categoryIndex in this.includeBlocks.generatedBlocks) {
-        for (var funIndex in this.includeBlocks.generatedBlocks[categoryIndex]) {
-          var fun = this.includeBlocks.generatedBlocks[categoryIndex][funIndex];
-          var funInfos = this._getFunctionsInfo(fun);
-          var funProto = funInfos.proto;
-          var funHelp = funInfos.help;
-          var funSnippet = getSnippet(funProto);
-          completions.push({
-            caption: funProto,
-            snippet: funSnippet,
-            type: "snippet",
-            docHTML: "<b>" + funProto + "</b><hr></hr>" + funHelp
-          })
+    if (this.includeBlocks) {
+      if(this.includeBlocks.generatedBlocks) {
+        for (var categoryIndex in this.includeBlocks.generatedBlocks) {
+          for (var funIndex in this.includeBlocks.generatedBlocks[categoryIndex]) {
+            var fun = this.includeBlocks.generatedBlocks[categoryIndex][funIndex];
+            var funInfos = this._getFunctionsInfo(fun);
+            var funProto = funInfos.proto;
+            var funHelp = funInfos.help;
+            var funSnippet = getSnippet(funProto);
+            completions.push({
+              caption: funProto,
+              snippet: funSnippet,
+              type: "snippet",
+              docHTML: "<b>" + funProto + "</b><hr></hr>" + funHelp
+            });
+          }
+
+          if(this._mainContext.customConstants && this._mainContext.customConstants[categoryIndex]) {
+            var constList = this._mainContext.customConstants[categoryIndex];
+            for(var iConst=0; iConst < constList.length; iConst++) {
+              var name = constList[iConst].name;
+              if(this._mainContext.strings.constant && this._mainContext.strings.constant[name]) {
+                name = this._mainContext.strings.constant[name];
+              }
+              completions.push({
+                name: name,
+                value: name,
+                meta: this._strings.constant
+              });
+            }
+          }
         }
       }
-      if(this._mainContext.customConstants && this._mainContext.customConstants[categoryIndex]) {
-        var constList = this._mainContext.customConstants[categoryIndex];
-        for(var iConst=0; iConst < constList.length; iConst++) {
-          var name = constList[iConst].name;
-          if(this._mainContext.strings.constant && this._mainContext.strings.constant[name]) {
-            name = this._mainContext.strings.constant[name];
-          }
+
+      if(this.includeBlocks.pythonAdditionalFunctions) {
+        for(var i=0; i < this.includeBlocks.pythonAdditionalFunctions.length; i++) {
+          var func = this.includeBlocks.pythonAdditionalFunctions[i];
           completions.push({
-            name: name,
-            value: name,
-            meta: this._strings.constant
-          })
+            caption: func + '()',
+            snippet: getSnippet(func),
+            type: "snippet",
+            docHTML: "<b>" + func + "()</b><hr></hr>"
+          });
         }
       }
     }
@@ -647,6 +698,9 @@ function LogicController(nbTestCases, maxInstructions) {
     this._aceEditor.getSession().setMode("ace/mode/python");
     this._aceEditor.setFontSize(16);
 
+    // Clean up previous instances of the autocomplete
+    $('.ace_autocomplete').remove();
+
     if (!this._mainContext.disableAutoCompletion) {
       // we resize the completer window, because some functions are too big so we need more place:
       if (!this._aceEditor.completer) {
@@ -713,11 +767,10 @@ function LogicController(nbTestCases, maxInstructions) {
     var onEditorChange = function () {
       if(!that._aceEditor) { return; }
 
-      if(that._mainContext.runner && that._mainContext.runner._editorMarker) {
-        that.clearSkulptAnalysis();
-
-        that._aceEditor.session.removeMarker(that._mainContext.runner._editorMarker);
-        that._mainContext.runner._editorMarker = null;
+      if(window.quickAlgoInterface) {
+        window.quickAlgoInterface.displayError(null);
+      } else {
+        $("#errors").html('');
       }
 
       if(window.quickAlgoInterface) {
@@ -726,19 +779,16 @@ function LogicController(nbTestCases, maxInstructions) {
         $('#capacity').html(that.getCapacityInfo().text);
       }
 
-      // Interrupt any ongoing execution
-      if(that._mainContext.runner) {
-         that._mainContext.runner.reset();
-      }
-
-      if(window.quickAlgoInterface) {
-        window.quickAlgoInterface.displayError(null);
-      } else {
-        $("#errors").html('');
+      if(that.subTask) {
+        that.subTask.onChange();
       }
 
       // Close reportValue popups
       $('.blocklyDropDownDiv').remove();
+
+      if(that._mainContext.runner && that._mainContext.runner._editorMarker) {
+        that.clearSkulptAnalysis();
+      }
     };
     this._aceEditor.getSession().on('change', debounce(onEditorChange, 500, false))
   };
@@ -768,17 +818,21 @@ function LogicController(nbTestCases, maxInstructions) {
    * @param functionName The name of the function
    * @return {{help: string, proto: string, desc: *}} The informations about the function
    */
-  this._getFunctionsInfo = function(functionName) {
+  this._getFunctionsInfo = function(functionName, ignoreDoc) {
     var blockDesc = '', funcProto = '', blockHelp = '';
-    if (this._mainContext.docGenerator) {
+    if (!ignoreDoc && this._mainContext.docGenerator) {
       blockDesc = this._mainContext.docGenerator.blockDescription(functionName);
       funcProto = blockDesc.substring(blockDesc.indexOf('<code>') + 6, blockDesc.indexOf('</code>'));
       blockHelp = blockDesc.substring(blockDesc.indexOf('</code>') + 7);
     } else {
       var blockName = functionName;
-      blockDesc = this._mainContext.strings.description[blockName];
+      var funcCode = (!ignoreDoc && this._mainContext.strings.code[blockName]) || blockName;
+      blockDesc = (!ignoreDoc && this._mainContext.strings.description[blockName]);
+      if(blockDesc) {
+         blockDesc = blockDesc.replace(/@/g, funcCode);
+      }
       if (!blockDesc) {
-        funcProto = (this._mainContext.strings.code[blockName] || blockName) + '()';
+        funcProto = funcCode + '()';
         blockDesc = '<code>' + funcProto + '</code>';
       } else if (blockDesc.indexOf('</code>') < 0) {
         var funcProtoEnd = blockDesc.indexOf(')') + 1;
@@ -813,21 +867,55 @@ function LogicController(nbTestCases, maxInstructions) {
 
   this.updateTaskIntro = function () {
     if(!this._mainContext.display) { return; }
+
     if($('.pythonIntro').length == 0) {
-      quickAlgoInterface.appendTaskIntro('<hr class="pythonIntroElement long" />'
+      quickAlgoInterface.appendPythonIntro(''
         + '<div class="pythonIntro pythonIntroElement long">'
         + '  <div class="pythonIntroSimple"></div>'
         + '  <div class="pythonIntroFull"></div>'
         + '  <div class="pythonIntroBtn"></div>'
-        + '</div>');
+        + '</div>', this.generateTaskIntro.bind(this));
     }
+    this.generateTaskIntro();
+  }
 
+  this.generateTaskIntro = function () {
     $('.pythonIntro').off('click', 'code');
     if(this._mainContext.infos.noPythonHelp) {
        $('.pythonIntroElement').css('display', 'none');
        return;
     }
     $('.pythonIntroElement').css('display', '');
+
+
+    // Display a list for the simpleHtml version
+    function displaySimpleList(elemList) {
+      var html = '';
+      if(window.quickAlgoResponsive && elemList.length > 0) {
+        // Dropdown mode
+        html  = '<div class="pythonIntroSelect">';
+        html += '<select>';
+        for(var i=0 ; i < elemList.length; i++) {
+          var elem = elemList[i];
+          html += '<option' + (elem.desc ? ' data-desc="' + elem.desc.replace('"', '&quot;') + '"' : '') + '>';
+          html += (typeof elem == 'string' ? elem : elem.func);
+          html += '</option>';
+        }
+        html += '</select>';
+        html += '<div class="pythonIntroSelectBtn pythonIntroSelectBtnCopy"><span class="fas fa-clone"></span></div>';
+        html += '<div class="pythonIntroSelectBtn pythonIntroSelectBtnHelp"><span class="fas fa-question"></span></div>';
+        html += '<span class="pythonIntroSelectDesc"></span>';
+        html += '</div>';
+      } else {
+        // Normal mode
+        for(var i=0 ; i < elemList.length; i++) {
+          var elem = elemList[i];
+          if(i > 0) { html += ', '; }
+          html += '<code>' + (typeof elem == 'string' ? elem : elem.func) + '</code>';
+        }
+      }
+      return html;
+    };    
 
     var fullHtml = '';
     var simpleHtml = '';
@@ -850,34 +938,6 @@ function LogicController(nbTestCases, maxInstructions) {
 
       var availableConsts = [];
 
-      // Display a list for the simpleHtml version
-      function displaySimpleList(elemList) {
-        var html = '';
-        if(window.quickAlgoResponsive && elemList.length > 0) {
-          // Dropdown mode
-          html  = '<div class="pythonIntroSelect">';
-          html += '<select>';
-          for(var i=0 ; i < elemList.length; i++) {
-            var elem = elemList[i];
-            html += '<option' + (elem.desc ? ' data-desc="' + elem.desc.replace('"', '&quot;') + '"' : '') + '>';
-            html += (typeof elem == 'string' ? elem : elem.func);
-            html += '</option>';
-          }
-          html += '</select>';
-          html += '<div class="pythonIntroSelectBtn pythonIntroSelectBtnCopy"><span class="fas fa-clone"></span></div>';
-          html += '<div class="pythonIntroSelectBtn pythonIntroSelectBtnHelp"><span class="fas fa-question"></span></div>';
-          html += '<span class="pythonIntroSelectDesc"></span>';
-          html += '</div>';
-        } else {
-          // Normal mode
-          for(var i=0 ; i < elemList.length; i++) {
-            var elem = elemList[i];
-            if(i > 0) { html += ', '; }
-            html += '<code>' + (typeof elem == 'string' ? elem : elem.func) + '</code>';
-          }
-        }
-        return html;
-      };
 
       // Generate list of functions available
       var simpleElements = [];
@@ -904,14 +964,28 @@ function LogicController(nbTestCases, maxInstructions) {
           }
         }
       }
+
+      if(this.includeBlocks.pythonAdditionalFunctions) {
+        for(var i=0; i < this.includeBlocks.pythonAdditionalFunctions.length; i++) {
+          var infos = this._getFunctionsInfo(this.includeBlocks.pythonAdditionalFunctions[i], true);
+          var blockDesc = infos.desc;
+          var funcProto = infos.proto;
+          var blockHelp = infos.help;
+          fullHtml += '<li>' + blockDesc + '</li>';
+          simpleElements.push({func: funcProto, desc: blockHelp});
+        }
+      }
+
       simpleHtml += displaySimpleList(simpleElements);
       fullHtml += '</ul>';
+
+      if(availableConsts.length) {
+        fullHtml += '<p>Les constantes disponibles sont : <code>' + availableConsts.join('</code>, <code>') + '</code>.</p>';
+        simpleHtml += '<br />Constantes disponibles : ' + displaySimpleList(availableConsts);
+      }      
     }
 
-    if(availableConsts.length) {
-      fullHtml += '<p>Les constantes disponibles sont : <code>' + availableConsts.join('</code>, <code>') + '</code>.</p>';
-      simpleHtml += '<br />Constantes disponibles : ' + displaySimpleList(availableConsts);
-    }
+
 
     var pflInfos = pythonForbiddenLists(this.includeBlocks);
 
@@ -998,7 +1072,7 @@ function LogicController(nbTestCases, maxInstructions) {
 
     var controller = this;
     $('.pythonIntroSimple code, .pythonIntroFull code').not('.pflForbidden').on('click', function() {
-      quickAlgoInterface.toggleLongIntro(false);
+      quickAlgoInterface.toggleMoreDetails(false);
       if(controller._aceEditor) {
         controller._aceEditor.insert(this.getAttribute('data-code'));
         controller._aceEditor.focus();
@@ -1099,6 +1173,6 @@ function LogicController(nbTestCases, maxInstructions) {
   };
 }
 
-function getBlocklyHelper(maxBlocks, nbTestCases) {
-  return new LogicController(nbTestCases, maxBlocks);
+function getBlocklyHelper(maxBlocks, subTask) {
+  return new LogicController(maxBlocks, subTask);
 }

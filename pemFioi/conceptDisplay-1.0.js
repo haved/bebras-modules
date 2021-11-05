@@ -1,3 +1,19 @@
+var channel = null;
+var setupCodeSnippets = false;
+
+$(function() {
+  var targetWindow = window.opener || window.parent;
+  if (window.Channel && targetWindow && targetWindow !== window) {
+    var windowChannel = window.opener ? window.opener : window.parent;
+    channel = Channel.build({window: windowChannel, origin: '*', scope: 'snippet'});
+
+    channel.bind('setupConceptDisplaySnippets', function () {
+      setupCodeSnippets = true;
+      doSetupCodeSnippets();
+    });
+  }
+});
+
 function conceptDisplay() {
   var hash = window.location.hash.substr(1);
   if(!hash) { return; }
@@ -11,7 +27,7 @@ function conceptDisplay() {
     var target = hash;
   }
 
-  var targetDiv = $('div[data-id='+target+']');
+  var targetDiv = $('[data-id='+target+']');
 
   if(!targetDiv.length) { return; }
 
@@ -22,7 +38,7 @@ function conceptDisplay() {
     var langDivs = allLangDivs.filter(function(i, e) {
       var langs = e.getAttribute('data-lang').split(' ');
       return langs.indexOf(lang) != -1;
-      });
+    });
     if(langDivs.length) {
       allLangDivs.hide();
       langDivs.show();
@@ -30,6 +46,40 @@ function conceptDisplay() {
       allLangDivs.show();
     }
   }
+
+  if (setupCodeSnippets) {
+    doSetupCodeSnippets();
+  }
+}
+
+function doSetupCodeSnippets() {
+  var pythonCodes = $('.pythonCode');
+  pythonCodes.each(function (index, element) {
+    const jQueryElement = $(element);
+    if (!jQueryElement.parents('.pythonCode-container').length) {
+      const previousCode = $(element).html();
+      jQueryElement
+        .removeClass('pythonCode')
+        .addClass('pythonCode-container')
+        .empty()
+        .append($("<div class='pythonCode'></div>").html(previousCode))
+        .append("<button class='pythonCode-execute'>Utiliser cet exemple</button>")
+    }
+  })
+
+  $('.pythonCode-execute').click(function () {
+    const code = $(this).parent().find('.pythonCode').text();
+    const language = $(this).closest('[data-lang]').length && $(this).closest('[data-lang]').attr('data-lang') ?
+      $(this).closest('[data-lang]').attr('data-lang') : 'python';
+
+    channel.notify({
+      method: 'useCodeExample',
+      params: {
+        code: code,
+        language: language,
+      },
+    });
+  });
 }
 
 $(window).on('hashchange', conceptDisplay);

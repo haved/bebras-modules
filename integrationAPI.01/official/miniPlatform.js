@@ -293,7 +293,7 @@ var alreadyStayed = false;
 
 var miniPlatformValidate = function(task) { return function(mode, success, error) {
    //$.post('updateTestToken.php', {action: 'showSolution'}, function(){}, 'json');
-   if (mode == 'nextImmediate' || mode == 'log') {
+   if (mode == 'nextImmediate' || mode == 'top' || mode == 'log') {
       return;
    }
    if (mode == 'stay') {
@@ -471,6 +471,9 @@ $(document).ready(function() {
             if(data.views) {
                chooseView.reinit(data.views);
             }
+            if (success) {success();}
+         };
+         platform.log = function(data, success, error) {
             if (success) {success();}
          };
          var taskOptions = {};

@@ -113,10 +113,12 @@ statement {
   display: block;
 }
 statement p {
-  /* because we get <p> wraps here by taskeditor tinymce */
-  display: inline;
   margin: 0;
   font-weight: normal;
+}
+statement p:first-child {
+  /* because we get <p> wraps here by taskeditor tinymce */
+  display: inline;
 }
 statement::before {
   counter-increment: questions-counter;
@@ -147,9 +149,10 @@ answer {
   padding: 5px 0;
 }
 answer p {
-  /* because we get <p> wraps here by taskeditor tinymce */
-  display: inline;
   margin: 0;
+}
+answer p:first-child {
+  display: inline;
 }
 /*question:nth-child(odd) answer {
   border-color: #d2d2d2;
@@ -659,4 +662,108 @@ button,
 .fill-gaps-text .mistake span {
   color: #ff001f;
   border-color: #ff001f;
+}
+
+/***** SORT LIST *****/
+
+question[type="sort_list"] .list-group {
+  display: flex;
+  flex-direction: column;
+}
+question[type="sort_list"] .list-group-item {
+  padding: .75rem 1.25rem;
+  margin-bottom: -1px;
+  background-color: #fff;
+  border: 1px solid rgba(0,0,0,.125);
+  cursor: grab;
+}
+question[type="sort_list"] .list-group-item:first-child {
+  border-top-left-radius: .25rem;
+  border-top-right-radius: .25rem;
+}
+question[type="sort_list"] .list-group-item:last-child {
+    border-bottom-right-radius: .25rem;
+    border-bottom-left-radius: .25rem;
+}
+
+/***** SORT ITEMS *****/
+
+question[type="sort_items"] .src {
+  min-height: 68px;
+}
+question[type="sort_items"] .src::after {
+  content: '';
+  display: block;
+  width: 90vw;
+  height: 1px;
+  background-color: #e5e5e5;
+  margin-top: 20px;
+}
+
+question[type="sort_items"] .src .list-group-item {
+  display: inline-block;
+  padding: .5rem 1rem;
+  margin: 10px;
+  background-color: #f1f2f7;
+  border: 1px solid rgba(0,0,0,.125);
+  cursor: grab;
+  min-width: 90px;
+  min-height: 30px;
+  border-radius: 30px;
+  text-align: center;
+  font-weight: bold;
+  color: #4a4a4a;
+}
+
+question[type="sort_items"] .src .list-group-item::before {
+  font-family: "Font Awesome 5 Free"; 
+  font-weight: 900; 
+  content: "\f142";
+  color: #d8d9dd;
+  margin-right: 10px;
+}
+
+question[type="sort_items"] .dest {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  text-align: center;
+}
+question[type="sort_items"] .dest label {
+  display: block;
+  font-weight: bold;
+  color: #4a90e2;
+  padding: 20px 0;
+}
+
+question[type="sort_items"] .dest .list-group {
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+  min-width: 100px;
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: .25rem;
+  background: #f2f2f2;
+}
+question[type="sort_items"] .dest .list-group-item {
+  padding: .75rem 1.25rem;
+  margin-bottom: -1px;
+  background-color: #fff;
+  border: 1px solid rgba(0,0,0,.125);
+  cursor: grab;
+}
+question[type="sort_items"] .dest .list-group-item:first-child {
+  border-top-left-radius: .25rem;
+  border-top-right-radius: .25rem;
+}
+question[type="sort_items"] .dest .list-group-item:last-child {
+    border-bottom-right-radius: .25rem;
+    border-bottom-left-radius: .25rem;
+}
+
+.blue-background-class{
+  background-color: lightblue !important;
+}
+.lightgrey-background-class{
+  background-color: lightgrey !important;
 }

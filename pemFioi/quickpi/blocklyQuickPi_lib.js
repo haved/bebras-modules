@@ -36,7 +36,7 @@ var quickPiLocalLanguageStrings = {
             displayText2Lines: "afficher Ligne 1 : %1 Ligne 2 : %2",
 
             readTemperature: "température ambiante",
-            getTemperature: "temperature de %1",
+            getTemperatureFromCloud: "temperature de la ville %1",
 
             readRotaryAngle: "état du potentiomètre %1",
             readDistance: "distance mesurée par %1",
@@ -46,6 +46,7 @@ var quickPiLocalLanguageStrings = {
             setServoAngle: "mettre le servo %1 à l'angle %2",
             getServoAngle: "angle du servo %1",
 
+            setContinousServoDirection: "la direction du servo continu  %1 %2",
 
             drawPoint: "dessiner un pixel en x₀: %1 y₀: %2",
             isPointSet: "pixel affiché en x₀: %1 y₀: %2",
@@ -108,7 +109,7 @@ var quickPiLocalLanguageStrings = {
             readLightIntensity: "readLightIntensity",
             readHumidity: "readHumidity",
             currentTime: "currentTime",
-            getTemperature: "getTemperature",
+            getTemperatureFromCloud: "getTemperatureFromCloud",
 
             isLedOn: "isLedOn",
             isLedOnWithName: "isLedOn",
@@ -170,6 +171,9 @@ var quickPiLocalLanguageStrings = {
             readIRMessage: "readIRMessage",
             sendIRMessage: "sendIRMessage",
             presetIRMessage: "presetIRMessage",
+
+            //Continous servo
+            setContinousServoDirection: "setContinousServoDirection",
         },
         description: {
             // Descriptions of the functions in Python (optional)
@@ -190,7 +194,7 @@ var quickPiLocalLanguageStrings = {
             readDistance: "readDistance(distanceSensor) retourne la distance mesurée",
             readLightIntensity: "readLightIntensity(lightSensor) retourne l'intensité lumineuse",
             readHumidity: "readHumidity(hygrometer) retourne l'humidité ambiante",
-            currentTime: "currentTime(milliseconds) temps en millisecondes depuis le début du programme",
+            currentTime: "currentTime() temps en millisecondes depuis le début du programme",
 
             setLedBrightness: "setLedBrightness(led, brightness) règle l'intensité lumineuse de la LED",
             getLedBrightness: "getLedBrightness(led) retourne l'intensité lumineuse de la LED",
@@ -209,49 +213,52 @@ var quickPiLocalLanguageStrings = {
             setBuzzerNote: "setBuzzerNote(buzzer, frequency) fait sonner le buzzer à la fréquence indiquée",
             getBuzzerNote: "getBuzzerNote(buzzer) retourne la fréquence actuelle du buzzer",
 
-            getTemperature: "getTemperature(thermometer) ",
+            getTemperatureFromCloud: "getTemperatureFromCloud(town) retourne la température dans la ville donnée",
 
-            drawPoint: "drawPoint(x, y)",
-            isPointSet: "isPointSet(x, y)",
-            drawLine: "drawLine(x0, y0, x1, y1)",
+            drawPoint: "drawPoint(x, y) dessine un point de un pixel aux coordonnées données",
+            isPointSet: "isPointSet(x, y) retourne True si le point aux coordonées x, y est actif",
+            drawLine: "drawLine(x0, y0, x1, y1) dessine un segment commençant en x0, y0 jusqu'à x1, y1",
             drawRectangle: "drawRectangle(x0, y0, width, height) dessine un rectangle, de coin haut gauche (x0,y0)",
-            drawCircle: "drawCircle(x0, y0, diameter)",
+            drawCircle: "drawCircle(x0, y0, diameter) dessine un cercle de centre x0, y0 et de diamètre donné",
             clearScreen: "clearScreen() efface le contenu de l'écran",
-            updateScreen: "updateScreen()",
-            autoUpdate: "autoUpdate(auto)",
+            updateScreen: "updateScreen() mettre à jour l'écran",
+            autoUpdate: "autoUpdate(auto) change le mode d'actualisation de l'écran",
 
-            fill: "fill(color)",
-            noFill: "noFill()",
-            stroke: "stroke(color)",
-            noStroke: "noStroke()",
-
-
-            readAcceleration: "readAcceleration(axis)",
-            computeRotation: "computeRotation()",
-
-            readSoundLevel: "readSoundLevel(port)",
+            fill: "fill(color) Remplir les formes avec la couleur donnée",
+            noFill: "noFill() Ne pas remplir les formes",
+            stroke: "stroke(color) dessiner les bords des figures avec la couleur donnée",
+            noStroke: "noStroke() ne pas dessiner les bordures des figures",
 
 
-            readMagneticForce: "readMagneticForce(axis)",
-            computeCompassHeading: "computeCompassHeading()",
+            readAcceleration: "readAcceleration(axis) lit l'accélération en m/s² sur l'axe (X, Y ou Z)",
+            computeRotation: "computeRotation(axis) calcule l'angle de rotation en degrés sur l'accéléromètre",
+
+            readSoundLevel: "readSoundLevel(port) retourne le volume ambiant",
+
+
+            readMagneticForce: "readMagneticForce(axis) retourne le champ magnétique (µT) sur l'axe (X, Y ou Z)",
+            computeCompassHeading: "computeCompassHeading() retourne la direction de la boussole en degrés",
 
             readInfraredState: "readInfraredState(IRReceiver) retourne True si un signal infra-rouge est détecté, False sinon",
             setInfraredState: "setInfraredState(IREmitter, state) modifie l'état de l'émetteur : True pour l'allumer, False pour l'éteindre",
 
             // Gyroscope
-            readAngularVelocity: "readAngularVelocity()",
-            setGyroZeroAngle: "setGyroZeroAngle()",
-            computeRotationGyro: "computeRotationGyro()",
+            readAngularVelocity: "readAngularVelocity(axis) retourne la vitesse engulairee (°/s) du gyroscope",
+            setGyroZeroAngle: "setGyroZeroAngle() initialize le gyroscope à l'état 0",
+            computeRotationGyro: "computeRotationGyro(axis) calcule la rotation du gyroscope en degrés",
 
             //Internet store
-            connectToCloudStore: "connectToCloudStore(identifier, password)",
-            writeToCloudStore: "writeToCloudStore(identifier, key, value)",
-            readFromCloudStore: "readFromCloudStore(identifier, key)",
+            connectToCloudStore: "connectToCloudStore(identifier, password) se connecter au cloud avec le nom d'utilisateur et le mot de passe donnés",
+            writeToCloudStore: "writeToCloudStore(identifier, key, value) écrire une valeur sur une clé dans le cloud",
+            readFromCloudStore: "readFromCloudStore(identifier, key) retourne la valeur lue dans le cloud de la clé donnée",
 
             // IR Remote
-            readIRMessage: "readIRMessage(irrec, timeout)",
-            sendIRMessage: "sendIRMessage(irtrans, name)",
-            presetIRMessage: "presetIRMessage(name, data)",
+            readIRMessage: "readIRMessage(irrec, timeout) attends un message infrarouge pendant le temps donné en millisecondes et le renvois",
+            sendIRMessage: "sendIRMessage(irtrans, name) envoi un message infrarouge précédement configurer avec le nom donné",
+            presetIRMessage: "presetIRMessage(name, data) configure un message infrarouge de nom name et de donné data",
+
+            //Continous servo
+            setContinousServoDirection: "setContinousServoDirection(servo, direction)",
         },
         constant: {
         },
@@ -373,10 +380,27 @@ var quickPiLocalLanguageStrings = {
             port: "Port",
             state: "State",
 
+            cloudTypes: {
+                object: "Dictionnaire",
+                array: "Tableau",
+                boolean: "Booléen",
+                number: "Nombre",
+                string: "Chaîne de caractère"
+            },
+            cloudMissingKey: "Test échoué : Il vous manque la clé {0} dans le cloud.",
+            cloudMoreKey: "Test échoué : La clé {0} est en trop dans le cloud",
+            cloudUnexpectedKeyCorrection: "Test échoué : La clé {0} n'étais pas attendu dans le cloud",
+            cloudPrimitiveWrongKey: "Test échoué : À la clé {0} du cloud, la valeur {1} était attendue au lieu de {2}",
+            cloudArrayWrongKey: "Test échoué : Le tableau à la clé {0} du cloud diffère de celui attendu.",
+            cloudDictionaryWrongKey: "Test échoué : Le dictionnaire à la clé {0} diffère de celui attendu",
+            cloudWrongType: "Test échoué : Vous avez stocké une valeur de type \"{0}\" dans la clé {1} du cloud, mais le type \"{2}\" était attendu.",
+
             cloudKeyNotExists: "La clé n'existe pas : {0} ",
             cloudWrongValue: "Clé {0} : la valeur {2} n'est pas celle attendue, {1}.",
             cloudUnexpectedKey: "La clé {0} n'est pas une clé attendue",
             hello: "Bonjour",
+
+            getTemperatureFromCloudWrongValue: "getTemperatureFromCloud: {0} n'est pas une ville supportée par getTemperatureFromCloud",
 
             experiment: "Expérimenter",
             validate: "Valider",
@@ -405,7 +429,7 @@ var quickPiLocalLanguageStrings = {
             sensorNameServo: "servo",
             sensorNameHumidity: "humidity",
             sensorNamePotentiometer: "pot",
-            sensorNameCloudStore: "cloud",
+            sensorNameCloudStore: "cloud"
         },
         concepts: {
             quickpi_start: 'Créer un programme',
@@ -426,6 +450,7 @@ var quickPiLocalLanguageStrings = {
             quickpi_ir_receiver: 'Récepteur infrarouge',
             quickpi_ir_emitter: 'Émetteur infrarouge',
             quickpi_potentiometer: "Potentiomètre",
+            quickpi_gyroscope: "Gyroscope",
             quickpi_cloud: 'Stockage dans le cloud'
         }
     },
@@ -465,7 +490,7 @@ var quickPiLocalLanguageStrings = {
             displayText2Lines: "desplegar texto Linea 1 : %1 Linea 2 : %2",
 
             readTemperature: "temperatura ambiente",
-            getTemperature: "temperatura de %1",
+            getTemperatureFromCloud: "temperatura de la ciudad %1", // TODO: verify
 
             readRotaryAngle: "estado del potenciómetro %1",
             readDistance: "distancia medida por %1",
@@ -514,6 +539,9 @@ var quickPiLocalLanguageStrings = {
             readIRMessage: "esperar un mensaje de infrarrojos : %1 durante : %2 ms",
             sendIRMessage: "enviar el mensaje por infrarrojos %2 por %1",
             presetIRMessage: "preparar un mensaje de infrarrojos con el nombre %1 y el contenido %2",
+
+            //Continous servo
+            setContinousServoDirection: "cambiar la dirección del servomotor continuo %1 %2",
         },
         code: {
             // Names of the functions in Python, or Blockly translated in JavaScript
@@ -537,7 +565,7 @@ var quickPiLocalLanguageStrings = {
             readLightIntensity: "readLightIntensity",
             readHumidity: "readHumidity",
             currentTime: "currentTime",
-            getTemperature: "getTemperature",
+            getTemperatureFromCloud: "getTemperatureFromCloud",
 
             isLedOn: "isLedOn",
             isLedOnWithName: "isLedOn",
@@ -599,6 +627,9 @@ var quickPiLocalLanguageStrings = {
             readIRMessage: "readIRMessage",
             sendIRMessage: "sendIRMessage",
             presetIRMessage: "presetIRMessage",
+
+            //Continous servo
+            setContinousServoDirection: "setContinousServoDirection",
         },
         description: {
             // Descriptions of the functions in Python (optional)
@@ -619,7 +650,7 @@ var quickPiLocalLanguageStrings = {
             readDistance: "readDistance(distanceSensor) devuelve la distancia medida",
             readLightIntensity: "readLightIntensity(lightSensor) devuelve la intensidad de la luz",
             readHumidity: "readHumidity(hygrometer) devuelve la humedad ambiental",
-            currentTime: "currentTime(milliseconds) tiempo en milisegundos desde el inicio del programa",
+            currentTime: "currentTime() tiempo en milisegundos desde el inicio del programa",
 
             setLedBrightness: "setLedBrightness(led, brightness) ajusta la intensidad de la luz del LED",
             getLedBrightness: "getLedBrightness(led) devuelve la intensidad de luz del LED",
@@ -638,7 +669,7 @@ var quickPiLocalLanguageStrings = {
             setBuzzerNote: "setBuzzerNote(buzzer, frequency) suena el zumbador en la frecuencia indicada",
             getBuzzerNote: "getBuzzerNote(buzzer) devuelve la frecuencia actual del zumbador",
 
-            getTemperature: "getTemperature(thermometer) obtiene la temperatura del sensor",
+            getTemperatureFromCloud: "getTemperatureFromCloud(town) obtiene la temperatura de la ciudad", // TODO: Verify
 
             drawPoint: "drawPoint(x, y) dibuja un punto en las coordenadas x, y",
             isPointSet: "isPointSet(x, y) devuelve True se dibujó sobre el punto x, y, False de lo contrario",
@@ -656,7 +687,7 @@ var quickPiLocalLanguageStrings = {
 
 
             readAcceleration: "readAcceleration(axis) leer la acceleración (m/s²) en el eje (X, Y o Z)",
-            computeRotation: "computeRotation() calcular el ángulo de rotación (°) en el acelerómetro",
+            computeRotation: "computeRotation(axis) calcular el ángulo de rotación (°) en el acelerómetro",
 
             readSoundLevel: "readSoundLevel(port) devuelve el volumen del sonido ambiente",
 
@@ -668,9 +699,9 @@ var quickPiLocalLanguageStrings = {
             setInfraredState: "setInfraredState(state) si se le pasa True enciende el transmisor infrarrojo, Falso lo apaga",
 
             // Gyroscope
-            readAngularVelocity: "readAngularVelocity() devuelve la velocidad angular (°/s) del gyroscopio",
+            readAngularVelocity: "readAngularVelocity(axis) devuelve la velocidad angular (°/s) del gyroscopio",
             setGyroZeroAngle: "setGyroZeroAngle() inicializa el giroscopio a estado cero",
-            computeRotationGyro: "computeRotationGyro() calcula la rotación del giroscopio (°)",
+            computeRotationGyro: "computeRotationGyro(axis) calcula la rotación del giroscopio (°)",
 
             //Internet store
             connectToCloudStore: "connectToCloudStore(identifier, password) se conecta a la nube con el usuario y password dados",
@@ -681,6 +712,9 @@ var quickPiLocalLanguageStrings = {
             readIRMessage: "readIRMessage(irrec, timeout) espera por un mensaje infrarrojo y lo devuelve durante el tiempo dado en milisegundos",
             sendIRMessage: "sendIRMessage(irtrans, name) envia un mensaje infrarrojo previamente configurado con el nombre dado",
             presetIRMessage: "presetIRMessage(name, data) configura un mensaje infrarrojo con el nombre y datos dados",
+
+            //Continous servo
+            setContinousServoDirection: "setContinousServoDirection(servo, direction) cambia la dirección de un servomotor",
         },
         constant: {
         },
@@ -747,6 +781,8 @@ var quickPiLocalLanguageStrings = {
             irEnableContinous: "Activar la emisión IR continua",
             irDisableContinous: "Desactivar la emisión IR continua",
 
+            getTemperatureFromCloudWrongValue: "getTemperatureFromCloud: {0} is not a town supported by getTemperatureFromCloud", // TODO: translate
+
             up: "arriba",
             down: "abajo",
             left: "izquierda",
@@ -799,6 +835,22 @@ var quickPiLocalLanguageStrings = {
             name: "Nombre",
             port: "Puerto",
             state: "Estado",
+
+            cloudTypes: {
+                object: "Dictionario",
+                array: "Arreglo",
+                boolean: "Booleano",
+                number: "Nombre",
+                string: "Cadena de caracteres"
+            },
+            cloudMissingKey: "Test échoué : Il vous manque la clé {0} dans le cloud.", // TODO: translate
+            cloudMoreKey: "Test échoué : La clé {0} est en trop dans le cloud", // TODO: translate
+            cloudUnexpectedKeyCorrection: "Test échoué : La clé {0} n'étais pas attendu dans le cloud", // TODO: translate
+            cloudPrimitiveWrongKey: "Test échoué : À la clé {0} du cloud, la valeur {1} était attendue au lieu de {2}", // TODO: translate
+            cloudArrayWrongKey: "Test échoué : Le tableau à la clé {0} du cloud diffère de celui attendu.", // TODO: translate
+            cloudDictionaryWrongKey: "Test échoué : Le dictionnaire à la clé {0} diffère de celui attendu", // TODO: translate
+            cloudWrongType: "Test échoué : Vous avez stocké une valeur de type \"{0}\" dans la clé {1} du cloud, mais le type \"{2}\" était attendu.", // TODO: translate
+
             cloudKeyNotExists: "La llave no existe : {0} ",
             cloudWrongValue: "Llave {0}: el valor {2} no es el esperado, {1}.",
             cloudUnexpectedKey: "La llave {0} no es una llave esperada",
@@ -850,6 +902,7 @@ var quickPiLocalLanguageStrings = {
             quickpi_ir_receiver: 'Receptor de infrarrojos', // TODO: verify
             quickpi_ir_emitter: 'Emisor de infrarrojos', // TODO: verify
             quickpi_potentiometer: "Potenciómetro", // TODO: verify
+            quickpi_gyroscope: "giroscopio", // TODO: verify
             quickpi_cloud: 'Almacenamiento en la nube'
         }
     },
@@ -889,7 +942,7 @@ var quickPiLocalLanguageStrings = {
             displayText2Lines: "mostra Riga 1 : %1 Riga 2 : %2",
 
             readTemperature: "temperatura ambiente",
-            getTemperature: "temperatura di %1",
+            getTemperatureFromCloud: "temperatura della cità %1", // TODO: verify
 
             readRotaryAngle: "stato del potenziometro %1",
             readDistance: "distanza misurata all'%1",
@@ -899,6 +952,7 @@ var quickPiLocalLanguageStrings = {
             setServoAngle: "metti il servomotore %1 all'angolo %2",
             getServoAngle: "angolo del servomotore %1",
 
+            setContinousServoDirection: "imposta la direzione continua del servo %1 %2",
 
             drawPoint: "draw pixel",
             isPointSet: "is pixel set in screen",
@@ -961,7 +1015,7 @@ var quickPiLocalLanguageStrings = {
             readLightIntensity: "readLightIntensity",
             readHumidity: "readHumidity",
             currentTime: "currentTime",
-            getTemperature: "getTemperature",
+            getTemperatureFromCloud: "getTemperatureFromCloud",
 
             isLedOn: "isLedOn",
             isLedOnWithName: "isLedOn",
@@ -1023,6 +1077,9 @@ var quickPiLocalLanguageStrings = {
             readIRMessage: "readIRMessage",
             sendIRMessage: "sendIRMessage",
             presetIRMessage: "presetIRMessage",
+
+            //Continous servo
+            setContinousServoDirection: "setContinousServoDirection",
         },
         description: {
             // Descriptions of the functions in Python (optional)
@@ -1043,7 +1100,7 @@ var quickPiLocalLanguageStrings = {
             readDistance: "readDistance(distanceSensor) riporta la distanza misurata",
             readLightIntensity: "readLightIntensity(lightSensor) riporta l'intensità luminosa",
             readHumidity: "readHumidity(hygrometer) riporta l'umidità dell'ambiente",
-            currentTime: "currentTime(milliseconds) tempo in millisecondi dall'avvio del programma",
+            currentTime: "currentTime() tempo in millisecondi dall'avvio del programma",
 
             setLedBrightness: "setLedBrightness(led, brightness) regola l'intensità luminosa del LED",
             getLedBrightness: "getLedBrightness(led) riporta l'intensità luminosa del LED",
@@ -1062,49 +1119,52 @@ var quickPiLocalLanguageStrings = {
             setBuzzerNote: "setBuzzerNote(buzzer, frequency) fa suonare il cicalino alla frequenza indicata",
             getBuzzerNote: "getBuzzerNote(buzzer) riporta la frequenza attuale del cicalino",
 
-            getTemperature: "getTemperature(thermometer) ",
+            getTemperatureFromCloud: "getTemperatureFromCloud(town) get the temperature from the town given", // TODO: Translate
 
-            drawPoint: "drawPoint(x, y)",
-            isPointSet: "isPointSet(x, y)",
-            drawLine: "drawLine(x0, y0, x1, y1)",
+            drawPoint: "drawPoint(x, y) draw a point of 1 pixel at given coordinates", // TODO: Translate
+            isPointSet: "isPointSet(x, y) return True if the point at coordinates x, y is on", // TODO: Translate
+            drawLine: "drawLine(x0, y0, x1, y1) draw a line starting at x0, y0 to x1, y1", // TODO: Translate
             drawRectangle: "drawRectangle(x0, y0, width, height) disegna un rettangolo, con angolo in alto a sinistra (x0,y0)",
-            drawCircle: "drawCircle(x0, y0, diameter)",
+            drawCircle: "drawCircle(x0, y0, diameter) draw a circle of center x0, y0 and of given diameter", // TODO: Translate
             clearScreen: "clearScreen() cancella il contenuto della schermata",
-            updateScreen: "updateScreen()",
-            autoUpdate: "autoUpdate(auto)",
+            updateScreen: "updateScreen() update screen content", // TODO: Translate
+            autoUpdate: "autoUpdate(auto) change the screen actualisation mode", // TODO: Translate
 
-            fill: "fill(color)",
-            noFill: "noFill()",
-            stroke: "stroke(color)",
-            noStroke: "noStroke()",
-
-
-            readAcceleration: "readAcceleration(axis)",
-            computeRotation: "computeRotation()",
-
-            readSoundLevel: "readSoundLevel(port)",
+            fill: "fill(color) fill the shapes with the color given", // TODO: Translate
+            noFill: "noFill() do not fill the shapes", // TODO: Translate
+            stroke: "stroke(color) draw the borders of shapes with the color given", // TODO: Translate
+            noStroke: "noStroke() do not draw the borders of shapes", // TODO: Translate
 
 
-            readMagneticForce: "readMagneticForce(axis)",
-            computeCompassHeading: "computeCompassHeading()",
+            readAcceleration: "readAcceleration(axis) read the acceleration (m/s²) in the axis (X, Y or Z)", // TODO: Translate
+            computeRotation: "computeRotation(axis) compute the rotation angle (°) in the accelerometro", // TODO: Translate
+
+            readSoundLevel: "readSoundLevel(port) return the ambien sound", // TODO: Translate
+
+
+            readMagneticForce: "readMagneticForce(axis) return the magnetic force (µT) in the axis (X, Y ou Z)", // TODO : Translate
+            computeCompassHeading: "computeCompassHeading() return the compass direction in degres", // TODO: Translate
 
             readInfraredState: "readInfraredState(IRReceiver) riporta True se viene rilevato un segnale infrarosso, False nel caso in contrario",
             setInfraredState: "setInfraredState(IREmitter, state) modifica lo stato del trasmettitore : True per accenderlo, False per spegnerlo",
 
             // Gyroscope
-            readAngularVelocity: "readAngularVelocity()",
-            setGyroZeroAngle: "setGyroZeroAngle()",
-            computeRotationGyro: "computeRotationGyro()",
+            readAngularVelocity: "readAngularVelocity(axis) return the angular speed (°/s) of the gyroscope", // TODO: Translate
+            setGyroZeroAngle: "setGyroZeroAngle() initialize the gyroscope at the 0 state", // TODO: Translate
+            computeRotationGyro: "computeRotationGyro(axis) compute the rotations of the gyroscope in degres", // TODO: Translate
 
             //Internet store
-            connectToCloudStore: "connectToCloudStore(identifier, password)",
-            writeToCloudStore: "writeToCloudStore(identifier, key, value)",
-            readFromCloudStore: "readFromCloudStore(identifier, key)",
+            connectToCloudStore: "connectToCloudStore(identifier, password) connect to cloud store with the given username and password", // TODO: Translate
+            writeToCloudStore: "writeToCloudStore(identifier, key, value) write a value at a key to the cloud", // TODO: Translate
+            readFromCloudStore: "readFromCloudStore(identifier, key) read the value at the given key from the cloud", // TODO: Translate
 
             // IR Remote
-            readIRMessage: "readIRMessage(irrec, timeout)",
-            sendIRMessage: "sendIRMessage(irtrans, name)",
-            presetIRMessage: "presetIRMessage(name, data)",
+            readIRMessage: "readIRMessage(irrec, timeout) wait for an IR message during the given time and then return it", // TODO: Translate
+            sendIRMessage: "sendIRMessage(irtrans, name) send an IR message previously configured with the given name", // TODO: Translate
+            presetIRMessage: "presetIRMessage(name, data) configure an IR message with the given name and data", // TODO: Translate
+
+            //Continous servo
+            setContinousServoDirection: "setContinousServoDirection(servo, direction)",           
         },
         constant: {
         },
@@ -1182,6 +1242,8 @@ var quickPiLocalLanguageStrings = {
             on: "On",
             off: "Off",
 
+            getTemperatureFromCloudWrongValue: "getTemperatureFromCloud: {0} is not a town supported by getTemperatureFromCloud", // TODO: translate
+
             grovehat: "Grove Base Hat for Raspberry Pi",
             quickpihat: "France IOI QuickPi Hat",
             pinohat: "Raspberry Pi without hat",
@@ -1225,6 +1287,21 @@ var quickPiLocalLanguageStrings = {
             name: "Name",
             port: "Port",
             state: "State",
+
+            cloudTypes: {
+                object: "Dictionnaire", // TODO: translate (dictionary)
+                array: "Tableau", // TODO: translate
+                boolean: "Booléen", // TODO: translate
+                number: "Nombre", // TODO: translate
+                string: "Chaîne de caractère" // TODO: translate
+            },
+            cloudMissingKey: "Test échoué : Il vous manque la clé {0} dans le cloud.", // TODO: translate
+            cloudMoreKey: "Test échoué : La clé {0} est en trop dans le cloud", // TODO: translate
+            cloudUnexpectedKeyCorrection: "Test échoué : La clé {0} n'étais pas attendu dans le cloud", // TODO: translate
+            cloudPrimitiveWrongKey: "Test échoué : À la clé {0} du cloud, la valeur {1} était attendue au lieu de {2}", // TODO: translate
+            cloudArrayWrongKey: "Test échoué : Le tableau à la clé {0} du cloud diffère de celui attendu.", // TODO: translate
+            cloudDictionaryWrongKey: "Test échoué : Le dictionnaire à la clé {0} diffère de celui attendu", // TODO: translate
+            cloudWrongType: "Test échoué : Vous avez stocké une valeur de type \"{0}\" dans la clé {1} du cloud, mais le type \"{2}\" était attendu.", // TODO: translate
 
             cloudKeyNotExists: "La chiave non esiste : {0} ",
             cloudWrongValue: "Chiave {0} : il valore {2} non è quello previsto, {1}.",
@@ -1279,6 +1356,7 @@ var quickPiLocalLanguageStrings = {
             quickpi_ir_receiver: 'Ricevitore a infrarossi', // TODO: verify
             quickpi_ir_emitter: 'Emettitore a infrarossi', // TODO: verify
             quickpi_potentiometer: "Potenziometro", // TODO: verify
+            quickpi_gyroscope: "giroscopio", // TODO: verify
             quickpi_cloud: 'Memorizzazione nel cloud'
         }
     },
@@ -1306,7 +1384,7 @@ var quickPiLocalLanguageStrings = {
             currentTime: "returns current time",
             setBuzzerState: "sonnerie",
             setBuzzerNote: "sonnerie note",
-            getTemperature: "Get temperature",
+            getTemperatureFromCloud: "Get temperature from town",
             setBuzzerNote: "Set buzzer note",
             getBuzzerNote: "Get buzzer note",
             setLedBrightness: "Set Led Brightness",
@@ -1352,6 +1430,9 @@ var quickPiLocalLanguageStrings = {
             readIRMessage: "readIRMessage",
             sendIRMessage: "sendIRMessage",
             presetIRMessage: "presetIRMessage",
+
+            //Continous servo  
+            setContinousServoDirection: "setContinousServoDirection",
         }
     }
 }
@@ -1639,7 +1720,7 @@ var getContext = function (display, infos, curLevel) {
             {
                 id: 'quickpi_button',
                 order: 202,
-                python: ['isButtonPressed', 'isButtonPressedWithName', 'waitForButton']
+                python: ['isButtonPressed', 'isButtonPressedWithName', 'waitForButton', 'buttonWasPressed']
             },  
             {   
                 id: 'quickpi_screen',
@@ -1650,7 +1731,7 @@ var getContext = function (display, infos, curLevel) {
                 id: 'quickpi_draw',
                 order: 203,
                 python: ['drawRectangle','drawLine','drawCircle', 'drawPoint', 'clearScreen', 'fill', 'noFill',
-                    'stroke', 'updateScreen', 'autoUpdate', 'isPointSet']
+                    'stroke', 'noStroke','updateScreen', 'autoUpdate', 'isPointSet']
             },
             {
                 id: 'quickpi_range',
@@ -1680,12 +1761,12 @@ var getContext = function (display, infos, curLevel) {
             {
                 id: 'quickpi_accelerometer',
                 order: 209,
-                python: ['readAcceleration']
+                python: ['readAcceleration', 'computeRotation']
             },
             {
                 id: 'quickpi_wait',
                 order: 250,
-                python: ['sleep']
+                python: ['sleep', 'currentTime']
             },
             {
                 id: 'quickpi_magneto',
@@ -1700,7 +1781,7 @@ var getContext = function (display, infos, curLevel) {
             {
                 id: "quickpi_ir_emitter",
                 order: 212,
-                python: ["setInfraredState", "sendIRMessage"]
+                python: ["setInfraredState", "sendIRMessage", "presetIRMessage"]
             },
             {
                 id: "quickpi_potentiometer",
@@ -1708,9 +1789,14 @@ var getContext = function (display, infos, curLevel) {
                 python: ["readRotaryAngle"]
             },
             {
+                id: "quickpi_gyroscope",
+                order: 214,
+                python: ["readAngularVelocity", "setGyroZeroAngle", "computeRotationGyro"]
+            },
+            {
                 id: 'quickpi_cloud',
                 order: 220,
-                python: ['writeToCloudStore','connectToCloudStore','readFromCloudStore']
+                python: ['writeToCloudStore','connectToCloudStore','readFromCloudStore', 'getTemperatureFromCloud']
             }
         ];
 
@@ -1732,7 +1818,6 @@ var getContext = function (display, infos, curLevel) {
         }
         return conceptList;
     }
-
 
     var boardDefinitions = [
         {
@@ -2503,10 +2588,168 @@ var getContext = function (display, infos, curLevel) {
                 return {};
             },*/
 
-            compareState: function (state1, state2) {
-                return quickPiStore.compareState(state1, state2);
+            getWrongStateString: function(failInfo) {
+                /**
+                 * Call this function when more.length > less.length. It will find the key that is missing inside of the
+                 * less array
+                 * @param more The bigger array, containing one or more key more than less
+                 * @param less Less, the smaller array, he has a key or more missing
+                 */
+                function getMissingKey(more, less) {
+                    for (var i = 0; i < more.length; i++) {
+                        var found = false;
+                        for (var j = 0; j < less.length; j++) {
+                            if (more[i] === less[j]) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                            return more[i];
+                    }
+                    // should never happen because length are different.
+                    return null;
+                }
+
+                // the type of a value in comparison.
+                var valueType = {
+                    // Primitive type are strings and integers
+                    PRIMITIVE: "primitive",
+                    ARRAY: "array",
+                    DICTIONARY: "dictionary",
+                    // if two values are of wrong type then this is returned
+                    WRONG_TYPE: "wrong_type"
+                };
+
+                /**
+                 * This method allow us to compare two keys of the cloud and their values
+                 * @param actual The actual key that we have
+                 * @param expected The expected key that we have
+                 * @return An object containing the type of the return and the key that differ
+                 */
+                function compareKeys(actual, expected) {
+                    function compareArrays(arr1, arr2) {
+                        if (arr1.length != arr2.length)
+                            return false;
+                        for (var i = 0; i < arr1.length; i++) {
+                            for (var j = 0; j < arr2.length; j++) {
+                                if (arr1[i] !== arr2[i])
+                                    return false;
+                            }
+                        }
+                        return true;
+                    }
+                    var actualKeys = Object.keys(actual);
+
+                    for (var i = 0; i < actualKeys.length; i++) {
+                        var actualVal = actual[actualKeys[i]];
+
+                        // they both have the same keys so we can do that.
+                        var expectedVal = expected[actualKeys[i]];
+
+                        if (isPrimitive(expectedVal)) {
+                            // if string with int for example
+                            if (typeof expectedVal !== typeof actualVal) {
+                                return {
+                                    type: valueType.WRONG_TYPE,
+                                    key: actualKeys[i]
+                                }
+                            }
+                            if (expectedVal !== actualVal) {
+                                return {
+                                    type: valueType.PRIMITIVE,
+                                    key: actualKeys[i]
+                                };
+                            }
+                        } else if (Array.isArray(expectedVal)) {
+                            if (!Array.isArray(actualVal)) {
+                                return {
+                                    type: valueType.WRONG_TYPE,
+                                    key: actualKeys[i]
+                                };
+                            }
+                            if (!compareArrays(expectedVal, actualVal)) {
+                                return {
+                                    type: valueType.ARRAY,
+                                    key: actualKeys[i]
+                                };
+                            }
+                            // if we are in a dictionary
+                            // method from: https://stackoverflow.com/questions/38304401/javascript-check-if-dictionary
+                        } else if (expectedVal.constructor == Object) {
+                            if (actualVal.constructor != Object) {
+                                return {
+                                    type: valueType.WRONG_TYPE,
+                                    key: actualKeys[i]
+                                };
+                            }
+                            if (!deepEqual(expectedVal, actualVal)) {
+                                return {
+                                    type: valueType.DICTIONARY,
+                                    key: actualKeys[i]
+                                };
+                            }
+                        }
+                    }
+                }
+
+                if(!failInfo.expected &&
+                    !failInfo.actual)
+                    return null;
+
+                var expected = failInfo.expected;
+                var actual = failInfo.actual;
+
+                var expectedKeys = Object.keys(expected);
+                var actualKeys = Object.keys(actual);
+
+                if (expectedKeys.length != actualKeys.length) {
+                    if (expectedKeys.length > actualKeys.length) {
+                        var missingKey = getMissingKey(expectedKeys, actualKeys);
+                        return strings.messages.cloudMissingKey.format(missingKey);
+                    } else {
+                        var additionalKey = getMissingKey(actualKeys, expectedKeys);
+                        return strings.messages.cloudMoreKey.format(additionalKey);
+                    }
+                }
+
+                // This will return a key that is missing inside of expectedKeys if there is one, otherwise it will return null.
+                var unexpectedKey = getMissingKey(actualKeys, expectedKeys);
+
+                if (unexpectedKey) {
+                    return strings.messages.cloudUnexpectedKeyCorrection.format(unexpectedKey);
+                }
+
+                var keyCompare = compareKeys(actual, expected);
+
+                switch (keyCompare.type) {
+                    case valueType.PRIMITIVE:
+                        return strings.messages.cloudPrimitiveWrongKey.format(keyCompare.key, expected[keyCompare.key], actual[keyCompare.key]);
+                    case valueType.WRONG_TYPE:
+                        var typeActual = typeof actual[keyCompare.key];
+                        var typeExpected = typeof expected[keyCompare.key];
+                        // we need to check if it is an array or a dictionary
+                        if (typeActual == "object") {
+                            if (Array.isArray(actual[keyCompare.key]))
+                                typeActual = "array";
+                        }
+                        if (typeExpected == "object") {
+                            if (Array.isArray(expected[keyCompare.key]))
+                                typeExpected = "array";
+                        }
+                        var typeActualTranslate = quickPiLocalLanguageStrings.fr.messages.cloudTypes[typeActual];
+                        var typeExpectedTranslate = quickPiLocalLanguageStrings.fr.messages.cloudTypes[typeExpected];
+                        return strings.messages.cloudWrongType.format(typeActualTranslate, keyCompare.key, typeExpectedTranslate);
+                    case valueType.ARRAY:
+                        return strings.messages.cloudArrayWrongKey.format(keyCompare.key);
+                    case valueType.DICTIONARY:
+                        return strings.messages.cloudDictionaryWrongKey.format(keyCompare.key);
+                }
             },
 
+            compareState: function (state1, state2) {
+                return quickPiStore.compareState(state1, state2);
+            }
         },
         {
             name: "clock",
@@ -3249,68 +3492,76 @@ var getContext = function (display, infos, curLevel) {
     context.board = "quickpi";
 
     if (getSessionStorage('board'))
-        context.changeBoard(getSessionStorage('board'))
+        context.changeBoard(getSessionStorage('board'));
 
-    context.savePrograms = function(xml) {
-        if (context.infos.customSensors)
-        {
-            var node = goog.dom.createElement("quickpi");
-            xml.appendChild(node);
+    /**
+     * This method allow us to save the sensors inside of the variable additional.
+     * If other things must be saved from quickPi later, it can be saved inside of this variable.
+     * @param additional The additional object saved inside of the xml
+     */
+    context.saveAdditional = function(additional) {
+        // we don't need to save sensors if user can't modify them
+        if (!infos.customSensors)
+            return;
 
-            for (var i = 0; i < infos.quickPiSensors.length; i++) {
-                var currentSensor = infos.quickPiSensors[i];
-
-                var node = goog.dom.createElement("sensor");
-
-                node.setAttribute("type", currentSensor.type);
-                node.setAttribute("port", currentSensor.port);
-                node.setAttribute("name", currentSensor.name);
-
-                if (currentSensor.subType)
-                    node.setAttribute("subtype", currentSensor.subType);
-
-                var elements = xml.getElementsByTagName("quickpi");
-
-                elements[0].appendChild(node);
-            }
+        additional.quickpiSensors = [];
+        for (var i = 0; i < infos.quickPiSensors.length; i++) {
+            var currentSensor = infos.quickPiSensors[i];
+            var savedSensor = {
+                type: currentSensor.type,
+                port: currentSensor.port,
+                name: currentSensor.name
+            };
+            if (currentSensor.subType)
+                savedSensor.subType = currentSensor.subType;
+            additional.quickpiSensors.push(savedSensor);
         }
-    }
+    };
 
-    context.loadPrograms = function(xml) {
-        if (context.infos.customSensors) {
-            var elements = xml.getElementsByTagName("sensor");
+    /**
+     * This function loads all additional stuff from the object "additional" for quickpi.
+     * For now on it only loads the sensor
+     * @param additional The additional variable which contains the sensors
+     */
+    context.loadAdditional = function(additional) {
+        // we load sensors only if custom sensors is available
+        if (!infos.customSensors)
+            return;
 
-            if (elements.length > 0) {
-                for (var i = 0; i < infos.quickPiSensors.length; i++) {
-                    var sensor = infos.quickPiSensors[i];
-                    sensor.removed = true;
-                }
-                infos.quickPiSensors = [];
+        var newSensors = additional.quickpiSensors;
 
-                for (var i = 0; i < elements.length; i++) {
-                    var sensornode = elements[i];
-                    var sensor = {
-                        "type" : sensornode.getAttribute("type"),
-                        "port" : sensornode.getAttribute("port"),
-                        "name" : sensornode.getAttribute("name"),
-                    };
+        // we don't verify if sensors are empty or not, because if they are it is maybe meant this
+        // way by the user
+        if (!newSensors)
+            return;
 
-                    if (sensornode.getAttribute("subtype")) {
-                        sensor.subType = sensornode.getAttribute("subtype");
-                    }
-
-                    sensor.state = null;
-                    sensor.callsInTimeSlot = 0;
-                    sensor.lastTimeIncrease = 0;
-
-                    infos.quickPiSensors.push(sensor);
-                }
-
-                context.recreateDisplay = true;
-                this.resetDisplay();
-            }
+        for (var i = 0; i < infos.quickPiSensors.length; i++) {
+            var sensor = infos.quickPiSensors[i];
+            sensor.removed = true;
         }
-    }
+
+        infos.quickPiSensors = [];
+
+        for (var i = 0; i < newSensors.length; i++) {
+            var sensor = {
+                type: newSensors[i].type,
+                port: newSensors[i].port,
+                name: newSensors[i].name
+            };
+
+            if (newSensors[i].subType)
+                sensor.sybType = newSensors[i].subType;
+
+            sensor.state = null;
+            sensor.callsInTimeSlot = 0;
+            sensor.lastTimeIncrease = 0;
+
+            infos.quickPiSensors.push(sensor);
+        }
+
+        context.recreateDisplay = true;
+        this.resetDisplay();
+    };
 
     context.resetDisplay = function() {
         if (!context.display || !this.raphaelFactory)
@@ -3602,34 +3853,31 @@ var getContext = function (display, infos, curLevel) {
             return;
 
 
-        var connectionHTML = `
-                <div id="piui">
-                    <button type="button" id="piconnect" class="btn">
-                        <span class="fa fa-wifi"></span><span id="piconnecttext" class="btnText">${strings.messages.connect}</span> <span id="piconnectprogress" class="fas fa-spinner fa-spin"></span>
-                    </button>
-
-                    <span id="piinstallui">
-                        <span class="fa fa-exchange-alt"></span>
-                        <button type="button" id="piinstall" class="btn">
-                            <span class="fa fa-upload"></span><span>${strings.messages.install}</span><span id=piinstallprogresss class="fas fa-spinner fa-spin"></span><span id="piinstallcheck" class="fa fa-check"></span>
-                        </button>
-                    </span>
-
-                    <span id="pichangehatui">
-                        <button type="button" id="pichangehat" class="btn">
-                            <span class="fas fa-hat-wizard"></span><span>${strings.messages.changeBoard}</span></span></span>
-                        </button>
-                        <button type="button" id="pihatsetup" class="btn">
-                            <span class="fas fa-cog"></span><span>${strings.messages.config}</span></span></span>
-                        </button>
-                    </span>
-                </div>`;
+        var connectionHTML = "<div id=\"piui\">" +
+            "   <button type=\"button\" id=\"piconnect\" class=\"btn\">" +
+            "       <span class=\"fa fa-wifi\"></span><span id=\"piconnecttext\" class=\"btnText\">" + strings.messages.connect + "</span> <span id=\"piconnectprogress\" class=\"fas fa-spinner fa-spin\"></span>" +
+            "   </button>" +
+            "   <span id=\"piinstallui\">" +
+            "       <span class=\"fa fa-exchange-alt\"></span>" +
+            "       <button type=\"button\" id=\"piinstall\" class=\"btn\">" +
+            "           <span class=\"fa fa-upload\"></span><span>" + strings.messages.install + "</span><span id=piinstallprogresss class=\"fas fa-spinner fa-spin\"></span><span id=\"piinstallcheck\" class=\"fa fa-check\"></span>" +
+            "       </button>" +
+            "   </span>" +
+            "   <span id=\"pichangehatui\">" +
+            "       <button type=\"button\" id=\"pichangehat\" class=\"btn\">" +
+            "           <span class=\"fas fa-hat-wizard\"></span><span>" + strings.messages.changeBoard + "</span></span></span>" +
+            "       </button>" +
+            "       <button type=\"button\" id=\"pihatsetup\" class=\"btn\">" +
+            "           <span class=\"fas fa-cog\"></span><span>" + strings.messages.config + "</span></span></span>" +
+            "       </button>" +
+            "   </span>" +
+            "</div>";
 
         var piUi = getQuickPiOption('disableConnection') ? '' : connectionHTML;
 
         var hasIntroControls = $('#taskIntro').find('#introControls').length;
         if (!hasIntroControls) {
-            $('#taskIntro').append(`<div id="introControls"></div>`);
+            $('#taskIntro').append("<div id=\"introControls\"></div>");
         }
         if (introControls === null) {
             introControls = piUi + $('#introControls').html();
@@ -3637,11 +3885,8 @@ var getContext = function (display, infos, curLevel) {
         $('#introControls').html(introControls);
         $('#taskIntro').addClass('piui');
 
-        $('#grid').html(`
-            <div id="virtualSensors" style="height: 100%; width: 100%;">
-            </div>
-             `
-        );
+        $('#grid').html("<div id=\"virtualSensors\" style=\"height: 100%; width: 100%;\">"
+            + "</div>");
 
 
         if (!context.quickPiZoom || !context.autoGrading)
@@ -3712,76 +3957,70 @@ var getContext = function (display, infos, curLevel) {
         }
 
         $('#piconnect').click(function () {
-            var connectionDialogHTML = `
-            <div class="content connectPi qpi">
-                <div class="panel-heading">
-                    <h2 class="sectionTitle">
-                        <span class="iconTag"><i class="icon fas fa-list-ul"></i></span>
-                        ${strings.messages.raspiConfig}
-                    </h2>
-                    <div class="exit" id="picancel"><i class="icon fas fa-times"></i></div>
-                </div>
-                <div class="panel-body">
-                    <div id="piconnectionmainui">
-                        <div class="switchRadio btn-group" id="piconsel">
-                            <button type="button" class="btn" id="piconlocal"><i class="fas fa-location-arrow icon"></i>${strings.messages.local}</button>
-                            <button type="button" class="btn active" id="piconwifi"><i class="fa fa-wifi icon"></i>WiFi</button>
-                            <button type="button" class="btn" id="piconusb"><i class="fab fa-usb icon"></i>USB</button>
-                            <button type="button" class="btn" id="piconbt"><i class="fab fa-bluetooth-b icon"></i>Bluetooth</button>
-                        </div>
-                        <div id="pischoolcon">
-                            <div class="form-group">
-                                <label id="pischoolkeylabel">${strings.messages.schoolKey}</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">Aa</div>
-                                    <input type="text" id="schoolkey" class="form-control">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label id="pilistlabel">${strings.messages.connectList}</label>
-                                <div class="input-group">
-                                    <button class="input-group-prepend" id=pigetlist disabled>${strings.messages.getPiList}</button>
-                                    <select id="pilist" class="custom-select" disabled>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label id="piiplabel">${strings.messages.enterIpAddress}</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">123</div>
-                                    <input id=piaddress type="text" class="form-control">
-                                </div>
-                            </div>
-                            <div>
-                                <input id="piusetunnel" disabled type="checkbox">${strings.messages.connectTroughtTunnel}
-                            </div>
-                        </div>
-
-                        <div id="panel-body-usbbt">
-                            <label id="piconnectionlabel"></label>
-                        </div>
-
-                        <div id="panel-body-local">
-                            <label id="piconnectionlabellocal"></label>
-
-                            <div id="piconnectolocalhost">
-                                <input type="radio" id="piconnectolocalhostcheckbox" name="pilocalconnectiontype" value="localhost">
-                                ${strings.messages.connectToLocalhost}
-                            </div>
-
-                            <div id="piconnectocurrenturl">
-                                <input type="radio" id="piconnectocurrenturlcheckbox" name="pilocalconnectiontype" value="currenturl">
-                                ${strings.messages.connectToWindowLocation}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="inlineButtons">
-                        <button id="piconnectok" class="btn"><i class="fa fa-wifi icon"></i>${strings.messages.connectToDevice}</button>
-                        <button id="pirelease" class="btn"><i class="fa fa-times icon"></i>${strings.messages.disconnectFromDevice}</button>
-                    </div>
-                </div>
-            </div>
-            `;
+            var connectionDialogHTML = "<div class=\"content connectPi qpi\">" +
+                "   <div class=\"panel-heading\">" +
+                "       <h2 class=\"sectionTitle\">" +
+                "           <span class=\"iconTag\"><i class=\"icon fas fa-list-ul\"></i></span>" +
+                            strings.messages.raspiConfig +
+                "       </h2>" +
+                "       <div class=\"exit\" id=\"picancel\"><i class=\"icon fas fa-times\"></i></div>" +
+                "   </div>" +
+                "   <div class=\"panel-body\">" +
+                "       <div id=\"piconnectionmainui\">" +
+                "           <div class=\"switchRadio btn-group\" id=\"piconsel\">" +
+                "               <button type=\"button\" class=\"btn\" id=\"piconlocal\"><i class=\"fas fa-location-arrow icon\"></i>" + strings.messages.local + "</button>" +
+                "               <button type=\"button\" class=\"btn active\" id=\"piconwifi\"><i class=\"fa fa-wifi icon\"></i>WiFi</button>" +
+                "               <button type=\"button\" class=\"btn\" id=\"piconusb\"><i class=\"fab fa-usb icon\"></i>USB</button>" +
+                "               <button type=\"button\" class=\"btn\" id=\"piconbt\"><i class=\"fab fa-bluetooth-b icon\"></i>Bluetooth</button>" +
+                "           </div>" +
+                "           <div id=\"pischoolcon\">" +
+                "               <div class=\"form-group\">" +
+                "                   <label id=\"pischoolkeylabel\">" + strings.messages.schoolKey + "</label>" +
+                "                   <div class=\"input-group\">" +
+                "                       <div class=\"input-group-prepend\">Aa</div>" +
+                "                       <input type=\"text\" id=\"schoolkey\" class=\"form-control\">" +
+                "                   </div>" +
+                "               </div>" +
+                "               <div class=\"form-group\">" +
+                "                   <label id=\"pilistlabel\">" + strings.messages.connectList + "</label>" +
+                "                   <div class=\"input-group\">" +
+                "                       <button class=\"input-group-prepend\" id=pigetlist disabled>" + strings.messages.getPiList + "</button>" +
+                "                       <select id=\"pilist\" class=\"custom-select\" disabled>" +
+                "                       </select>" +
+                "                   </div>" +
+                "               </div>" +
+                "               <div class=\"form-group\">" +
+                "                   <label id=\"piiplabel\">" + strings.messages.enterIpAddress + "</label>" +
+                "                   <div class=\"input-group\">" +
+                "                       <div class=\"input-group-prepend\">123</div>" +
+                "                       <input id=piaddress type=\"text\" class=\"form-control\">" +
+                "                   </div>" +
+                "               </div>" +
+                "               <div>" +
+                "                   <input id=\"piusetunnel\" disabled type=\"checkbox\">" + strings.messages.connectTroughtTunnel +
+                "               </div>" +
+                "           </div>" +
+                "           <div id=\"panel-body-usbbt\">" +
+                "               <label id=\"piconnectionlabel\"></label>" +
+                "           </div>" +
+                "           <div id=\"panel-body-local\">" +
+                "               <label id=\"piconnectionlabellocal\"></label>" +
+                "               <div id=\"piconnectolocalhost\">" +
+                "                   <input type=\"radio\" id=\"piconnectolocalhostcheckbox\" name=\"pilocalconnectiontype\" value=\"localhost\">" +
+                                        strings.messages.connectToLocalhost +
+                "               </div>" +
+                "               <div id=\"piconnectocurrenturl\">" +
+                "                   <input type=\"radio\" id=\"piconnectocurrenturlcheckbox\" name=\"pilocalconnectiontype\" value=\"currenturl\">" +
+                                        strings.messages.connectToWindowLocation +
+                "               </div>" +
+                "           </div>" +
+                "       </div>" +
+                "       <div class=\"inlineButtons\">" +
+                "           <button id=\"piconnectok\" class=\"btn\"><i class=\"fa fa-wifi icon\"></i>" + strings.messages.connectToDevice + "</button>" +
+                "           <button id=\"pirelease\" class=\"btn\"><i class=\"fa fa-times icon\"></i>" + strings.messages.disconnectFromDevice + "</button>" +
+                "       </div>" +
+                "   </div>" +
+                "</div>";
 
             window.displayHelper.showPopupDialog(connectionDialogHTML);
 
@@ -3862,7 +4101,7 @@ var getContext = function (display, infos, curLevel) {
                 var localvalue = $('input[name=pilocalconnectiontype]:checked').val()
 
                 if (localvalue == "localhost") {
-                    $('#piaddress').val(localhost);
+                    $('#piaddress').val("localhost");
                     $('#piaddress').trigger("input");
                 } else {
                     $('#piaddress').val(window.location.hostname);
@@ -4180,27 +4419,23 @@ var getContext = function (display, infos, curLevel) {
         });
 
 
-
         $('#pichangehat').click(function () {
-            window.displayHelper.showPopupDialog(`
-            <div class="content connectPi qpi">
-            <div class="panel-heading">
-                <h2 class="sectionTitle">
-                    <span class="iconTag"><i class="icon fas fa-list-ul"></i></span>
-                    ${strings.messages.chooseBoard}
-                </h2>
-                <div class="exit" id="picancel"><i class="icon fas fa-times"></i></div>
-            </div>
-            <div class="panel-body">
-
-                <div id=boardlist>
-                </div>
-
-                <div panel-body-usbbt>
-                    <label id="piconnectionlabel"></label>
-                </div>
-            </div>
-        </div>`);
+            window.displayHelper.showPopupDialog("<div class=\"content connectPi qpi\">" +
+                "   <div class=\"panel-heading\">" +
+                "       <h2 class=\"sectionTitle\">" +
+                "           <span class=\"iconTag\"><i class=\"icon fas fa-list-ul\"></i></span>" +
+                            strings.messages.chooseBoard +
+                "       </h2>" +
+                "       <div class=\"exit\" id=\"picancel\"><i class=\"icon fas fa-times\"></i></div>" +
+                "   </div>" +
+                "   <div class=\"panel-body\">" +
+                "       <div id=boardlist>" +
+                "       </div>" +
+                "       <div panel-body-usbbt>" +
+                "           <label id=\"piconnectionlabel\"></label>" +
+                "       </div>" +
+                "   </div>" +
+                "</div>");
 
             $('#picancel').click(function () {
                 $('#popupMessage').hide();
@@ -4227,35 +4462,32 @@ var getContext = function (display, infos, curLevel) {
 
         $('#pihatsetup').click(function () {
 
-                window.displayHelper.showPopupDialog(`
-                <div class="content connectPi qpi">
-                <div class="panel-heading">
-                    <h2 class="sectionTitle">
-                        <span class="iconTag"><i class="icon fas fa-list-ul"></i></span>
-                        ${strings.messages.nameandports}
-                    </h2>
-                    <div class="exit" id="picancel"><i class="icon fas fa-times"></i></div>
-                </div>
-                <div class="panel-body">
-                <table id='sensorTable' style="display:table-header-group;">
-                <tr>
-                <th>${strings.messages.name}</th>
-                <th>${strings.messages.port}</th>
-                <th>${strings.messages.state}</th>
-                </tr>
-                </table>
-                <!--
-                    <div>
-                        <input type="checkbox" id="buzzeraudio" value="buzzeron"> Output audio trought audio buzzer<br>
-                    </div>
-
-                    <div class="inlineButtons">
-                        <button id="pisetupok" class="btn"><i class="fas fa-cog icon"></i>Set</button>
-                    </div>
-                -->
-                </div>
-            </div>`);
-
+                window.displayHelper.showPopupDialog("<div class=\"content connectPi qpi\">" +
+                    "   <div class=\"panel-heading\">" +
+                    "       <h2 class=\"sectionTitle\">" +
+                    "           <span class=\"iconTag\"><i class=\"icon fas fa-list-ul\"></i></span>" +
+                                strings.messages.nameandports +
+                    "       </h2>" +
+                    "       <div class=\"exit\" id=\"picancel\"><i class=\"icon fas fa-times\"></i></div>" +
+                    "   </div>" +
+                    "   <div class=\"panel-body\">" +
+                    "       <table id='sensorTable' style=\"display:table-header-group;\">" +
+                    "           <tr>" +
+                    "               <th>" + strings.messages.name + "</th>" +
+                    "               <th>" + strings.messages.port + "</th>" +
+                    "               <th>" + strings.messages.state + "</th>" +
+                    "           </tr>" +
+                    "       </table>" +
+                    "   <!--" +
+                    "       <div>" +
+                    "           <input type=\"checkbox\" id=\"buzzeraudio\" value=\"buzzeron\"> Output audio trought audio buzzer<br>" +
+                    "       </div>" +
+                    "       <div class=\"inlineButtons\">" +
+                    "           <button id=\"pisetupok\" class=\"btn\"><i class=\"fas fa-cog icon\"></i>Set</button>" +
+                    "       </div>" +
+                    "   -->" +
+                    "   </div>" +
+                    "</div>");
 
                 var table = document.getElementById("sensorTable");
                 for (var iSensor = 0; iSensor < infos.quickPiSensors.length; iSensor++) {
@@ -4453,41 +4685,39 @@ var getContext = function (display, infos, curLevel) {
 
         context.sensorAdder.click(function () {
 
-            window.displayHelper.showPopupDialog(`
-                <div class="content qpi">
-                    <div class="panel-heading">
-                        <h2 class="sectionTitle">
-                            <span class="iconTag"><i class="icon fas fa-list-ul"></i></span>
-                            ${strings.messages.addcomponent}
-                        </h2>
-                        <div class="exit" id="picancel"><i class="icon fas fa-times"></i></div>
-                    </div>
-                    <div id="sensorPicker" class="panel-body">
-                        <label>${strings.messages.selectcomponent}</label>
-                        <div class="flex-container">
-                            <div id="selector-image-container" class="flex-col half">
-                                <img id="selector-sensor-image">
-                            </div>
-                            <div class="flex-col half">
-                                <div class="form-group">
-                                    <div class="input-group">
-                                        <select id="selector-sensor-list" class="custom-select"></select>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <div class="input-group">
-                                        <select id="selector-sensor-port" class="custom-select"></select>
-                                    </div>
-                                    <label id="selector-label"></label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="singleButton">
-                        <button id="selector-add-button" class="btn btn-centered"><i class="icon fa fa-check"></i>${strings.messages.add}</button>
-                    </div>
-                </div>
-            `);
+            window.displayHelper.showPopupDialog("<div class=\"content qpi\">" +
+                "   <div class=\"panel-heading\">" +
+                "       <h2 class=\"sectionTitle\">" +
+                "           <span class=\"iconTag\"><i class=\"icon fas fa-list-ul\"></i></span>" +
+                            strings.messages.addcomponent +
+                "       </h2>" +
+                "       <div class=\"exit\" id=\"picancel\"><i class=\"icon fas fa-times\"></i></div>" +
+                "   </div>" +
+                "   <div id=\"sensorPicker\" class=\"panel-body\">" +
+                "       <label>" + strings.messages.selectcomponent + "</label>" +
+                "       <div class=\"flex-container\">" +
+                "           <div id=\"selector-image-container\" class=\"flex-col half\">" +
+                "               <img id=\"selector-sensor-image\">" +
+                "           </div>" +
+                "           <div class=\"flex-col half\">" +
+                "               <div class=\"form-group\">" +
+                "                   <div class=\"input-group\">" +
+                "                       <select id=\"selector-sensor-list\" class=\"custom-select\"></select>" +
+                "                   </div>" +
+                "              </div>" +
+                "              <div class=\"form-group\">" +
+                "                   <div class=\"input-group\">" +
+                "                       <select id=\"selector-sensor-port\" class=\"custom-select\"></select>" +
+                "                   </div>" +
+                "                   <label id=\"selector-label\"></label>" +
+                "               </div>" +
+                "           </div>" +
+                "       </div>" +
+                "   </div>" +
+                "   <div class=\"singleButton\">" +
+                "       <button id=\"selector-add-button\" class=\"btn btn-centered\"><i class=\"icon fa fa-check\"></i>" + strings.messages.add + "</button>" +
+                "   </div>" +
+                "</div>");
 
             var select = document.getElementById("selector-sensor-list");
             for (var iSensorDef = 0; iSensorDef < sensorDefinitions.length; iSensorDef++) {
@@ -6117,27 +6347,24 @@ var getContext = function (display, infos, curLevel) {
         return !element.paper.canvas || !element.node.parentElement;
     }
 
-    var irRemoteDialog = `
-    <div class="content qpi">
-    <div class="panel-heading">
-        <h2 class="sectionTitle">
-            <span class="iconTag"><i class="icon fas fa-list-ul"></i></span>
-            ${strings.messages.irRemoteControl}
-        </h2>
-        <div class="exit" id="picancel"><i class="icon fas fa-times"></i></div>
-    </div>
-    <div id="sensorPicker" class="panel-body">
-        <div id="piremotemessage" >
-        </div>
-        <div id="piremotecontent" >
-        </div>
-    </div>
-    <div class="singleButton">
-        <button id="picancel2" class="btn btn-centered"><i class="icon fa fa-check"></i>${strings.messages.closeDialog}</button>
-    </div>
-</div>
-    `;
-
+    var irRemoteDialog = "<div class=\"content qpi\">" +
+        "   <div class=\"panel-heading\">" +
+        "       <h2 class=\"sectionTitle\">" +
+        "           <span class=\"iconTag\"><i class=\"icon fas fa-list-ul\"></i></span>" +
+                    strings.messages.irRemoteControl +
+        "       </h2>" +
+        "       <div class=\"exit\" id=\"picancel\"><i class=\"icon fas fa-times\"></i></div>" +
+        "   </div>" +
+        "   <div id=\"sensorPicker\" class=\"panel-body\">" +
+        "       <div id=\"piremotemessage\" >" +
+        "       </div>" +
+        "       <div id=\"piremotecontent\" >" +
+        "       </div>" +
+        "   </div>" +
+        "   <div class=\"singleButton\">" +
+        "       <button id=\"picancel2\" class=\"btn btn-centered\"><i class=\"icon fa fa-check\"></i>" + strings.messages.closeDialog + "</button>" +
+        "   </div>" +
+        "</div>";
 
     function drawSensor(sensor, juststate = false, donotmovefocusrect = false) {
         if (paper == undefined || !context.display || !sensor.drawInfo)
@@ -6678,7 +6905,7 @@ var getContext = function (display, infos, curLevel) {
                     cliph
             });
 
-            sensor.stateText = paper.text(state1x, state1y, sensor.state + "C");
+            sensor.stateText = paper.text(state1x, state1y, sensor.state + " °C");
 
             if (!context.autoGrading && context.offLineMode) {
                 setSlider(sensor, juststate, imgx, imgy, imgw, imgh, 0, 60);
@@ -6882,7 +7109,7 @@ var getContext = function (display, infos, curLevel) {
             if (sensor.state >= 10)
                 sensor.state = Math.round(sensor.state);
 
-            sensor.stateText = paper.text(state1x, state1y, sensor.state + "cm");
+            sensor.stateText = paper.text(state1x, state1y, sensor.state + " cm");
             if (!context.autoGrading && context.offLineMode) {
                 setSlider(sensor, juststate, imgx, imgy, imgw, imgh, 0, 500);
             } else {
@@ -7003,7 +7230,7 @@ var getContext = function (display, infos, curLevel) {
 
             if (sensor.state) {
                 try {
-                sensor.stateText = paper.text(state1x, state1y, "X: " + sensor.state[0] + "m/s²\nY: " + sensor.state[1] + "m/s²\nZ: " + sensor.state[2] + "m/s²");
+                sensor.stateText = paper.text(state1x, state1y, "X: " + sensor.state[0] + " m/s²\nY: " + sensor.state[1] + " m/s²\nZ: " + sensor.state[2] + " m/s²");
                 } catch (Err)
                 {
                     var a = 1;
@@ -7148,7 +7375,7 @@ var getContext = function (display, infos, curLevel) {
                 sensor.stateText.remove();
 
             if (sensor.state) {
-                sensor.stateText = paper.text(state1x, state1y, "X: " + sensor.state[0] + "μT\nY: " + sensor.state[1] + "μT\nZ: " + sensor.state[2] + "μT");
+                sensor.stateText = paper.text(state1x, state1y, "X: " + sensor.state[0] + " μT\nY: " + sensor.state[1] + " μT\nZ: " + sensor.state[2] + " μT");
             }
 
             if (!context.autoGrading && context.offLineMode) {
@@ -7442,30 +7669,27 @@ var getContext = function (display, infos, curLevel) {
 
                     context.stopLiveUpdate = true;
 
-                    var irLearnDialog = `
-                <div class="content qpi">
-                <div class="panel-heading">
-                    <h2 class="sectionTitle">
-                        <span class="iconTag"><i class="icon fas fa-list-ul"></i></span>
-                        ${strings.messages.irReceiverTitle}
-                    </h2>
-                    <div class="exit" id="picancel"><i class="icon fas fa-times"></i></div>
-                </div>
-                <div id="sensorPicker" class="panel-body">
-                    <div class="form-group">
-                        <p>${strings.messages.directIrControl}</p>
-                    </div>
-
-                    <div class="form-group">
-                        <p id=piircode></p>
-                    </div>
-                </div>
-                <div class="singleButton">
-                    <button id="piirlearn" class="btn"><i class="fa fa-wifi icon"></i>${strings.messages.getIrCode}</button>
-                    <button id="picancel2" class="btn"><i class="fa fa-times icon"></i>${strings.messages.closeDialog}</button>
-                </div>
-            </div>
-                `;
+                    var irLearnDialog = "<div class=\"content qpi\">" +
+                        "   <div class=\"panel-heading\">" +
+                        "       <h2 class=\"sectionTitle\">" +
+                        "           <span class=\"iconTag\"><i class=\"icon fas fa-list-ul\"></i></span>" +
+                                    strings.messages.irReceiverTitle +
+                        "       </h2>" +
+                        "       <div class=\"exit\" id=\"picancel\"><i class=\"icon fas fa-times\"></i></div>" +
+                        "   </div>" +
+                        "   <div id=\"sensorPicker\" class=\"panel-body\">" +
+                        "       <div class=\"form-group\">" +
+                        "           <p>" + strings.messages.directIrControl + "</p>" +
+                        "       </div>" +
+                        "       <div class=\"form-group\">" +
+                        "           <p id=piircode></p>" +
+                        "       </div>" +
+                        "   </div>" +
+                        "   <div class=\"singleButton\">" +
+                        "       <button id=\"piirlearn\" class=\"btn\"><i class=\"fa fa-wifi icon\"></i>" + strings.messages.getIrCode + "</button>" +
+                        "       <button id=\"picancel2\" class=\"btn\"><i class=\"fa fa-times icon\"></i>" + strings.messages.closeDialog + "</button>" +
+                        "   </div>" +
+                        "</div>";
 
                     window.displayHelper.showPopupDialog(irLearnDialog);
 
@@ -7906,7 +8130,7 @@ var getContext = function (display, infos, curLevel) {
                                     infos.quickPiSensors.splice(i, 1);
                                 }
                             }
-                            context.recreateDisplay = true
+                            context.recreateDisplay = true;
                             context.resetDisplay();
                         },
                         strings.messages.keep);
@@ -8730,13 +8954,33 @@ var getContext = function (display, infos, curLevel) {
             var cb = context.runner.waitCallback(callback);
 
             context.quickPiConnection.sendCommand(command, function(returnVal) {
-                returnVal = parseFloat(returnVal)
+                returnVal = parseFloat(returnVal);
                 cb(returnVal);
 
             });
         }
     };
 
+
+    context.quickpi.setContinousServoDirection = function (name, direction, callback) {
+        var sensor = findSensorByName(name, true);
+
+        if (direction > 0)
+            angle = 0;
+        else if (direction < 0)
+            angle = 180;
+        else
+            angle = 90;
+
+        context.registerQuickPiEvent(name, angle);
+        if (!context.display || context.autoGrading || context.offLineMode) {
+            context.waitDelay(callback);
+        } else {
+            var command = "setServoAngle(\"" + name + "\"," + angle + ")";
+            cb = context.runner.waitCallback(callback);
+            context.quickPiConnection.sendCommand(command, cb);
+        }
+    };
 
     context.quickpi.readRotaryAngle = function (name, callback) {
         var sensor = findSensorByName(name, true);
@@ -8826,10 +9070,46 @@ var getContext = function (display, infos, curLevel) {
         context.runner.waitDelay(callback, millis);
     };
 
-    context.quickpi.getTemperature = function(location, callback) {
-        var retVal =  25;
 
-        context.waitDelay(callback, retVal);
+    var getTemperatureFromCloudURl = "https://cloud.quick-pi.org/cache/weather.php";
+
+    var getTemperatureFromCloudSupportedTowns = [];
+
+    // setup the supported towns
+    $.get(getTemperatureFromCloudURl + "?q=" + "supportedtowns", function(towns) {
+        getTemperatureFromCloudSupportedTowns = JSON.parse(towns);
+    });
+
+    // We create a cache so there is less calls to the api and we get the results of the temperature faster
+    var getTemperatureFromCloudCache = {};
+
+    context.quickpi.getTemperatureFromCloud = function(location, callback) {
+        var url = getTemperatureFromCloudURl;
+
+        if (!arrayContains(getTemperatureFromCloudSupportedTowns, location))
+            throw strings.messages.getTemperatureFromCloudWrongValue.format(location);
+
+        var cache = getTemperatureFromCloudCache;
+        if (cache[location] != undefined && ((Date.now() - cache[location].lastUpdate) / 1000) / 60 < 10) {
+            context.waitDelay(callback, cache[location].temperature);
+            return;
+        }
+
+        var cb = context.runner.waitCallback(callback);
+        $.get(url + "?q=" + location, function(data) {
+            // If the server return invalid it mean that the town given is not supported
+            if (data === "invalid") {
+                // This only happen when the user give an invalid town to the server, which should never happen because
+                // the validity of the user input is checked above.
+                cb(0);
+            } else {
+                cache[location] = {
+                    lastUpdate: Date.now(),
+                    temperature: data
+                };
+                cb(data);
+            }
+        });
     };
 
     context.initScreenDrawing = function(sensor) {
@@ -9195,7 +9475,7 @@ var getContext = function (display, infos, curLevel) {
             var sensor = context.findSensor("magnetometer", "i2c");
 
             context.quickPiConnection.sendCommand("readMagnetometerLSM303C()", function(returnVal) {
-                sensor.state = returnVal;
+                sensor.state = JSON.parse(returnVal);
                 drawSensor(sensor);
 
                 returnVal = Math.atan2(sensor.state[0],sensor.state[1])*(180/Math.PI) + 180;
@@ -9911,7 +10191,6 @@ var getContext = function (display, infos, curLevel) {
                         ]
                     }
                 },
-
                 {
                     name: "setServoAngle", params: ["String", "Number"], blocklyJson: {
                         "args0": [
@@ -9934,6 +10213,19 @@ var getContext = function (display, infos, curLevel) {
                             },
                         ]
                     }
+                },
+                {
+                    name: "setContinousServoDirection", params: ["String", "Number"], blocklyJson: {
+                        "args0": [
+                            {
+                                "type": "field_dropdown", "name": "PARAM_0", "options": getSensorNames("servo")
+                            },
+                            { 
+                                "type": "field_dropdown", "name": "PARAM_1", "options": [["forward", "1"], ["backwards", "-1"], ["stop", "0"]] 
+                            },
+
+                        ]
+                    },
                 },
                 {
                     name: "setInfraredState", params: ["String", "Number"], blocklyJson: {
@@ -9986,7 +10278,7 @@ var getContext = function (display, infos, curLevel) {
                         ]
                     },
                     blocklyXml: "<block type='displayText'>" +
-                        `<value name='PARAM_0'><shadow type='text'><field name='TEXT'>${strings.messages.hello}</field> </shadow></value>` +
+                        "<value name='PARAM_0'><shadow type='text'><field name='TEXT'>" + strings.messages.hello + "</field> </shadow></value>" +
                         "</block>"
 
                 },
@@ -9998,7 +10290,7 @@ var getContext = function (display, infos, curLevel) {
                         ]
                     },
                     blocklyXml: "<block type='displayText2Lines'>" +
-                        `<value name='PARAM_0'><shadow type='text'><field name='TEXT'>${strings.messages.hello}</field> </shadow></value>` +
+                        "<value name='PARAM_0'><shadow type='text'><field name='TEXT'>" + strings.messages.hello + "</field> </shadow></value>" +
                         "<value name='PARAM_1'><shadow type='text'><field name='TEXT'></field> </shadow></value>" +
                         "</block>"
 
@@ -10120,11 +10412,14 @@ var getContext = function (display, infos, curLevel) {
             ],
             internet: [
                 {
-                    name: "getTemperature", yieldsValue: true, params: ["String"], blocklyJson: {
+                    name: "getTemperatureFromCloud", yieldsValue: true, params: ["String"], blocklyJson: {
                         "args0": [
-                            { "type": "field_input", "name": "PARAM_0", text: "Paris, France"},
+                            { "type": "field_input", "name": "PARAM_0", text: "Paris"},
                         ]
                     },
+                    blocklyXml: "<block type='getTemperatureFromCloud'>" +
+                        "<value name='PARAM_0'><shadow type='text'><field name='TEXT'></field> </shadow></value>" +
+                        "</block>"
                 },
                 {
                     name: "connectToCloudStore", params: ["String", "String"], blocklyJson: {

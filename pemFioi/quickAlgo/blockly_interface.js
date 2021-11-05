@@ -3,8 +3,9 @@
         Blockly mode interface and running logic
 */
 
-function getBlocklyInterface(maxBlocks, nbTestCases) {
+function getBlocklyInterface(maxBlocks, subTask) {
    return {
+      subTask: subTask,
       isBlockly: true,
       scratchMode: (typeof Blockly.Blocks['control_if'] !== 'undefined'),
       maxBlocks: maxBlocks,
@@ -98,6 +99,7 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
          if (options.maxListSize) {
             FioiBlockly.maxListSize = options.maxListSize;
          }
+         this.placeholderBlocks = options.placeholderBlocks;
 
          this.locale = locale;
          this.nbTestCases = nbTestCases;
@@ -300,9 +302,6 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
 
       onChangeResetDisplayFct: function() {
          if(this.unloaded || this.reloading) { return; }
-         if(this.mainContext.runner) {
-            this.mainContext.runner.reset();
-         }
          this.highlightBlock(null);
          if(this.quickAlgoInterface && !this.reloading) {
             this.quickAlgoInterface.resetTestScores();
@@ -350,7 +349,11 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
          // We're over the block limit, is there any block used too often?
          var limited = this.findLimited(this.workspace);
          if(limited) {
-            return {text: this.strings.limitedBlock+' "'+this.getBlockLabel(limited)+'".', invalid: true, type: 'limited'};
+            var errorMsg = typeof limited == 'string' ? this.strings.limitedBlock : this.strings.limitedBlocks;
+            errorMsg += ' ';
+            errorMsg += this.getBlockLabel(limited, true);
+            errorMsg += '.';
+            return {text: errorMsg, invalid: true, type: 'limited'};
          } else if(remaining == 0) {
             return {text: text, warning: true, type: 'capacity'};
          }
@@ -379,6 +382,7 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
                $('#capacity').html(capacityInfo.text);
             }
             this.onChangeResetDisplay();
+            this.subTask.onChange();
          } else {
             Blockly.svgResize(this.workspace);
          }
@@ -487,9 +491,16 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
             var xml = Blockly.Xml.workspaceToDom(this.workspace);
             this.cleanBlockAttributes(xml);
 
-            if (this.mainContext.savePrograms) {
-               this.mainContext.savePrograms(xml);
-            }
+            // The additional variable contain all additional things that we can save, for example quickpi sensors,
+            // subject title when edition is enabled...
+            var additional = {};
+
+            if (this.quickAlgoInterface.saveAdditional)
+               this.quickAlgoInterface.saveAdditional(additional);
+
+            var additionalNode = document.createElement("additional");
+            additionalNode.innerText = JSON.stringify(additional);
+            xml.appendChild(additionalNode);
 
             this.programs[this.codeId].blockly = Blockly.Xml.domToText(xml);
             this.programs[this.codeId].blocklyJS = this.getCode("javascript");
@@ -504,8 +515,15 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
             this.cleanBlockAttributes(xml, this.getOrigin());
             Blockly.Xml.domToWorkspace(xml, this.workspace);
 
-            if (this.mainContext.loadPrograms) {
-               this.mainContext.loadPrograms(xml);
+            var additionalXML = xml.getElementsByTagName("additional");
+            if (additionalXML.length > 0) {
+               try {
+                  var additional = JSON.parse(additionalXML[0].innerHTML);
+                  // load additional from quickAlgoInterface
+                  if (this.quickAlgoInterface.loadAdditional) {
+                     this.quickAlgoInterface.loadAdditional(additional);
+                  }
+               } catch(e) {}
             }
          }
          $("#program").val(this.programs[this.codeId].javascript);
@@ -728,6 +746,7 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
             }
             if(!robotStartHasChildren) {
                this.displayError('<span class="testError">' + window.languageStrings.errorEmptyProgram + '</span>');
+               SrlLogger.validation(0, 'code');
                return;
             }
          }
@@ -737,11 +756,17 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
          this.highlightPause = false;
          if(this.getRemainingCapacity(that.workspace) < 0) {
             this.displayError('<span class="testError">'+this.strings.tooManyBlocks+'</span>');
+            SrlLogger.validation(0, 'code');
             return;
          }
          var limited = this.findLimited(this.workspace);
          if(limited) {
-            this.displayError('<span class="testError">'+this.strings.limitedBlock+' "'+this.getBlockLabel(limited)+'".</span>');
+            var errorMsg = typeof limited == 'string' ? this.strings.limitedBlock : this.strings.limitedBlocks;
+            errorMsg += ' ';
+            errorMsg += this.getBlockLabel(limited, true);
+            errorMsg += '.';
+            this.displayError('<span class="testError">'+errorMsg+'</span>');
+            SrlLogger.validation(0, 'code');
             return;
          }
          if(!this.scratchMode) {
@@ -749,17 +774,18 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
          }
          var codes = this.getAllCodes();
          this.mainContext.runner.initCodes(codes);
+         return true;
       },
 
 
       run: function () {
-         this.initRun();
+         if(!this.initRun()) { return; }
          this.mainContext.runner.run();
       },
 
       step: function () {
          if(this.mainContext.runner.nbRunning() <= 0) {
-            this.initRun();
+            if(!this.initRun()) { return; }
          }
          this.mainContext.runner.step();
       },
@@ -812,10 +838,10 @@ function getBlocklyInterface(maxBlocks, nbTestCases) {
    }
 }
 
-function getBlocklyHelper(maxBlocks, nbTestCases) {
+function getBlocklyHelper(maxBlocks, subTask) {
    // TODO :: temporary until splitting of the block functions logic is done
-   var blocklyHelper = getBlocklyInterface(maxBlocks, nbTestCases);
-   var blocklyBlockFunc = getBlocklyBlockFunctions(maxBlocks, nbTestCases);
+   var blocklyHelper = getBlocklyInterface(maxBlocks, subTask);
+   var blocklyBlockFunc = getBlocklyBlockFunctions(maxBlocks);
    for(var property in blocklyBlockFunc) {
       blocklyHelper[property] = blocklyBlockFunc[property];
    }

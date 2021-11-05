@@ -22,6 +22,47 @@ var arrayContains = function(array, needle) {
       }
    }
    return false;
+};
+
+/**
+ * This method allow us to verify if the current value is primitive. A primitive is a string or a number or boolean
+ * (any value that can be safely compared
+ * @param obj The object to check if it is a primitive or not
+ * @return {boolean} true if object is primitive, false otherwise
+ */
+function isPrimitive(obj)
+{
+    return (obj !== Object(obj));
+}
+
+/**
+ * THis function allow us to compare two objects. Do not call with {@code null} or {@code undefined}
+ * Be careful! Do not use this with circular objects.
+ * @param obj1 The first object to compare
+ * @param obj2 The second object to compare
+ * @return {boolean} true if objects are equals, false otherwise.
+ */
+function deepEqual(obj1, obj2) {
+
+    if (obj1 === obj2) // it's just the same object. No need to compare.
+        return true;
+
+    // if one is primitive and not the other, then we can return false. If both are primitive, then the up
+    // comparison can return true
+    if (isPrimitive(obj1) || isPrimitive(obj2))
+        return false;
+
+    if (Object.keys(obj1).length !== Object.keys(obj2).length)
+        return false;
+
+    // compare objects with same number of keys
+    for (var key in obj1)
+    {
+        if (!(key in obj2)) return false; //other object doesn't have this prop
+        if (!deepEqual(obj1[key], obj2[key])) return false;
+    }
+
+    return true;
 }
 
 var highlightPause = false;
@@ -54,7 +95,7 @@ if (!String.prototype.format) {
 
 
 function showModal(id) {
-   var el = '#' + id
+   var el = '#' + id;
    $(el).show();
 }
 function closeModal(id) {
@@ -255,6 +296,215 @@ function dragElement(elmnt) {
     document.onmousemove = null;
   }
 }
+
+
+window.SrlLogger = {
+   active: false,
+   version: 0
+   };
+
+SrlLogger.load = function() {
+   SrlLogger.active = true;
+
+   SrlLogger.logMouseInit();
+   SrlLogger.logKeyboardInit();
+};
+
+SrlLogger.logMouseInit = function() {
+   if(SrlLogger.logMouseInitialized) { return; }
+
+   SrlLogger.mouseButtons = {'left': false, 'right': false};
+
+   window.addEventListener('mousedown', SrlLogger.logMouse);
+   window.addEventListener('mousemove', SrlLogger.logMouse);
+   window.addEventListener('mouseup', SrlLogger.logMouse);
+
+   SrlLogger.logMouseInitialized = true;
+};
+
+SrlLogger.logMouse = function(e) {
+   if(!SrlLogger.active) { return; }
+   if(e.type == 'mousemove' && SrlLogger.mouseMoveIgnore) { return; }
+
+   var state = 'aucun';
+
+   if(e.type == 'mousedown' || e.type == 'mouseup') {
+      var newval = e.type == 'mousedown';
+      if(e.button === 0) {
+         var btn = 'left';
+      } else if(e.button === 2) {
+         var btn = 'right';
+      } else {
+         return;
+      }
+      SrlLogger.mouseButtons[btn] = newval;
+
+      state = btn == 'left' ? 'clic gauche' : 'clic droit';
+   }
+
+   if(e.type == 'mousemove') {
+      // Throttle mousemove events
+      SrlLogger.mouseMoveIgnore = true;
+      setTimeout(function() { SrlLogger.mouseMoveIgnore = false; }, 200);
+
+      if(SrlLogger.mouseButtons['left'] || SrlLogger.mouseButtons['right']) {
+         state = 'drag';
+      }
+   }
+
+   var zone = 'task';
+   var target = $(e.target);
+   var targetParent = null;
+   if((targetParent = target.parents('#blocklyLibContent')).length) {
+      zone = 'editor';
+   } else if((targetParent = target.parents('#gridContainer')).length) {
+      zone = 'grid';
+   } else if((targetParent = target.parents('.speedControls')).length) {
+      zone = 'controls';
+   } else {
+      targetParent = null;
+   }
+
+   var tpx = e.pageX;
+   var tpy = e.pageY;
+
+   var win = $(window);
+   var winw = win.width();
+   var winh = win.height();
+   var tpw = winw;
+   var tph = winh;
+   if(targetParent) {
+      var tpo = targetParent.offset();
+      tpx -= Math.floor(tpo.left);
+      tpy -= Math.floor(tpo.top);
+      tpw = Math.floor(targetParent.width());
+      tph = Math.floor(targetParent.height());
+   }
+   var data = {
+      'reference': 'souris',
+      'version': SrlLogger.version,
+      'zone': zone,
+      'etat': state,
+      'coordonnees_ecran_x': e.screenX,
+      'coordonnees_ecran_y': e.screenY,
+      'coordonnees_page_x': e.pageX,
+      'coordonnees_page_y': e.pageY,
+      'coordonnees_zone_x': tpx,
+      'coordonnees_zone_y': tpy,
+      'dimension_zone_longueur': tpw,
+      'dimension_zone_hauteur': tph,
+      'dimension_page_longueur': win.width(),
+      'dimension_page_hauteur': win.height()
+      };
+
+   platform.log(['srl', data]);
+};
+
+SrlLogger.logKeyboardInit = function() {
+   if(SrlLogger.logKeyboardInitialized) { return; }
+
+   window.addEventListener('keydown', SrlLogger.logKeyboard);
+
+   SrlLogger.logKeyboardInitialized = true;
+};
+
+SrlLogger.logKeyboard = function(e) {
+   if(!SrlLogger.active) { return; }
+
+   var text = e.key;
+   var data = {
+      'reference': 'clavier',
+      'version': SrlLogger.version,
+      'touche': text
+      };
+   platform.log(['srl', data]);
+};
+
+SrlLogger.stepByStep = function(subtask, type) {
+   if(!SrlLogger.active) { return; }
+
+   var srlType = '';
+   if(type == 'play') {
+      srlType = subtask.context.actionDelay == 0 ? 'Aller à la fin' : 'Exécution automatique';
+   } else if(type == 'step') {
+      srlType = 'Exécution Manuelle';
+   } else if(type == 'stop') {
+      srlType = 'Revenir au début';
+   }
+
+   var data = {
+      reference: 'pas_a_pas',
+      version: SrlLogger.version,
+      action: srlType,
+      vitesse: subtask.context.infos.actionDelay
+      };
+   platform.log(['srl', data]);
+};
+
+SrlLogger.navigation = function(type) {
+   if(!SrlLogger.active) { return; }
+
+   var data = {
+      reference: 'navigation',
+      version: SrlLogger.version,
+      module: type
+      };
+   platform.log(['srl', data]);
+};
+
+SrlLogger.levelLoaded = function(level) {
+   if(!SrlLogger.active || SrlLogger.lastLevelLoaded == level) { return; }
+
+   SrlLogger.lastLevelLoaded = level;
+
+   var defaultLevelsRanks = { basic: 1, easy: 2, medium: 3, hard: 4 };
+   var version = defaultLevelsRanks[level];
+   if(!version) { version = 5; }
+
+   if(version == SrlLogger.version) { return; }
+
+   SrlLogger.version = version;
+   SrlLogger.navigation('Exercice');
+};
+
+SrlLogger.validation = function(score, error, experimentation) {
+   if(!SrlLogger.active) { return; }
+
+   if(error == 'code') {
+      error = 'Erreur de prérequis';
+   } else if(error == 'execution') {
+      error = 'Erreur de solution';
+   } else {
+      error = 'Aucune';
+   }
+   var data = {
+      reference: 'validation',
+      version: SrlLogger.version,
+      score: score,
+      experimentation: experimentation,
+      'type_erreur': error
+      };
+   platform.log(['srl', data]);
+};
+
+SrlLogger.modification = function(len, error) {
+   if(!SrlLogger.active) { return; }
+
+   if(error == 'code') {
+      error = 'Erreur de prérequis';
+   } else if(error == 'execution') {
+      error = 'Erreur de solution';
+   } else {
+      error = 'Aucune';
+   }
+   var data = {
+      reference: 'modification',
+      version: SrlLogger.version,
+      'taille_reponse': len,
+      erreur: error
+      };
+   platform.log(['srl', data]);
+};
 
 
 window.iOSDetected = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) || (navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform));

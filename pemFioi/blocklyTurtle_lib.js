@@ -4,20 +4,29 @@ var makeTurtle = function(coords) {
    this.reset = function(stepsize, newcoords) {
       this.x = 150;
       this.y = 150;
+
+      this.directionDeg = 0;
+      this.direction = 0;
+
       var initcoords = newcoords || coords;
       if(initcoords) {
          this.x = initcoords.x;
          this.y = initcoords.y;
+
+         if (initcoords.dir) {
+           this.directionDeg = initcoords.dir,
+           this.direction = this.directionDeg*Math.PI/180;
+        }
       }
-      this.stepsize = 1;
-      this.direction = 0;
+
       this.paint = true;
       this.stepsize = 5;
+
       if (this.drawingContext)
          this.drawingContext.clearRect(0, 0, 300, 300);
       if (this.turtle) {
          this.turtle.src = this.turtle.getAttribute("pendown");
-         this.turtle.style.transform = "none";
+         this.turtle.style.transform = "rotate(" + (-this.direction) + "rad)";
          this.placeTurtle();
       }
       if (stepsize) {
@@ -25,13 +34,31 @@ var makeTurtle = function(coords) {
       }
    }
    this.reset(5);
-   
+
    this.turn = function(angle) {
-      this.direction += angle*Math.PI/180;
+      angle = parseInt(angle);
+      this.directionDeg = (this.directionDeg + angle) % 360;
+
+      // Make sure we have a positive direction
+      this.directionDeg = (this.directionDeg + 360) % 360;
+
+      this.direction = this.directionDeg*Math.PI/180;
       if (this.turtle) {
-         // TODO :: Do we need to put "none" first?
-         this.turtle.style.transform = "none";
          this.turtle.style.transform = "rotate(" + (-this.direction) + "rad)";
+      }
+   }
+   this.trig = function() {
+      // Fix rounding issues
+      if(this.directionDeg == 0) {
+         return {sin: 0, cos: 1};
+      } else if(this.directionDeg == 90) {
+         return {sin: 1, cos: 0};
+      } else if(this.directionDeg == 180) {
+         return {sin: 0, cos: -1};
+      } else if(this.directionDeg == 270) {
+         return {sin: -1, cos: 0};
+      } else {
+         return {sin: Math.sin(this.direction), cos: Math.cos(this.direction)};
       }
    }
    this.move = function(amount) {
@@ -39,16 +66,17 @@ var makeTurtle = function(coords) {
          this.drawingContext.beginPath();
          this.drawingContext.moveTo(this.x, this.y);
       }
-      
-      this.x -= amount * this.stepsize * 10 * Math.sin(this.direction);
-      this.y -= amount * this.stepsize * 10 * Math.cos(this.direction);
-     
+
+      var trig = this.trig();
+      this.x -= amount * this.stepsize * 10 * trig.sin;
+      this.y -= amount * this.stepsize * 10 * trig.cos;
+
       if (this.paint) {
          this.drawingContext.lineTo(this.x, this.y);
          this.drawingContext.stroke();
       }
 
-      this.placeTurtle();      
+      this.placeTurtle();
    }
    this.start_painting = function() {
       this.paint = true;
@@ -62,7 +90,7 @@ var makeTurtle = function(coords) {
          this.turtle.src = this.turtle.src = this.turtle.getAttribute("penup");
       }
    }
-   
+
    this.set_colour = function(colour) {
       this.drawingContext.strokeStyle = colour;
    }
@@ -170,20 +198,20 @@ var getContext = function(display, infos) {
             inputvalue: "eingabewert"
          },
          description: {
-            moveamount: 'forward() la tortue avance du nombre de pas indiqué en paramètre. Exemple : forward(50)',
-            moveamountvalue: 'forward() la tortue avance du nombre de pas indiqué en paramètre. Exemple : forward(50)',
-            movebackamount: 'backward() la tortue recule du nombre de pas indiqué en paramètre. Exemple : backward(50)',
-            movebackamountvalue: 'backward() la tortue recule du nombre de pas indiqué en paramètre. Exemple : backward(50)',
-            turnleftamount: 'left() la tortue pivote vers la gauche du nombre de degrés indiqué en paramètre. Exemple : left(90)',
-            turnleftamountvalue: 'left() la tortue pivote vers la gauche du nombre de degrés indiqué en paramètre. Exemple : left(90)',
-            turnrightamount: 'right() la tortue pivote vers la droite du nombre de degrés indiqué en paramètre. Exemple : right(90)',
-            turnrightamountvalue: 'right() la tortue pivote vers la droite du nombre de degrés indiqué en paramètre. Exemple : right(90)',
-            row: 'row() capteur qui renvoie la ligne sur laquelle se trouve la tortue',
-            col: 'col() capteur qui renvoie la colonne sur laquelle se trouve la tortue',
-            penup: 'liftBrush() la tortue lève son pinceau. Dans cette position, le pinceau ne laisse pas de trace.',
-            pendown: 'lowerBrush() la tortue place son pinceau dans la position où il laisse une trace.',
-            colourvalue: 'color() la trace du pinceau aura la couleur indiquée en paramètre. Exemple : color(\'red\')',
-            inputvalue: 'inputvalue() lire un nombre en entrée.'
+            moveamount: '@() la tortue avance du nombre de pas indiqué en paramètre. Exemple : @(50)',
+            moveamountvalue: '@() la tortue avance du nombre de pas indiqué en paramètre. Exemple : @(50)',
+            movebackamount: '@() la tortue recule du nombre de pas indiqué en paramètre. Exemple : @(50)',
+            movebackamountvalue: '@() la tortue recule du nombre de pas indiqué en paramètre. Exemple : @(50)',
+            turnleftamount: '@() la tortue pivote vers la gauche du nombre de degrés indiqué en paramètre. Exemple : @(90)',
+            turnleftamountvalue: '@() la tortue pivote vers la gauche du nombre de degrés indiqué en paramètre. Exemple : @(90)',
+            turnrightamount: '@() la tortue pivote vers la droite du nombre de degrés indiqué en paramètre. Exemple : @(90)',
+            turnrightamountvalue: '@() la tortue pivote vers la droite du nombre de degrés indiqué en paramètre. Exemple : @(90)',
+            row: '@() capteur qui renvoie la ligne sur laquelle se trouve la tortue',
+            col: '@() capteur qui renvoie la colonne sur laquelle se trouve la tortue',
+            penup: '@() la tortue lève son pinceau. Dans cette position, le pinceau ne laisse pas de trace.',
+            pendown: '@() la tortue place son pinceau dans la position où il laisse une trace.',
+            colourvalue: '@() la trace du pinceau aura la couleur indiquée en paramètre. Exemple : @(\'red\')',
+            inputvalue: '@() lire un nombre en entrée.'
          },
          startingBlockName: "Programme de la tortue",
          messages: {
@@ -222,6 +250,10 @@ var getContext = function(display, infos) {
             turnrightamountvalue_europe: "drehe um %1 nach rechts ↻",
             turnleftamountvalue_nikolaus: "drehe um %1 nach links ↺",
             turnrightamountvalue_nikolaus: "drehe um %1 nach rechts ↻",
+            turnleftamountvalue_penta: "drehe um %1 nach links ↺",
+            turnrightamountvalue_penta: "drehe um %1 nach rechts ↻",
+            turnleftamountvalue_pentasimple: "drehe um %1 nach links ↺",
+            turnrightamountvalue_pentasimple: "drehe um %1 nach rechts ↻",
             turneitheramount: "drehe um %1° nach %2",
             turneitheramountvalue: "drehe um %1 nach %2",
             row: "turtle's row", // TODO :: translate
@@ -258,6 +290,10 @@ var getContext = function(display, infos) {
             turnrightamountvalue_europe: "dreheRechtsGrad",
             turnleftamountvalue_nikolaus: "dreheLinksGrad",
             turnrightamountvalue_nikolaus: "dreheRechtsGrad",
+            turnleftamountvalue_penta: "dreheLinksGrad",
+            turnrightamountvalue_penta: "dreheRechtsGrad",
+            turnleftamountvalue_pentasimple: "dreheLinksGrad",
+            turnrightamountvalue_pentasimple: "dreheRechtsGrad",
             turneitheramount: "dreheGrade",
             turneitheramountvalue: "dreheGrad",
             row: "turtleRow", // TODO :: translate
@@ -354,7 +390,7 @@ var getContext = function(display, infos) {
             inputvalue: "inputvalue"
          },
          description: {
-            
+
          },
          startingBlockName: "Program of the turtle",
          messages: {
@@ -383,7 +419,7 @@ var getContext = function(display, infos) {
    var texts = [];
    var scale = 1;
    var paper;
-   
+
    context.turtle = {displayTurtle : new makeTurtle(infos.coords), displaySolutionTurtle : new makeTurtle(infos.coords), invisibleTurtle : new makeTurtle(infos.coords), invisibleSolutionTurtle : new makeTurtle(infos.coords)};
 
    switch (infos.blocklyColourTheme) {
@@ -430,7 +466,7 @@ var getContext = function(display, infos) {
       else {
          context.defaultGridInfos = gridInfos;
       }
-      
+
       if (context.display && gridInfos) {
          context.resetDisplay();
 
@@ -440,7 +476,7 @@ var getContext = function(display, infos) {
          context.turtle.displayTurtle.reset(context.infos.turtleStepSize, gridInfos.coords || infos.coords);
          context.turtle.displaySolutionTurtle.reset(context.infos.turtleStepSize, gridInfos.coords || infos.coords);
       }
-    
+
       function createMeACanvas() {
          var canvas = document.createElement('canvas');
          canvas.width = 300;
@@ -453,14 +489,14 @@ var getContext = function(display, infos) {
          //document.body.appendChild(canvas); // for debug
          return canvas;
       }
-      
+
       if (gridInfos) {
          context.turtle.invisibleTurtle.setDrawingContext(createMeACanvas().getContext('2d'));
          context.turtle.invisibleSolutionTurtle.setDrawingContext(createMeACanvas().getContext('2d'));
 
          context.turtle.invisibleTurtle.reset(context.infos.turtleStepSize, gridInfos.coords);
          context.turtle.invisibleSolutionTurtle.reset(context.infos.turtleStepSize, gridInfos.coords);
-         
+
          context.drawSolution = gridInfos.drawSolution;
          context.inputValue   = gridInfos.inputValue;
 
@@ -473,7 +509,7 @@ var getContext = function(display, infos) {
 
    context.resetDisplay = function() {
       var turtleFileName = "turtle.svg";
-      
+
       if ($("#turtleImg").length > 0) {
          turtleFileName = $("#turtleImg").attr("src");
       }
@@ -481,14 +517,14 @@ var getContext = function(display, infos) {
       if ($("#turtleUpImg").length > 0) {
          turtleUpFileName = $("#turtleUpImg").attr("src");
       }
-      $("#grid").html("<div id='output'  style='height: 300px;width: 300px;border: solid 2px;margin: 12px auto;position:relative;background-color:white;'> <img id='drawinggrid' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=10);' src='" + context.infos.overlayFileName + "'><canvas id='solutionfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=20);'></canvas><canvas id='displayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;'></canvas><canvas id='invisibledisplayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;visibility:hidden;'></canvas><img id='turtle' pendown='" + turtleFileName + "' penup='" + turtleUpFileName + "' src='" + turtleFileName + "' style='width: 22px; height: 27px; position:absolute; left: 139px; top: 136px;'></img></div>")
-      
+      $("#grid").html("<div id='output'  style='height: 304px;width: 304px;border: solid 2px;margin: 12px auto;position:relative;background-color:white;'> <img id='drawinggrid' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=10);' src='" + context.infos.overlayFileName + "'><canvas id='solutionfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;opacity: 0.4;filter: alpha(opacity=20);'></canvas><canvas id='displayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;'></canvas><canvas id='invisibledisplayfield' width='300' height='300' style='width:300px;height:300px;position:absolute;top:0;left:0;visibility:hidden;'></canvas><img id='turtle' pendown='" + turtleFileName + "' penup='" + turtleUpFileName + "' src='" + turtleFileName + "' style='width: 22px; height: 27px; position:absolute; left: 139px; top: 136px;'></img></div>")
+
       context.blocklyHelper.updateSize();
       context.turtle.displayTurtle.setTurtle(document.getElementById('turtle'));
       context.turtle.displayTurtle.fixTurtle(); // TODO :: find a way to define whether the turtle needs fixing or not
       context.turtle.displayTurtle.reset();
-      
-      context.updateScale(); // does nothing for now 
+
+      context.updateScale(); // does nothing for now
    };
 
    context.unload = function() {
@@ -512,27 +548,27 @@ var getContext = function(display, infos) {
          callback = param;
          param = 0;
       }
-         
+
       callOnAllTurtles(function(turtle) {
          turtle.move(param);
       })
-      
+
       context.waitDelay(callback);
    }
-   
+
    context.turtle.movebackamount = function(param, callback) {
       if (typeof callback == "undefined") {
          callback = param;
          param = 0;
       }
-         
+
       callOnAllTurtles(function(turtle) {
          turtle.move(-param);
       });
-      
+
       context.waitDelay(callback);
    }
-   
+
    // DEPRECATED
    context.turtle.turn = function(param, callback) {
       callOnAllTurtles(function(turtle) {
@@ -551,7 +587,7 @@ var getContext = function(display, infos) {
             degree = 0;
          }
       }
-   
+
       callOnAllTurtles(function(turtle) {
          if (direction.search('l') != -1) {
             turtle.turn(degree);
@@ -560,7 +596,7 @@ var getContext = function(display, infos) {
             turtle.turn(-degree);
          }
       });
-      
+
       context.waitDelay(callback);
    }
 
@@ -594,7 +630,7 @@ var getContext = function(display, infos) {
    }
    context.turtle.turnleft = function(callback) {
       context.turtle.turnleftamount(90, callback);
-   }   
+   }
    context.turtle.turnright = function(callback) {
       context.turtle.turnrightamount(90, callback);
    }
@@ -623,7 +659,10 @@ var getContext = function(display, infos) {
    context.turtle.turnrightamountvalue_europe = context.turtle.turnrightamount;
    context.turtle.turnleftamountvalue_nikolaus = context.turtle.turnleftamount;
    context.turtle.turnrightamountvalue_nikolaus = context.turtle.turnrightamount;
-   
+   context.turtle.turnleftamountvalue_penta = context.turtle.turnleftamount;
+   context.turtle.turnrightamountvalue_penta = context.turtle.turnrightamount;
+   context.turtle.turnleftamountvalue_pentasimple = context.turtle.turnleftamount;
+   context.turtle.turnrightamountvalue_pentasimple = context.turtle.turnrightamount;
 
    context.turtle.colour2 = function(colour, callback) {
       if (typeof callback == "undefined") {
@@ -638,11 +677,11 @@ var getContext = function(display, infos) {
       context.waitDelay(callback);
    }
    context.turtle.colourvalue = context.turtle.colour2;
-   
+
    var defaultMoveAmount = 1;
    if(context.infos.defaultMoveAmount != undefined)
       defaultMoveAmount = context.infos.defaultMoveAmount;
-   
+
    context.customBlocks = {
       turtle: {
          turtle: [
@@ -676,6 +715,14 @@ var getContext = function(display, infos) {
               ["36.9 °","36.86989"],["53.1 °","53.13010"],["73.7 °","73.73979"],["90 °","90"],["106.3 °","106.26020"],["126.9 °","126.86989"],["143.1 °","143.13010"],["180 °","180"]]}]}},
             { name: "turnrightamountvalue_nikolaus", blocklyJson: {"args0": [{"type": "field_dropdown", "name": "PARAM_0", "options": [
               ["36.9 °","36.86989"],["53.1 °","53.13010"],["73.7 °","73.73979"],["90 °","90"],["106.3 °","106.26020"],["126.9 °","126.86989"],["143.1 °","143.13010"],["180 °","180"]]}]}},
+            { name: "turnrightamountvalue_penta", blocklyJson: {"args0": [{"type": "field_dropdown", "name": "PARAM_0", "options": [
+              ["18 °","18"],["36 °","36"],["54 °","54"],["72 °","72"],["90 °","90"],["108 °","108"],["126 °","126"],["144 °","144"],["162 °","162"],["180 °","180"]]}]}},
+            { name: "turnleftamountvalue_penta", blocklyJson: {"args0": [{"type": "field_dropdown", "name": "PARAM_0", "options": [
+              ["18 °","18"],["36 °","36"],["54 °","54"],["72 °","72"],["90 °","90"],["108 °","108"],["126 °","126"],["144 °","144"],["162 °","162"],["180 °","180"]]}]}},
+            { name: "turnrightamountvalue_pentasimple", blocklyJson: {"args0": [{"type": "field_dropdown", "name": "PARAM_0", "options": [
+              ["18 °","18"],["72 °","72"],["90 °","90"],["108 °","108"],["144 °","144"],["162 °","162"],["180 °","180"]]}]}},
+            { name: "turnleftamountvalue_pentasimple", blocklyJson: {"args0": [{"type": "field_dropdown", "name": "PARAM_0", "options": [
+              ["18 °","18"],["72 °","72"],["90 °","90"],["108 °","108"],["144 °","144"],["162 °","162"],["180 °","180"]]}]}},
             { name: "turneitheramount", blocklyJson: {"args0": [
                {"type": "input_value", "name": "PARAM_0"},
                {"type": "field_dropdown", "name": "PARAM_1", "options":

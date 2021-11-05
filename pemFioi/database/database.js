@@ -39,7 +39,9 @@ function DatabaseHelper(options) {
         graph_height:360,
 
         // histogram renderer
-        histogram_height: '300px'
+        histogram_height: '300px',
+        histogram_bar_color: '#ACF',
+        histogram_mistake_color: '#F99'
     }
 
     var options = Object.assign(defaults, options || {})
@@ -169,7 +171,6 @@ function DatabaseHelper(options) {
         return true;
     }
 
-
     function hashString(str) {
         var hash = 0, i = 0, len = str.length;
         while(i < len) {
@@ -185,11 +186,17 @@ function DatabaseHelper(options) {
     }
 
 
+    this.validateHistogram = function(data) {
+        return db_renderers.histogram.validate(data);
+    }
+
+
     this.destroy = function() {
         db_renderers.html.destroy();
         db_renderers.map.destroy();
         db_renderers.graph.destroy();
         db_renderers.console.destroy();
+        db_renderers.histogram.destroy();
         window.db_renderers = null;
     }
 
@@ -940,7 +947,7 @@ function HistogramRenderer(options) {
         };
 
 
-        var animationEndHandler = function() {
+        var animationHandler = function() {
             var ctx = this.chart.ctx;
             ctx.font = Chart.helpers.fontString(
                 Chart.defaults.global.defaultFontFamily, 
@@ -959,7 +966,6 @@ function HistogramRenderer(options) {
                         scale_max = meta_data[i]._yScale.maxHeight;
                         left = meta_data[i]._xScale.left;
                         offset = meta_data[i]._xScale.longestLabelWidth;
-                    ctx.fillStyle = '#444';
                     var y_pos = model.y - 5;
                     var label = model.label;
                     // Make sure data value does not get overflown and hidden
@@ -997,7 +1003,8 @@ function HistogramRenderer(options) {
             animation: {
                 duration: 500,
                 easing: "easeOutQuart",
-                onComplete: animationEndHandler
+                onComplete: animationHandler,
+                onProgress: animationHandler
             }
         }
 
@@ -1027,6 +1034,8 @@ function HistogramRenderer(options) {
         container.hide();
     };
 
+    var user_values = [];
+
     this.init = function(records_amount, max_value, display) {
         if(!chart) {
             return console.error('Chart.js lib not loaded.')
@@ -1035,11 +1044,15 @@ function HistogramRenderer(options) {
         chart.options.scales.xAxes[0].ticks.max = max;
         var values = [];
         var labels = [];
+        var colors = [];
         for(var i=0; i<records_amount; i++) {
             values[i] = 0;
             labels[i] = '';
+            colors[i] = options.histogram_bar_color;
         }
         chart.data.datasets[0].data = values;
+        user_values = values.slice();
+        chart.data.datasets[0].backgroundColor = colors;
         chart.data.labels = labels;
         display && render();
     }
@@ -1048,12 +1061,81 @@ function HistogramRenderer(options) {
         if(!chart) {
             return console.error('Chart.js lib not loaded.')
         }
-        value = Math.min(value, max);
-        chart.data.datasets[0].data[record_idx] = value;
+        user_values[record_idx] = value;
+        chart.data.datasets[0].data[record_idx] = Math.min(value, max);
         chart.data.labels[record_idx] = label;
         display && render();
     }
 
+
+
+
+    this.validate = function(target) {
+        if('max_value' in target) {
+            if(typeof target.max_value === 'object' && target.max_value !== null) {
+                var range = target.max_value;
+            } else {
+                var range = {
+                    min: target.max_value * 2 / 3,
+                    max: target.max_value
+                }
+            }
+            var mistake = false;
+            for(var i=0; i<user_values.length; i++) {
+                if(range.min > user_values[i] || range.max < user_values[i]) {
+                    chart.data.datasets[0].backgroundColor[i] = options.histogram_mistake_color;
+                    mistake = true;
+                }
+            }
+            if(mistake) {
+                chart.update();
+                return 'incorrect_results';
+            }
+        }
+
+        
+        var user_labels = chart.data.labels;
+        if('labels' in target && Array.isArray(target.labels)) {
+            var target_labels = target.labels;
+        } else {
+            var target_labels = user_labels.slice();            
+        }
+        if('values' in target && Array.isArray(target.values)) {
+            var target_values = target.values;
+        } else {
+            var target_values = user_values.slice();            
+        }        
+
+        function validateRecord(value, label, idx) {
+            if(target.check_order) {
+                return target_values[idx] == value && target_labels[idx] == label;
+            } else {
+                var vidx = target_values.indexOf(value);
+                var lidx = target_labels.indexOf(label);
+                //console.log(label, value, lidx, vidx)
+                return vidx === lidx && vidx !== -1 && lidx !== -1;
+            }
+        }
+
+        
+
+        if(user_values.length !== target.values.length) {
+            return user_values.length < target.values.length ? 'some_results_missing' : 'incorrect_results';
+        }
+        var mistake = false;
+        for(var i=0; i<user_values.length; i++) {
+            if(!validateRecord(user_values[i], user_labels[i], i)) {
+                mistake = true;
+                chart.data.datasets[0].backgroundColor[i] = options.histogram_mistake_color;
+            }
+        }
+        if(mistake) {
+            chart.update();
+            return 'incorrect_results';
+        }
+
+        return true;
+    }
 
     this.destroy = function() {
         chart && chart.destroy();

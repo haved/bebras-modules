@@ -406,8 +406,14 @@ var getContext = function(display, infos, curLevel) {
     }
 
     context.expectHistogram = function(data) {
-        context.success = true;
-        throw strings.messages.success;
+        var status = db_helper.validateHistogram(data);
+        if(status === true) {
+            context.success = true;
+            throw strings.messages.success;
+            return;
+        }
+        context.success = false;
+        throw new Error(strings.messages[status]);
     }
 
 

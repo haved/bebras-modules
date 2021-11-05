@@ -27,6 +27,15 @@ function loadQuizModules() {
     if(window.quiz_question_types.input) {
         modules.push('quiz2_questions_input');
     }
+    if(window.quiz_question_types.sort_list){
+        modules.push('quiz2_questions_sort_list');
+    }
+    if(window.quiz_question_types.sort_items){
+        modules.push('quiz2_questions_sort_items');
+    }
+    if(window.quiz_question_types.sort_list || window.quiz_question_types.sort_items){
+        modules.push('sortable');
+    }
 
     // text processing
     if(quiz_settings.mathjax) {

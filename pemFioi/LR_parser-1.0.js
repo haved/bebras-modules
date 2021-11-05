@@ -5,20 +5,35 @@ function LR_Parser(settings,subTask,answer) {
    this.strings = {
       explanations: {
          // +
-         shift: 'The lookahead symbol {symbol} is read from the input and state {state} is pushed onto the stack.',
+         shift: 'The lookahead symbol <code>{symbol}</code> is read from the input and state <code>{state}</code> is pushed onto the stack.',
          //         
-         reduce1: 'Lookahead symbol {symbol} is in the Follow set of the LHS non-terminal ({non_terminal}) for the item {item}, thus states {popped_states} are popped from the stack that represent {RHS} in the derivation.',
-         reduce2: 'The top element after popping {popped_states} is {top_state}, that leads to state {new_state} with the non-terminal {non_terminal}, which is pushed onto the stack.',
+         reduce1: function(plural) {
+            if(plural){
+               var plState = 'states';
+               var plIs = 'are';
+            }else{
+               var plState = 'state';
+               var plIs = 'is';
+            }
+            var str = 'Lookahead symbol <code>{symbol}</code> is in the Follow set of the LHS non-terminal (<code>{non_terminal}</code>) for the item <code>{item}</code>,';
+            str += ' thus '+plState+' <code>{popped_states}</code> '+plIs+' popped from the stack that represent <code>{RHS}</code> in the derivation.';
+            return str
+         },
+         reduce2: 'The top element after popping <code>{popped_states}</code> is <code>{top_state}</code>, that leads to state <code>{new_state}</code> with the non-terminal <code>{non_terminal}</code>, which is pushed onto the stack.',
          //+
-         error: 'No shift or reduce operations possible at state {state} for lookahead symbol {symbol}',
+         error: 'No shift or reduce operations possible at state <code>{state}</code> for lookahead symbol <code>{symbol}</code>',
          //?
          not_accepted: 'The input is fully read, and no reduction is possible, so the input is in the language of the grammar.',
          //+
-         accepted: 'The input is fully read, and the current state {state} has the item {base_reduction_item}, so the input is accepted.'
+         accepted: 'The input is fully read, and the current state <code>{state}</code> has the item <code>{base_reduction_item}</code>, so the input is accepted.'
       }
    }
-   this.formatExplanation = function(key, values) {
-      var str = this.strings.explanations[key] || null;
+   this.formatExplanation = function(key, values, plural) {
+      if(key != 'reduce1'){
+         var str = this.strings.explanations[key] || null;
+      }else{
+         var str = this.strings.explanations[key](plural) || null;
+      }
       if(str === null) {
          console.error('Explanation ' + key + ' not found.');
          return str;
@@ -31,7 +46,21 @@ function LR_Parser(settings,subTask,answer) {
          str = str.replace('{' + i + '}', '<strong>' + values[i] + '</strong>');
       }
       return str;
-   }
+   };
+   this.itemToString = function(item) {
+      var str = '';
+      str += item.rule.nonterminal+' '+arrow;
+      for(var iDev = 0; iDev <= item.rule.development.length; iDev++){
+         if(iDev == item.dotIndex){
+            str += ' '+dot;
+         }
+         if(item.rule.development[iDev]){
+            str += ' '+item.rule.development[iDev];
+         }
+      }
+      return str
+   };
+   this.gotoInformation = {}; // for explanation
 
 
    this.mode = settings.mode;
@@ -68,17 +97,14 @@ function LR_Parser(settings,subTask,answer) {
    this.inputBaseline = []; // mode = 7
    this.selectedSymbolIndices = [];
    this.reductionMarkerR = 10;
+   this.previousState = null;
 
    this.timeOutID;
-   this.animationTime = 1000;
+   this.animationTime = settings.animationTime || 1000;
    this.token;
+   this.showLog = settings.showLog;
 
-   this.divID = settings.divID,
-   this.parseInfoID = "parseInfo";
-   this.parseTableID = "parseTable";
-   this.graphPaperID = "graphPaper";
-   this.tabsID = "tabs";
-   this.tabsContainerID = "tabsCont";
+   this.divID = settings.divID;
    this.sideTable = false;
    this.rowHL = null;
    this.colHL = null;
@@ -139,12 +165,12 @@ function LR_Parser(settings,subTask,answer) {
       lightBlue: "#cbddf3",
       greyBlue: "#aec6e2"
    };
-   this.unselectedTabAttr = {
-      opacity: 0.5
-   };
-   this.selectedTabAttr = {
-      opacity: 1
-   };
+   // this.unselectedTabAttr = {
+   //    opacity: 0.5
+   // };
+   // this.selectedTabAttr = {
+   //    opacity: 1
+   // };
    this.defaultEdgeAttr = {
      "stroke": this.colors.yellow,
      "stroke-width": 4,
@@ -234,11 +260,6 @@ function LR_Parser(settings,subTask,answer) {
          fill: this.colors.yellow
       }
    };
-   // this.selectedCellAttr = {
-   //    "background-color": this.colors.blue,
-   //    color: "white",
-   //    border: "1px solid "+this.colors.lightgrey
-   // };
    this.cellHighlightAttr = {
       position: "absolute",
       border: "4px solid",
@@ -318,13 +339,20 @@ function LR_Parser(settings,subTask,answer) {
 
       var html = "";
       if(this.mode < 6){
-         html += "<div id=\""+this.tabsID+"\"></div>";
-         html += "<div id=\""+this.tabsContainerID+"\">";
-         html += "<div id=\""+this.graphPaperID+"\"></div>";
+         html += '<div id="tabs"></div>';
+         html += '<div id="tabsCont">';
+         html += '<div id="graphPaper"></div>';
+         html += '<div id="parseTable"></div>';
+         html += '<div id="explanations"></div>';
+         html += "</div>";
       }
-      html += "<div id=\""+this.parseTableID+"\"></div>";
-      html += "</div>";
-      html += "<div id=\""+this.parseInfoID+"\"></div>";
+      html += '<div id="parseInfo"></div>';
+
+      if(this.showLog){
+         html += '<div id="logTable">'
+         html += '<table><thead><tr><th>STACK</th><th>INPUT</th><th>ACTION</th></tr></thead><tbody></tbody></table>';
+         html += '</div>';
+      }
 
       $("#"+this.divID).html(html);
 
@@ -350,6 +378,9 @@ function LR_Parser(settings,subTask,answer) {
       this.style();
       if(this.mode < 6){
          this.updateState(false,"init");
+         // if(this.showLog){
+         //    this.updateLogTable();
+         // }
       }
       this.initHandlers();
       if(this.mode >= 3 && this.mode < 6){
@@ -358,7 +389,7 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.initTabs = function() {
-      $("#"+this.tabsID).html("<span id=\"automatonTab\">Automaton</span><div id=\"switchContainer\"><div id=\"switch\"></div></div><span id=\"parseTableTab\">Parse table</span>");
+      $("#tabs").html("<span id=\"automatonTab\">Automaton</span><div id=\"switchContainer\"><div id=\"switch\"></div></div><span id=\"parseTableTab\">Parse table</span>");
       $("#"+this.tabTag[this.selectedTab]).addClass("selectedTab");
    };
 
@@ -373,7 +404,7 @@ function LR_Parser(settings,subTask,answer) {
 
    this.initAutomata = function() {
       if(!this.paper){
-         this.paper = subTask.raphaelFactory.create(this.graphPaperID,this.graphPaperID,this.paperWidth,this.paperHeight);
+         this.paper = subTask.raphaelFactory.create("graphPaper","graphPaper",this.paperWidth,this.paperHeight);
       }
       if(this.mode < 6 && this.mode != 3){
          this.reductionStates = this.getReductionStates();
@@ -394,7 +425,7 @@ function LR_Parser(settings,subTask,answer) {
          var graphEditorSettings = {
             paper: this.paper,
             graph: this.graph,
-            paperElementID: this.graphPaperID,
+            paperElementID: "graphPaper",
             visualGraph: this.visualGraph,
             graphMouse: this.graphMouse,
             // alphabet: this.alphabet,
@@ -527,6 +558,7 @@ function LR_Parser(settings,subTask,answer) {
                   if(symbol == "S" && iChar >= this.input.length - 1){
                      this.actionSequence[this.actionSequence.length - 1]["goto"] = this.getTerminalState();
                      success = true;
+                     this.actionSequence.push({ actionType: 'accept' });
                   }
                   
                   /* create derivation tree */
@@ -538,12 +570,15 @@ function LR_Parser(settings,subTask,answer) {
                         // console.log(treeIndex);
                         treeIndex = (2*inputIndex + 1 >= treeIndex) ? 2*inputIndex + 1 : treeIndex; 
                      }
-                     
+                     var actionIndex = this.actionSequence.length - 1;
+                     if(this.actionSequence[actionIndex].actionType == 'accept'){
+                        actionIndex--; // bug fix due to final accept step
+                     }
                      if(nbRedChar <= 1){
                         if(this.derivationTree[treeIndex]){
-                           this.derivationTree[treeIndex].push([ruleIndex,this.actionSequence.length - 1]);
+                           this.derivationTree[treeIndex].push([ruleIndex,actionIndex]);
                         }else{
-                           this.derivationTree[treeIndex] = [[ruleIndex,this.actionSequence.length - 1]];
+                           this.derivationTree[treeIndex] = [[ruleIndex,actionIndex]];
                         }
                         if(this.derivationTree[treeIndex].length > this.treeHeight){
                            this.treeHeight = this.derivationTree[treeIndex].length;
@@ -576,11 +611,11 @@ function LR_Parser(settings,subTask,answer) {
                                  if(!this.derivationTree[i]){
                                     this.derivationTree[i] = [];
                                  }
-                                 this.derivationTree[i].push(["",this.actionSequence.length - 1]);
+                                 this.derivationTree[i].push(["",actionIndex]);
                               }
                            }
                            if(i == treeIndex){
-                              this.derivationTree[i].push([ruleIndex,this.actionSequence.length - 1]);
+                              this.derivationTree[i].push([ruleIndex,actionIndex]);
                            }
                            if(this.derivationTree[i].length > this.treeHeight){
                               this.treeHeight = this.derivationTree[i].length;
@@ -657,7 +692,7 @@ function LR_Parser(settings,subTask,answer) {
          }
       }
       html += "</table>";
-      $("#"+this.parseTableID).append(html);
+      $("#parseTable").append(html);
       if(this.mode == 3){
          this.initStackPreview();
          this.updateParseTable();         
@@ -667,14 +702,14 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.initStackPreview = function() {
-      $("#"+this.parseTableID).prepend("<div id=\"stackPreview\"></div>");
-      stackPreviewH = $("#"+this.parseTableID).height();
+      $("#parseTable").prepend("<div id=\"stackPreview\"></div>");
+      stackPreviewH = $("#parseTable").height();
       this.stackPreview = subTask.raphaelFactory.create("stackPreview","stackPreview",stackPreviewW,stackPreviewH);
    };
 
    this.initParseInfo = function() {
       var html = "<div id=\"rules\"></div><div id=\"action\"></div>";
-      $("#"+this.parseInfoID).html(html);
+      $("#parseInfo").html(html);
       this.initRules();
       this.initAction();
    };
@@ -696,7 +731,6 @@ function LR_Parser(settings,subTask,answer) {
    this.initAction = function() {
       if(this.mode < 6){
          this.initPlayer();
-         this.initExplanations();
       }
       this.initActionInfo();
    };
@@ -718,28 +752,15 @@ function LR_Parser(settings,subTask,answer) {
       $("#action").html(html);
    };
 
-   this.initExplanations = function() {
-      var el = $('#lr-explanation');
-      if(el.length) {
-         el.html('');
-      } else {
-         var div = $("<div id=\"lr-explanation\"></div>").css('margin-top', '0.5em');
-         $("#action").append(div);
+   this.displayExplanation = function(key, values, concat, plural) {
+      var newExpl = key ? this.formatExplanation(key, values, plural) : '';
+      if(concat){
+         var oldExpl = $('#explanations').html();
+         var newExpl = '<p>' + oldExpl + '</p><p>' + newExpl + '</p>';
+      }else{
+         newExpl = '<p>' + newExpl + '</p>';
       }
-   }
-
-      /*
-      this.displayExplanation('reduce1', {
-         symbol: this.input.charAt(this.inputIndex),
-         non_terminal: nonTerminal,
-         item: this.grammar.rules[this.selectedRule].toString(),
-         popped_states: prevStates.slice(1).join(', '),
-         RHS: 'TODO'
-      });      
-      */   
-   this.displayExplanation = function(key, values) {
-      return;
-      $('#lr-explanation').html(key ? this.formatExplanation(key, values) : '');
+      $('#explanations').html(newExpl);
    }
 
    this.initActionInfo = function() {
@@ -866,13 +887,13 @@ function LR_Parser(settings,subTask,answer) {
 
    this.initHandlers = function() {
       if(this.mode < 6 && this.mode != 2){
-         $("#"+this.tabsID+" #switchContainer").off("click");
-         $("#"+this.tabsID+" #switchContainer").click(self.switchTab);
+         $("#tabs #switchContainer").off("click");
+         $("#tabs #switchContainer").click(self.switchTab);
          $(window).resize(self.onResize);
       }
       if(this.mode < 6 && this.mode > 2 /*&& this.mode != 3*/){
          $("#stackPreview").hide();
-         $("#"+this.parseTableID+" table").hover(
+         $("#parseTable table").hover(
             function(){
                $("#stackPreview").show();
             },function(){
@@ -905,8 +926,8 @@ function LR_Parser(settings,subTask,answer) {
             this.disableUndoButton();
             break;
          case 4:
-            $("#"+this.parseTableID+" td[data_state]").off("click");
-            $("#"+this.parseTableID+" td[data_state]").click(self.clickCell);
+            $("#parseTable td[data_state]").off("click");
+            $("#parseTable td[data_state]").click(self.clickCell);
             this.initPlayerHandlers();
             break;
          case 5:
@@ -915,8 +936,8 @@ function LR_Parser(settings,subTask,answer) {
             $("#acceptButton").click(self.acceptInput);
             $("#errorButton").off("click");
             $("#errorButton").click(self.refuseInput); 
-            $("#"+this.parseTableID+" td[data_state]").off("click");
-            $("#"+this.parseTableID+" td[data_state]").click(self.clickCell);
+            $("#parseTable td[data_state]").off("click");
+            $("#parseTable td[data_state]").click(self.clickCell);
             $("#"+this.divID).off("click");
             $("#"+this.divID).click(self.resetFeedback);
             break;
@@ -1251,8 +1272,8 @@ function LR_Parser(settings,subTask,answer) {
             self.styleTabSwitch();
             self.styleTabs();
             if(self.sideTable){
-               $("#"+self.graphPaperID).show();
-               $("#"+self.parseTableID).show();
+               $("#graphPaper").show();
+               $("#parseTable").show();
             }else{
                self.showTab();
             }
@@ -1274,9 +1295,9 @@ function LR_Parser(settings,subTask,answer) {
       this.error = false;
       this.accept = false;
 
-      this.styleRules();
-      this.styleStackTable();
-      this.styleProgressBar();
+      // this.styleRules();
+      // this.styleStackTable();
+      // this.styleProgressBar();
       $("#acceptButton, #errorButton").css({
          "background-color": this.colors.blue
       });
@@ -1380,7 +1401,7 @@ function LR_Parser(settings,subTask,answer) {
                $(".stackElement[data_col="+index+"]").addClass("selected");
                self.selectedStackElements.push(index);
             }
-            self.styleStackTable();
+            // self.styleStackTable();
             self.selectRule($(".rule[data_rule="+rule+"]"));
             if(anim){
                this.timeOutID = setTimeout(function() {
@@ -1397,11 +1418,15 @@ function LR_Parser(settings,subTask,answer) {
          case "error":
             self.refuseInput();
             break;
+         case 'accept':
+            if(self.currentState == self.getTerminalState()){
+               if(!self.accept)
+                  self.acceptInput();
+            } 
       }
    };
 
    this.treeAnim = function(step,reverse,anim) {
-      // console.log("tree");
       if(!this.treeElements[step]){
          return
       }
@@ -1587,12 +1612,22 @@ function LR_Parser(settings,subTask,answer) {
       if(col == 0){
          return
       }
-
       if($(".stackElement[data_col="+col+"]").hasClass("selected")){
-         for(var iCol = 0; iCol <= col; iCol++){
+         var lowest = true;
+         for(var selectedCol of self.selectedStackElements){
+            if(selectedCol < col){
+               lowest = false;
+            }
+         }
+         if(lowest){
+            var lastColToUnselect = self.stack.length - 1;
+         }else{
+            var lastColToUnselect = col - 1;
+         }
+         for(var iCol = 0; iCol <= lastColToUnselect; iCol++){
             $(".stackElement[data_col="+iCol+"]").removeClass("selected");
          }
-         self.selectedStackElements = self.selectedStackElements.filter(element => element > col);
+         self.selectedStackElements = self.selectedStackElements.filter(element => element > lastColToUnselect);
       }else{
          for(var iCol = col; iCol < self.stack.length; iCol++){
             $(".stackElement[data_col="+iCol+"]").addClass("selected");
@@ -1601,7 +1636,6 @@ function LR_Parser(settings,subTask,answer) {
             }
          }
       }
-      self.styleStackTable();
    };
 
    this.clickRule = function() {
@@ -1611,7 +1645,7 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.clickReductionMarker = function(rule,state,vID) {
-      return function() {
+      return function(ev) {
          if(state == self.currentState){
             var ruleObj = $("#rules [data_rule="+rule+"]");
             self.selectRule(ruleObj);
@@ -1619,12 +1653,22 @@ function LR_Parser(settings,subTask,answer) {
             var info = self.graph.getVertexInfo(vID);
             var raphObj = self.visualGraph.getRaphaelsFromID(vID);
             info.selected = !info.selected;
+            // console.log(state,self.currentState,self.previousState,info.selected)
             if(info.selected){
                raphObj[0].attr(self.defaultSelectedVertexAttr);
+               if(self.prevStateHighlight){
+                  if(state == self.previousState){
+                     self.prevStateHighlight.toBack();
+                  }
+               }
             }else{
                raphObj[0].attr(self.defaultVertexAttr);
+               if(self.prevStateHighlight){
+                  self.prevStateHighlight.toFront();
+               }
             }
-            self.onVertexSelect(vID,info.selected);
+            // self.onVertexSelect(vID,info.selected);
+            self.graphEditor.vertexDragAndConnect.clickHandler(vID,ev.pageX,ev.pageY)
             // console.log("click")
          }
       }
@@ -1648,14 +1692,14 @@ function LR_Parser(settings,subTask,answer) {
          self.selectedRule = ruleID;
          self.highlightReductionMarker(ruleID,true);
       }
-      self.styleRules();
+      // self.styleRules();
    };
 
    this.unselectRules = function() {
       // console.log("uselect rules")
       $(".rule").removeClass("selected");
       self.selectedRule = null;
-      self.styleRules();
+      // self.styleRules();
    };
 
    this.highlightReductionMarker = function(rule,selected) {
@@ -1686,11 +1730,11 @@ function LR_Parser(settings,subTask,answer) {
 
    this.showTab = function() {
       if(this.selectedTab == 1){
-         $("#"+this.graphPaperID).hide();
-         $("#"+this.parseTableID).show();
+         $("#graphPaper").hide();
+         $("#parseTable").show();
       }else{
-         $("#"+this.graphPaperID).show();
-         $("#"+this.parseTableID).hide();
+         $("#graphPaper").show();
+         $("#parseTable").hide();
       }
    };
 
@@ -1803,23 +1847,6 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.getTerminalState = function() {
-      // var initVertex = this.getStateID(0);
-      // if(initVertex){
-      //    var children = this.graph.getChildren(initVertex);
-
-      //    for(var child of children){
-      //       var edges = this.graph.getEdgesFrom(initVertex,child);
-      //       if(edges.length > 0){
-      //          var edgeInfo = this.graph.getEdgeInfo(edges[0]);
-      //          if(edgeInfo.label == this.grammar.rules[0].nonterminal){
-      //             var vertexInfo = this.graph.getVertexInfo(child);
-      //             if(vertexInfo.terminal){
-      //                return vertexInfo.label;
-      //             }
-      //          }
-      //       }
-      //    }
-      // }
       var vertices = this.graph.getAllVertices();
       for(var vertex of vertices){
          var info = this.graph.getVertexInfo(vertex);
@@ -1869,12 +1896,33 @@ function LR_Parser(settings,subTask,answer) {
          prevStates.push(this.stack[col][0]);
       }
 
-      this.displayExplanation('reduce2', {
-         popped_states: prevStates.slice(1).join(', '),
-         non_terminal: nonTerminal,
+      this.displayExplanation(false);        
+       
+      var prevState = prevStates[prevStates.length - 1];  
+      var items = this.lrClosureTable.kernels[prevState].items;
+      for(var item of items){
+         if(item.rule.index == this.selectedRule){
+            break;
+         }
+      }
+      // console.log(this.itemToString(item));
+      var poppedStates = prevStates.slice(1).reverse();
+      this.gotoInformation = {
+         popped_states: poppedStates.join(','),
          top_state: prevStates[0],
+         non_terminal: nonTerminal,
          new_state: goto
-      });               
+      };
+
+      var plural = (poppedStates.length > 1);
+      this.displayExplanation('reduce1', {
+         symbol: this.input[this.inputIndex],
+         non_terminal: nonTerminal,
+         item: this.itemToString(item),
+         popped_states: poppedStates.join(','),
+         RHS: this.grammar.rules[self.selectedRule].development.join(' ')
+      }, false, plural);           
+      // console.log("reduc1");
 
       var state = prevStates.pop();
    
@@ -1900,8 +1948,8 @@ function LR_Parser(settings,subTask,answer) {
          
          $(".rule").removeClass("selected");
          this.selectedRule = null;
-         this.styleRules();
-         this.updateStackTable();
+         // this.styleRules();
+         this.updateStackTable(false,true);
 
          this.updateState(anim,"reduction");
          this.arrangeEdgeHL();
@@ -1969,6 +2017,7 @@ function LR_Parser(settings,subTask,answer) {
                   /* prevent double callback */
                   return
                }
+               // console.log("goto");
                if(!firstStepOnly){
                   self.goto(newStackElement[0]);
                   self.arrangeEdgeHL();
@@ -2008,6 +2057,7 @@ function LR_Parser(settings,subTask,answer) {
 
    this.goto = function(newState) {
       // console.log("goto "+newState)
+      this.displayExplanation('reduce2', this.gotoInformation, true); 
       var col = this.stack.length - 1;
       $(".stackElement.State[data_col="+col+"]").text(newState);
       $(".stackElement.State[data_col="+col+"]").css("opacity",0);
@@ -2015,6 +2065,7 @@ function LR_Parser(settings,subTask,answer) {
       self.highlightRule(self.selectedRule);
       self.updateState(true,"goto");
       self.displayMessage("reduce","GOTO "+newState);
+
       self.currentVertex = self.getStateID(newState);
       self.arrangeEdgeHL();
       if(this.mode == 2){
@@ -2037,7 +2088,7 @@ function LR_Parser(settings,subTask,answer) {
 
       this.updateStackTable();
 
-      this.styleStackTable();
+      // this.styleStackTable();
       this.updateState(false,"reverseReduction");
 
    };
@@ -2096,13 +2147,12 @@ function LR_Parser(settings,subTask,answer) {
          this.highlightPrevState(this.currentState);
       }
       this.selectedStackElements = [];
-      this.updateStackTable();
+      this.updateStackTable(false,!anim);
       this.updateCursor(!(reverse || !anim));
       this.updateState(!(reverse || !anim),"shift");
-      // console.log(this.selectedState)
    };
 
-   this.updateStackTable = function(noGoto) {
+   this.updateStackTable = function(noGoto,noAnim) {
       var html = "";
       for(var iData = 0; iData < this.stackData.length; iData++) {
          html += "<tr>";
@@ -2113,7 +2163,7 @@ function LR_Parser(settings,subTask,answer) {
          html += "</tr>";
       }
       $("#stackTable").html(html);
-      this.styleStackTable();
+      // this.styleStackTable();
       if(this.mode == 2){
          $(".stackElement").off("click");
          $(".stackElement").click(self.selectStackElement);
@@ -2122,7 +2172,43 @@ function LR_Parser(settings,subTask,answer) {
          this.currentState = this.stack[this.stack.length - 1][0];
          this.currentVertex = this.getStateID(this.currentState);
       }
-      // console.log("updateStack "+this.currentState);
+      if(this.showLog){
+         this.updateLogTable(noAnim);
+      }
+   };
+
+   this.updateLogTable = function(noAnim) {
+      var step = this.simulationStep;
+      var stackStr = '';
+      var inputStr = this.input.slice(this.inputIndex);
+      if(this.stack.length < 2){
+         $('#logTable .logLine').remove();
+      }
+      if(noAnim === true || this.stack.length < 2){
+         var action = this.actionSequence[step];
+      }else{
+         var action = this.actionSequence[step + 1];
+      }
+      var actionStr = action.actionType;
+      if(actionStr == 's'){
+         actionStr += action.state;
+      }else if(actionStr == 'r'){
+         actionStr += (action.rule + 1);
+      }
+      for(var stack of this.stack){
+         stackStr += '<code>'+stack[1]+'</code>'+stack[0];
+      }
+      var newLine = '<tr class="logLine"><td class="log_stack">'+stackStr+'</td><td class="log_input"><code>'+inputStr+'</code></td><td class="log_action"><span>'+actionStr+'</span></td></tr>';
+      $('#logTable tbody').append(newLine);
+      this.updateLogAction();
+   };
+
+   this.updateLogAction = function() {
+      $('#logTable td.log_action span').show();
+      var lastAction = $('#logTable tr:last-child td.log_action span');
+      if(lastAction.text() != 'accept'){
+         lastAction.hide();
+      }
    };
 
    this.updateCursor = function(anim) {
@@ -2163,12 +2249,13 @@ function LR_Parser(settings,subTask,answer) {
             $(this).removeClass("read");
          }
       });
-      self.styleInput();
+      // self.styleInput();
    };
 
    /* HIGHLIGHT */
 
    this.highlightPrevState = function(previousState) {
+      self.previousState = previousState; // bug fix
       var vertex = this.getStateID(previousState);
       var raphObj = this.visualGraph.getRaphaelsFromID(vertex);
       // var x = raphObj[0].attr("x");
@@ -2235,7 +2322,7 @@ function LR_Parser(settings,subTask,answer) {
       $(".rule").removeClass("selected");
       $(".rule[data_rule="+rule+"]").addClass("previousRule");
       self.selectedRule = null;
-      self.styleRules();
+      // self.styleRules();
       self.highlightReductionMarker(rule,false);
    };
 
@@ -2291,7 +2378,7 @@ function LR_Parser(settings,subTask,answer) {
          this.stackElementsHL = [];
       }
       $(".rule").removeClass("previousRule");
-      this.styleRules();
+      // this.styleRules();
    };
 
    this.resetParseTableHL = function() {
@@ -2306,7 +2393,7 @@ function LR_Parser(settings,subTask,answer) {
 
    this.updateParseTableHL = function(data) {
       if(this.mode == 3){
-         if($("#"+this.parseTableID+" td[data_state=\""+this.currentState+"\"]").length == 0){
+         if($("#parseTable td[data_state=\""+this.currentState+"\"]").length == 0){
             if(this.rowHL){
                this.rowHL.remove();
                this.rowHL = null;
@@ -2328,28 +2415,28 @@ function LR_Parser(settings,subTask,answer) {
       // console.log("updateParseTable "+action+" "+anim);
       if(!this.rowHL && this.mode != 4){
          this.rowHL = $("<div id=\"rowHL\"></div>");
-         $("#"+this.parseTableID).append(this.rowHL);
+         $("#parseTable").append(this.rowHL);
          this.rowHL.css(this.cellHighlightAttr);
       }
       if(!this.colHL && this.mode != 4){
          this.colHL = $("<div id=\"colHL\"></div>");
-         $("#"+this.parseTableID).append(this.colHL);
+         $("#parseTable").append(this.colHL);
          this.colHL.css(this.cellHighlightAttr);
       }
-      var tableW = $("#"+this.parseTableID+" table").width();
-      var tableH = $("#"+this.parseTableID+" table").height();
-      var tablePos = $("#"+this.parseTableID+" table").position();
-      var tableMarginLeft = ($("#"+this.parseTableID).width() - tableW)/2;
-      var actionH = $("#"+this.parseTableID+" table th:nth-child(2)").outerHeight();
-      var rowH = $("#"+this.parseTableID+" td[data_state=\""+this.currentState+"\"]").outerHeight();
-      var colW = $("#"+this.parseTableID+" td[data_symbol=\""+this.input[this.inputIndex]+"\"]").outerWidth();
+      var tableW = $("#parseTable table").width();
+      var tableH = $("#parseTable table").height();
+      var tablePos = $("#parseTable table").position();
+      var tableMarginLeft = ($("#parseTable").width() - tableW)/2;
+      var actionH = $("#parseTable table th:nth-child(2)").outerHeight();
+      var rowH = $("#parseTable td[data_state=\""+this.currentState+"\"]").outerHeight();
+      var colW = $("#parseTable td[data_symbol=\""+this.input[this.inputIndex]+"\"]").outerWidth();
       var rowTop = 0;
-      if($("#"+this.parseTableID+" td[data_state=\""+this.currentState+"\"]").position()){
-         rowTop = $("#"+this.parseTableID+" td[data_state=\""+this.currentState+"\"]").position().top;
+      if($("#parseTable td[data_state=\""+this.currentState+"\"]").position()){
+         rowTop = $("#parseTable td[data_state=\""+this.currentState+"\"]").position().top;
       }
       var colLeft = 0;
-      if($("#"+this.parseTableID+" td[data_symbol=\""+this.input[this.inputIndex]+"\"]").position()){
-         var colLeft = $("#"+this.parseTableID+" td[data_symbol=\""+this.input[this.inputIndex]+"\"]").position().left;
+      if($("#parseTable td[data_symbol=\""+this.input[this.inputIndex]+"\"]").position()){
+         var colLeft = $("#parseTable td[data_symbol=\""+this.input[this.inputIndex]+"\"]").position().left;
       }
 
       if(action == "startReduction" && anim){
@@ -2362,10 +2449,10 @@ function LR_Parser(settings,subTask,answer) {
          }
          this.colHL.css("border-color",this.colors.lightBlue);
          this.gotoColHL = $("<div id=\"gotoColHL\"></div>");
-         $("#"+this.parseTableID).append(this.gotoColHL);
+         $("#parseTable").append(this.gotoColHL);
          this.gotoColHL.css(this.cellHighlightAttr);
-         var gotoColW = $("#"+this.parseTableID+" td[data_symbol=\""+nonTerminal+"\"]").outerWidth();
-         var gotoColLeft = $("#"+this.parseTableID+" td[data_symbol=\""+nonTerminal+"\"]").position().left;
+         var gotoColW = $("#parseTable td[data_symbol=\""+nonTerminal+"\"]").outerWidth();
+         var gotoColLeft = $("#parseTable td[data_symbol=\""+nonTerminal+"\"]").position().left;
          var gotoColAttr = {
             width: gotoColW - 4,
             height: tableH - 4 - actionH,
@@ -2427,6 +2514,7 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.updateStackPreview = function(rule,goto) {
+      // console.log('updateStackPreview');
       var attr = this.stackPreviewAttr;
       var localStack = JSON.parse(JSON.stringify(this.stack));
       if(rule || rule == 0){
@@ -2443,11 +2531,11 @@ function LR_Parser(settings,subTask,answer) {
       }else{
          this.stackPreview.clear();
       }
-      var tableW = $("#"+this.parseTableID+" table").width();
-      var tableH = $("#"+this.parseTableID+" table").height();
-      var tablePos = $("#"+this.parseTableID+" table").position();
-      var tableMarginLeft = ($("#"+this.parseTableID).width() - tableW)/2;
-      var headerH = $("#"+this.parseTableID+" table th:first-child").outerHeight();
+      var tableW = $("#parseTable table").width();
+      var tableH = $("#parseTable table").height();
+      var tablePos = $("#parseTable table").position();
+      var tableMarginLeft = ($("#parseTable").width() - tableW)/2;
+      var headerH = $("#parseTable table th:first-child").outerHeight();
       stackPreviewH = tableH + 4;
       stackPreviewW = Math.max(localStack.length,this.stack.length)*attr.colW;
       this.stackPreview.setSize(stackPreviewW,stackPreviewH);
@@ -2456,7 +2544,7 @@ function LR_Parser(settings,subTask,answer) {
          top: 0,
          left: tableMarginLeft - stackPreviewW - 2
       });
-      this.stackPreview.rect(0,headerH,stackPreviewW,stackPreviewH - headerH).attr(attr.background).toBack();
+      this.stackPreview.rect(0,headerH,stackPreviewW,Math.max(0,stackPreviewH - headerH)).attr(attr.background).toBack();
       var lastPos = null;
       var x = stackPreviewW/2;
 
@@ -2466,7 +2554,7 @@ function LR_Parser(settings,subTask,answer) {
          var elem = localStack[iElem];
          var state = elem[0];
          var symbol = elem[1];
-         var line = $("#"+this.parseTableID+" td[data_state=\""+state+"\"]");
+         var line = $("#parseTable td[data_state=\""+state+"\"]");
          if(line.length > 0){
             var x = (iElem + 1/2)*attr.colW;
             var y = line.position().top + line.outerHeight()/2;
@@ -2770,11 +2858,7 @@ function LR_Parser(settings,subTask,answer) {
          // var previousState = this.stack[this.stack.length - 2][0];
          // var animTime = (action == "shift") ? this.animationTime*0.8 : this.animationTime;
          this.changeStateAnim(previousState,this.currentState,this.animationTime);
-      }
-      if(this.currentState == this.getTerminalState()){
-         if(!this.accept)
-            this.acceptInput();
-      }     
+      }   
    };
 
    this.changeStateAnim = function(state1,state2,time,reduction,callback) {
@@ -2904,10 +2988,12 @@ function LR_Parser(settings,subTask,answer) {
          if(self.error){
             self.refuseInput();
          } else {
-            this.displayExplanation('accepted', {
-               state: this.currentState,
-               base_reduction_item: this.stack[this.stack.length - 1][1]
-            });            
+            if(self.mode != 2){
+               self.displayExplanation('accepted', {
+                  state: self.currentState,
+                  base_reduction_item: self.stack[self.stack.length - 1][1]
+               });    
+            }        
          }
       }else{
          $("#acceptButton").css({
@@ -2933,10 +3019,12 @@ function LR_Parser(settings,subTask,answer) {
          if(self.accept){
             self.acceptInput();
          } else {
-            this.displayExplanation('error', {
-               symbol: this.input[this.inputIndex],
-               state: this.currentState
-            });         
+            if(self.mode != 2){
+               self.displayExplanation('error', {
+                  symbol: self.input[self.inputIndex],
+                  state: self.currentState
+               });    
+            }     
          }
       }else{
          $("#errorButton").css({
@@ -2945,7 +3033,9 @@ function LR_Parser(settings,subTask,answer) {
          $("#errorMessage").parent().css({
             "background-color": self.colors.blue
          });
-         this.displayExplanation('not_accepted');                              
+         if(self.mode != 2){
+            self.displayExplanation('not_accepted');     
+         }                         
       }
       self.saveAnswer();
    };
@@ -3082,7 +3172,7 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.selectVertexCallback = function(id,selected) {
-      // console.log(id+" "+selected)
+      // console.log('selectVertexCallback'+id+" "+selected)
       var current = self.getStateID(self.currentState);
       if(!selected && id == current){
          self.styleVertex(id,"current");
@@ -3095,11 +3185,18 @@ function LR_Parser(settings,subTask,answer) {
    this.onVertexSelect = function(ID,selected) {
       // console.log("onVertexSelect"+" "+ID+" "+selected)
       var info = self.graph.getVertexInfo(ID);
+      var state = info.label;
+
       var stateVertex = self.visualGraph.getRaphaelsFromID(ID);
       if(selected){
          self.selectedVertex = ID;
          self.selectedState = info.label;
          stateVertex[4].attr(self.defaultSelectedVertexAttr);
+         if(self.prevStateHighlight && state == self.previousState){
+            self.prevStateHighlight.toBack();
+         }else if(self.prevStateHighlight){
+            self.prevStateHighlight.toFront();
+         }
       }else{
          self.selectedVertex = null;
          self.selectedState = null;
@@ -3118,6 +3215,14 @@ function LR_Parser(settings,subTask,answer) {
       if(self.reductionClickArea[ID]){
          self.reductionClickArea[ID].toFront();
       }
+
+      // if(self.prevStateHighlight){
+      //    if(currState == previousState){
+      //       self.prevStateHighlight.toBack();
+      //    }else{
+      //       self.prevStateHighlight.toFront();
+      //    }
+      // }
    };
 
    this.formatContent = function() {
@@ -3383,11 +3488,11 @@ function LR_Parser(settings,subTask,answer) {
                   $(".stackElement[data_col="+index+"]").addClass("selected");
                   self.selectedStackElements.push(index);
                }
-               self.styleStackTable();
+               // self.styleStackTable();
                $(".rule").removeClass("selected");
                $(".rule[data_rule="+rule+"]").addClass("selected");
                self.selectedRule = rule;
-               self.styleRules();
+               // self.styleRules();
                var previousState = self.getPreviousState();
                var goto = (nonTerminal != "S") ? self.lrTable.states[previousState][nonTerminal][0].actionValue : self.getTerminalState();
                self.updateParseTableHL({anim:true,action:"startReduction",nonTerminal:nonTerminal});
@@ -3400,6 +3505,7 @@ function LR_Parser(settings,subTask,answer) {
                   goto: cellContent
                });
                self.currentState = cellContent;
+               // console.log("goto 3409");
                self.goto(cellContent);
                self.waitingForGoto = false;
                self.saveAnswer();
@@ -3468,7 +3574,6 @@ function LR_Parser(settings,subTask,answer) {
    /** derivation tree **/
 
    this.updateTree = function() {
-      // console.log("updateTree");
       this.updateTreePaper();
       this.fixConflict();
       this.treeClickableElements = {};
@@ -3491,7 +3596,6 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.displayTree = function(tree,level,parentCol) {
-      // console.log("displayTree");
       var children = [];
       for(var col in tree){
          if(col == "nonTerminal" || col == "path"){
@@ -3965,6 +4069,9 @@ function LR_Parser(settings,subTask,answer) {
             break;
          case 3:
             answer.visualGraphJSON.push(self.visualGraph.toJSON());
+            if(settings.visualGraphLog){
+               console.log(self.visualGraph.toJSON())
+            }
             break;
          case 6:
          case 7:
@@ -4000,7 +4107,7 @@ function LR_Parser(settings,subTask,answer) {
             for(var state in answer){
                if(answer[state]){
                   for(var symbol in answer[state]){
-                     $("#"+this.parseTableID+" table td[data_symbol=\""+symbol+"\"][data_state=\""+state+"\"]").text(answer[state][symbol])
+                     $("#parseTable table td[data_symbol=\""+symbol+"\"][data_state=\""+state+"\"]").text(answer[state][symbol])
                   }
                }
             }
@@ -4192,7 +4299,8 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.displayError = function(msg) {
-      $("#error").text(msg);
+      // $("#error").text(msg);
+      $("#explanations").html('<span id="error">'+msg+'</span>');
       // console.log(msg)
    };
 
@@ -4204,11 +4312,10 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.style = function() {
-      // TODO :: put all that into the CSS file...
       // console.log("style")
       $("#"+this.divID).css({
          "font-size": "80%"
-      })
+      });
       if(this.mode < 6){
          /* tab switch */
          this.styleTabSwitch();
@@ -4217,174 +4324,33 @@ function LR_Parser(settings,subTask,answer) {
          this.styleTabs();
       }
 
-      /* parse info */
-      $("#parseInfo").css({
-         display: "flex",
-         "justify-content": "center",
-         "align-items": "flex-start"
-      });
-      $("#parseInfo > *").css({
-         "box-sizing": "border-box"
-      });
-
       /* rules */
-      this.styleRules();
+      // this.styleRules();
 
-      /* action */
-      $("#action").css({
-         "margin-left": "15px",
-         "flex-grow": "20"
-      });
-      $("#action h4").css({
-         color: "grey",
-         "font-weight": "normal",
-         "margin-bottom": "0.5em",
-      });
       if(this.mode < 6){
-         /* player */
-         $("#player").css({
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "space-between",
-            padding: "10px",
-            "border-radius": "25px",
-            "background-color": this.colors.lightgrey
-         });
-         $("#player > *").css({
-            color: "white",
-            "font-size": "1em",
-            "border-radius": "2em",
-            "text-align": "center",
-            "box-sizing": "border-box"
-         });
-         $("#play").css({
-            "background-color": this.colors.blue,
-            padding: "10px 12px",
-            "margin-right": "10px"
-         });
-         $("#stepBackward, #stepForward, #undo").css({
-            "background-color": this.colors.black,
-            padding: "10px 20px",
-            "margin-left": "10px"
-         });
-         $("#undo").css({
-            "font-weight": "bold"
-         })
          if(this.mode == 3){
             this.showUndo();
          }
-         this.styleProgressBar();
+         // this.styleProgressBar();
 
          /* stack */
-         this.styleStackTable();
+         // this.styleStackTable();
 
          /* action button */
-         $("#acceptButton, #errorButton").css({
-            "border-radius": "1em",
-            float: "right",
-            "margin-top": "1em",
-            clear: "right"
-         });
-         $(".actionButton").css({
-            "background-color": this.colors.blue,
-            color: "white",
-            width: "110px",
-            padding: "0.5em 0",
-            "text-align": "center",
-            "font-weight": "bold",
-            "font-size": "0.9em"
-         });
          var buttonHeight = $(".actionButton").innerHeight();
-         $("#reduceBar, #shiftBar").css({
-            display: "flex",
-            "justify-content": "flex-end",
-         });
 
-         $(".actionMessage").css({
-            padding: "0.5em 1em",
-            color: "grey",
-            "background-color": "white",
-            "border-radius": "0 5px 0 0",
-            height: buttonHeight+"px",
-            "box-sizing": "border-box"
-         });
+         $(".actionMessage").css("height", buttonHeight+"px");
          $(".messageBackground").css({
             "background-color": this.colors.blue,
             height: buttonHeight+"px"
          })
-         $("#reduceButton, #shiftButton").css({
-            "border-radius": "0 0 5px 5px"
-         });
-         // $("#acceptButton, #errorButton").css({
-         //    "margin-left": "1em"
-         // });
-         $(".buttonIcon").css({
-            "font-size": "0.9em",
-            "margin-right": "0.2em"
-         });
-         $("#shiftButton .buttonIcon").css({
-            "margin-right": "0.5em"
-         });
 
          /* input */
-         this.styleInput();
-
-         /* cursor */
-         $("#cursor").css({
-            position: "absolute",
-            top: 0,
-            left: 0,
-            height: "2em"
-         });
-         $("#cursorBar").css({
-            height: "2em",
-            width: 0,
-            border: "1px solid "+this.colors.blue,
-            position: "absolute",
-            top: 0,
-            left: 0
-         });
-         $("#topCircle, #bottomCircle").css({
-            width: "6px",
-            height: "6px",
-            "background-color": "white",
-            border: "1px solid "+this.colors.blue,
-            "border-radius": "5px",
-            position: "absolute",
-            left: "-3px",
-            "z-index": 2
-         });
-         $("#topCircle").css({
-            top: "-4px"
-         });
-         $("#bottomCircle").css({
-            bottom: "-6px"
-         });
+         // this.styleInput();
 
          this.styleDerivationTree();
       }else{        
-         $("#tree").css({
-            display: "flex",
-            "justify-content": "flex-start",
-            "align-items": "flex-start"
-         });
-         $("#reduceButton, #produceButton, #undo").css({
-            "border-radius": "1em",
-            "background-color": this.colors.blue,
-            color: "white",
-            width: "110px",
-            padding: "0.5em 0",
-            "text-align": "center",
-            "font-weight": "bold",
-            "font-size": "0.9em",
-         });
-         $(".buttonIcon").css({
-            "font-size": "0.9em",
-            "margin-right": "0.2em"
-         });
-         $("#reduceButton, #produceButton").css({
-            "margin-bottom": "1em"
-         });
+         $("#reduceButton, #produceButton, #undo").css("border-radius", "1em");
          $(".inputChar").css({
             display: "inline-block",
             width: this.treeCharSize,
@@ -4398,55 +4364,25 @@ function LR_Parser(settings,subTask,answer) {
 
    this.styleTabSwitch = function() {
       if(this.sideTable){
-         $("#"+this.tabsID).hide();
+         $("#tabs").hide();
          return
       }else{
-         $("#"+this.tabsID).show();
+         $("#tabs").show();
       }
-      $("#"+this.tabsID).css({
-         "text-align": "right",
-         margin: "1em 0"
-      });
-      $("#"+this.tabsID+" > *").css({
-         display: "inline-block",
-         "vertical-align": "middle",
-         "font-weight": "bold",
-         color: this.colors.black,
-         margin: "0 0.2em"
-      });
-      $("#"+this.tabsID+" span").css(this.unselectedTabAttr);
-      $("#"+this.tabsID+" span.selectedTab").css(this.selectedTabAttr);
-      $("#switchContainer").css({
-         width: "50px",
-         height: "15px",
-         "background-color": this.colors.lightgrey,
-         "border-radius": "10px",
-         "box-shadow": "inset 0 1px 0 0 rgba(0,0,0,0.2)",
-         cursor: "pointer",
-         position: "relative"
-      });
-      $("#switch").css({
-         width: "25px",
-         height: "15px",
-         "background-color": this.colors.blue,
-         "border-radius": "10px",
-         position: "absolute",
-         top: 0,
-         left: this.selectedTab*25+"px"
-      });
+      $("#switch").css("left", this.selectedTab*25+"px");
    };
 
    this.styleTabs = function() {
       if(!this.sideTable){
-         $("#"+this.graphPaperID).css({
+         $("#graphPaper").css({
             width: this.paperWidth
          });
-         $("#"+this.graphPaperID+", #"+this.parseTableID).css({
+         $("#graphPaper, #parseTable").css({
             margin: "1em auto",
             height: this.paperHeight
          });
       }else{
-         $("#"+this.tabsContainerID).css({
+         $("#tabsCont").css({
             display: "flex",
             "flex-direction": "row",
             "justify-content": "space-around",
@@ -4459,225 +4395,41 @@ function LR_Parser(settings,subTask,answer) {
    this.styleParseTable = function() {
       // console.log("styleParseTable")
       if(!this.sideTable){
-         $("#"+this.parseTableID+" table").css({
+         $("#parseTable table").css({
             "font-size": "1.2em"
          });
-         $("#"+this.parseTableID+" table").css({
+         $("#parseTable table").css({
             margin: "auto"
          });
-         $("#"+this.parseTableID+" table th, #"+this.parseTableID+" table td").css({
+         $("#parseTable table th, #parseTable table td").css({
             padding: "0.4em 0.8em"
          });
       }else{
-         $("#"+this.parseTableID+" table th, #"+this.parseTableID+" table td").css({
+         $("#parseTable table th, #parseTable table td").css({
             padding: "0.2em 0.4em"
          });
          if(this.mode == 4){
-            $("#"+this.parseTableID+" table td[data_symbol]").css({
+            $("#parseTable table td[data_symbol]").css({
                width: "1.5em"
             });
          }
       }
-      $("#"+this.parseTableID).css({
-         position: "relative"
-      })
-      $("#"+this.parseTableID+" table").css({
-         "border-collapse": "collapse",
-         border: "2px solid "+this.colors.black,
-         "text-align": "center"
-      });
-      $("#"+this.parseTableID+" table th").css({
-         "background-color": this.colors.black,
-         color: "white",
-         border: "1px solid white"
-      });
-      $("#"+this.parseTableID+" td").css(this.cellAttr);
+
+      $("#parseTable td").css(this.cellAttr);
       if(this.mode >= 4){
-         $("#"+this.parseTableID+" td[data_symbol]").css({
+         $("#parseTable td[data_symbol]").css({
             cursor: "pointer"
          })
       }
-      $("#"+this.parseTableID+" td .ruleMarker").css({
-         "background-color": this.colors.black,
-         "border-radius": "1em",
-         color: "white",
-         padding: "0.2em 0.5em"
-      });
-      $("#"+this.parseTableID+" td .ruleMarkerIndex").css({
-         color: this.colors.yellow,
-         // "font-weight": "bold"
-      });
 
       $("#rowHL, #colHL").css(this.cellHighlightAttr);
-      // $("#"+this.parseTableID+" td.selected").css(this.selectedCellAttr);
    };
-
-   this.styleRules = function() {
-      $("#rules").css({
-         "flex-grow": "1",
-         "flex-shrink": "0",
-         "background-color": this.colors.lightgrey,
-         "border-radius": "0 5px 5px 0",
-         "overflow": "hidden",
-         "font-weight": "bold"
-      });
-      $("#rules h3").css({
-         "text-align": "center",
-         padding: "1em",
-         margin: 0,
-         "background-color": this.colors.black,
-         color: "white",
-         "font-size": "1em"
-      });
-      $("#rules ul").css({
-         "list-style": "none",
-         padding: 0
-      });
-      $(".rule").css({
-
-         padding: "0.2em 0.5em 0.2em 0",
-         margin: "0.5em 1em",
-         "background-color": "transparent",
-         color: this.colors.black,
-         "border-radius": "1em"
-      });
-      $(".ruleIndex").css({
-         "flex-grow": "0",
-         "background-color": this.colors.black,
-         "border-radius": "1em",
-         // color: "white",
-         color: this.colors.yellow,
-         padding: "0.2em 0.5em",
-         "margin-right": "0.5em"
-      });
-      $(".rule i").css({
-         color: "grey",
-         margin: "0 0.5em"
-      });
-      $(".rule.previousRule").css({
-         "background-color": "#d9e3ef"
-      });
-      $(".rule.selected").css({
-         "background-color": this.colors.blue,
-         color: "white"
-      });
-      $(".rule.selected .ruleIndex").css({
-         "border-radius": "1em 0 0 1em",
-      });
-      $(".rule.selected i").css({
-         color: this.colors.yellow
-      });
-      $(".rule .epsilon").css({
-         "font-style": "italic"
-      })
-   };
-
-   this.styleProgressBar = function() {
-      $("#progressBarClickArea").css({
-         "flex-grow": "1",
-         height: "20px",
-         margin: "0 10px",
-         "padding-top": "8px"
-      });
-      $("#progressBarContainer").css({
-         height: "4px",
-         "background-color": "grey",
-      });
-      $("#progressBar").css({
-         width: "0%",
-         height: "100%",
-         "background-color": this.colors.blue,
-         position: "relative"
-      });
-      $("#progressBarMarker").css({
-         width: "6px",
-         height: "6px",
-         "background-color": "white",
-         border: "3px solid "+this.colors.blue,
-         "border-radius": "15px",
-         position: "absolute",
-         right: "-6px",
-         top: "-4px",
-         "z-index": 2
-      });
-   };
-
-   this.styleStackTable = function() {
-      $("#stackTableContainer").css({
-         position: "relative"
-      });
-      $("#stackTable").css({
-         border: "2px solid "+this.colors.blue,
-         "border-right": "none",
-         "border-collapse": "collapse",
-         "width": "100%"
-      });
-      $("#stackTable td").css({
-         border: "1px solid grey",
-         "background-color": this.colors.lightgrey,
-         "text-align": "center",
-         width: "2em",
-         height: "2em"
-      });
-      $("#stackTable td:last-child").css({
-         "border-right": "none",
-         color: "grey",
-         "text-align": "right",
-         "font-style": "italic",
-         "background-color": "white",
-         width: "auto"
-      });
-      $("#stackTable .State").css({
-         color: "grey"
-      });
-      $("#stackTable .Symbol").css({
-         color: this.colors.blue
-      });
-      $("#stackTable .stackElement.selected").css({
-         "background-color": this.colors.blue,
-         color: "white"
-      });
-   };
-
-   this.styleInput = function() {
-      $("#inputBar").css({
-         position: "relative",
-         "background-color": this.colors.lightgrey,
-         "margin-top": "5px",
-         "border-top": "1px solid grey",
-         "border-bottom": "2px solid "+this.colors.blue
-      });
-      $("#inputBar h4").css({
-         position: "absolute",
-         top: "-3em"
-      });
-      $(".inputChar").css({
-         display: "inline-block",
-         width: "1.5em",
-         "text-align": "center",
-         color: this.colors.black,
-         "font-size": "1.5em",
-         padding: "0.1em 0"
-      });
-      $(".inputChar.read").css({
-         color: this.colors.blue
-      });
-      $(".inputChar:first-of-type").css({
-         "margin-left": "0.75em"
-      });
-   }; 
 
    this.styleDerivationTree = function() {
-      // if(this.mode < 6){
-         var charWidth = $("#inputBar .inputChar").width();
-         var charHeight = $("#inputBar .inputChar").height()*0.7;
-         var treeWidth = this.input.length*charWidth;
-      // }else{
-      //    var charWidth = this.treeCharSize;
-      //    var charHeight = this.treeCharSize*0.7;
-      //    var treeWidth = (this.input.length + 1)*charWidth;
-      // }
-      // var treeWidth = this.input.length*charWidth;
+      // console.log('styleDerivationTree')
+      var charWidth = $("#inputBar .inputChar").width();
+      var charHeight = $("#inputBar .inputChar").height()*0.7;
+      var treeWidth = this.input.length*charWidth;
       var treeHeight = (2*this.treeHeight + 1)*charHeight;
 
       $("#derivationTree").css({
@@ -4793,7 +4545,7 @@ function LR_Parser(settings,subTask,answer) {
             }
          }
       }
-      // if(this.mode < 6)
+      // console.log(this.treeElements,this.actionSequence,this.derivationTree)
       for(var actionIndex in this.treeElements){
          var elements = this.treeElements[actionIndex];
          for(var el of elements){
@@ -4812,7 +4564,7 @@ function LR_Parser(settings,subTask,answer) {
    };
 
    this.styleCellEditor = function(state,symbol) {
-      $("#"+this.parseTableID+" table td[data_symbol=\""+symbol+"\"][data_state=\""+state+"\"]").css({
+      $("#parseTable table td[data_symbol=\""+symbol+"\"][data_state=\""+state+"\"]").css({
          padding: 0
       })
       $("#cellEditor").css({
