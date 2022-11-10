@@ -835,7 +835,7 @@ var getContext = function(display, infos, curLevel) {
             paintNorth: "paint above",
             paintNorthEast: "ppaint above and to the right",
             colorUnder: "coulor of the cell",
-            numberUnder: "number in the cell",
+            numberUnder: "tallet i ruten",
             writeNumber: "set this cell's number to",
             dir: "direction of the robot",
             col: "robotens kolonne",
