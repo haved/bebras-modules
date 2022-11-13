@@ -762,7 +762,7 @@ window.displayHelper = {
          answerNotSavedContestOver: "The contest being over, your answer was not saved. You may {0}.",
          reloadSubmittedAnswer: "reload the validated answer",
          difficultyWarning: "<strong>Advarsel:</strong> Denne versjonen kan være tidkrevende.<br/>Du kan nok løse 2 eller 3-stjerne-versjonene av andre oppgaver raskere.",
-         enemyWarning: "<strong>Advarsel:</strong> in this challenge, the computer will make sure you don't find the solution by chance."
+         enemyWarning: "<strong>Advarsel:</strong> i denne oppgaven vil datamaskinen sørge for at du ikke finner riktig svar ved en tilfeldighet."
       },
    },
 
